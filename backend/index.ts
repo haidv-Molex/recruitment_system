@@ -1,33 +1,13 @@
 import "@utilities/validateEnv";
-import "@utilities/validateFirebaseServiceFile";
 import "express-async-errors";
 import express from "express";
 import path from 'path';
-import fs from 'fs'
 
 import { server, app, io } from "@/serverConfig";
 import { pool } from "@middlewares/database";
 import redis from "@middlewares/redisClient";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 import { AppError } from "@middlewares/AppError";
-
-import AuthController from "@controller/Auth/_AuthController";
-import UserController from "@controller/User/_UserController";
-import BookController from "@controller/Book/_BookController";
-import VolumeController from "@controller/Volume/_VolumeController";
-import ChapterController from "@controller/Chapter/_ChapterController";
-import SocketController from "@controller/Socket/_SocketController";
-import AudioController from "@controller/Audio/_AudioController";
-import ReportController from "@controller/Report/_ReportController";
-import NotificationController from "@controller/Notification/_NotificationController";
-import AdminController from "@controller/Admin/_AdminController";
-import TransController from "@controller/Trans/_TransController";
-
-import Chapter from "@services/Book/Chapter/Utils/_Chapter";
-
-import "@controller/Socket/socketConnection";
-
-import { withTransaction } from "@middlewares/withTransaction";
 
 app.get('/', (req, res) => {
   const clientUrl =
@@ -43,56 +23,9 @@ app.get('/health', (req, res) => {
 
 // Đường dẫn lấy ảnh
 app.use('/image', express.static(path.join(process.env.PATH_SAVE_IMAGE as string)));
-app.get("/imageBooks/:chapter_id/:filename", async (req, res) => {
-  const { chapter_id, filename } = req.params;
-  const chapter_folder = await withTransaction(async (pool) => {
-    return await Chapter.getFullFolderPath(Number(chapter_id), pool);
-  })
 
-  const imagePath = path.join(
-    process.env.PATH_SAVE_BOOKS as string,
-    chapter_folder,
-    filename
-  );
-
-  if (fs.existsSync(imagePath)) {
-    res.sendFile(imagePath);
-  } else {
-    return res.status(404).json({ error: "Image not found" });
-  }
-});
-
-app.get("/audioBooks/:chapter_id/:filename", async (req, res) => {
-  const { chapter_id, filename } = req.params;
-  const chapter_folder = await withTransaction(async (pool) => {
-    return await Chapter.getFullFolderPath(Number(chapter_id), pool);
-  })
-
-  const audioPath = path.join(
-    process.env.PATH_SAVE_BOOKS as string,
-    chapter_folder,
-    filename
-  );
-
-  if (fs.existsSync(audioPath)) {
-    return res.sendFile(audioPath);
-  }
-
-  return res.status(404).json({ error: "Audio not found" });
-});
-
-// đường dẫn các controller
-app.use("/Auth", AuthController);
-app.use("/Audio", AudioController);
-app.use("/User", UserController);
-app.use("/Socket", SocketController);
-app.use("/Book", BookController);
-app.use("/Book/Volume", VolumeController);
-app.use("/Book/Volume/Chapter", ChapterController);
-app.use("/Report", ReportController);
-app.use("/Notification", NotificationController);
-app.use("/Admin", AdminController);
-app.use("/Trans", TransController);
+// Các controller hiện chưa có trong dự án mới, giữ server hoạt động với các route gốc.
+// Nếu cần bổ sung router riêng, thêm vào thư mục controller và mount ở đây.
 
 // Route không khớp → 404
 app.all("*", (req, _res, next) => {

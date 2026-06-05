@@ -17,10 +17,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@controller/*": ["Controller/*"],
+      "@controller/*": ["controller/*"],
       "@services/*": ["services/*"],
-      "@model/*": ["Model/*"],
-      "@database/*": ["Database/*"],
+      "@model/*": ["model/*"],
+      "@database/*": ["database/*"],
       "@type/*": ["types/*"],
       "@utilities/*": ["utilities/*"],
       "@middlewares/*": ["middlewares/*"],

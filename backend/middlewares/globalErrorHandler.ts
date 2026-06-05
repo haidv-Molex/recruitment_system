@@ -1,15 +1,16 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import { AppError } from "@middlewares/AppError";
 import logger from "@middlewares/logger";
 
 // Nếu dùng pg thì DatabaseError thường nằm ở err.name === "DatabaseError"
-export function globalErrorHandler(
-  err: Error & { code?: string; name?: string },
+export const globalErrorHandler: ErrorRequestHandler = (
+  err,
   req: Request,
   res: Response,
   _next: NextFunction
-) {
-  const codeStr = String(err.code ?? "");
+) => {
+  const error = err as Error & { code?: string; name?: string };
+  const codeStr = String(error.code ?? "");
 
   // 1. Lỗi do mình kiểm soát (AppError)
   if (err instanceof AppError) {
