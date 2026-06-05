@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+
+    /* QUAN TRỌNG */
+    "allowJs": true,          // Cho phép import và biên dịch file .js
+    "checkJs": false,         // Nếu muốn kiểm tra type trong file .js thì bật true
+    "outDir": "dist",         // Nơi chứa file build sau khi tsc chạy
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@controller/*": ["Controller/*"],
+      "@services/*": ["services/*"],
+      "@model/*": ["Model/*"],
+      "@database/*": ["Database/*"],
+      "@type/*": ["types/*"],
+      "@utilities/*": ["utilities/*"],
+      "@middlewares/*": ["middlewares/*"],
+    },
+
+  "plugins": [
+    { "transform": "typescript-transform-paths" },
+    { "transform": "typescript-transform-paths", "afterDeclarations": true }
+  ]
+  },
+  "include": ["src", "src/type", "**/*.ts", "**/*.js", "types/**/*", "ecosystem.config.cjs"],   // Bao gồm cả file .ts và .js
+  "exclude": ["node_modules", "dist"],  // Không build lại node_modules
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
+}
