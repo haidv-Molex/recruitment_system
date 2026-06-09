@@ -6,7 +6,7 @@ import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
 import { AppError } from "@middlewares/AppError";
 
-const updateUserController = express.Router();
+const updateUserController = express.Router({ mergeParams: true });
 
 const paramsSchema = Joi.object({
   user_id: Joi.number().integer().positive().required().messages({
@@ -35,7 +35,7 @@ const bodySchema = Joi.object({
   "object.missing": "Phải cung cấp ít nhất tên người dùng, mô tả hoặc mã phòng ban để cập nhật"
 });
 
-updateUserController.put("/profile/:user_id",
+updateUserController.put("",
   passport.authenticate("jwt", { session: false }),
   joiValidate(paramsSchema, "params"),
   joiValidate(bodySchema, "body"),
