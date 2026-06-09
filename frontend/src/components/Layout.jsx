@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Database, FileSpreadsheet, Table2 } from 'lucide-react';
+import { Database, FileSpreadsheet, Table2, LogOut, User } from 'lucide-react';  // ★ NEW
+import { useAuth } from '../contexts/AuthContext';  // ★ NEW
 
 export const Layout = ({ children }) => {
   const location = useLocation();
+  const { user, logout } = useAuth();  // ★ NEW
   const [now, setNow] = useState(new Date());
 
-  
-useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 60_000); // cập nhật mỗi 60 giây
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
 
@@ -19,7 +20,6 @@ useEffect(() => {
     year: 'numeric',
   });
 
-
   const tabs = [
     { path: '/', label: 'Job Tracking', icon: Table2 },
     { path: '/candidates', label: 'Candidate Database', icon: Database },
@@ -27,6 +27,30 @@ useEffect(() => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  // ★ NEW — Style cho user info
+  const userBlockStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    fontSize: '13px',
+    color: '#e2e8f0',
+  };
+
+  const logoutButtonStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: 600,
+    color: '#e2e8f0',
+    background: 'rgba(255,255,255,0.1)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
+  };
 
   return (
     <div className="app-shell">
@@ -40,8 +64,28 @@ useEffect(() => {
         </div>
         <div className="header-meta">
           <span>Mode: Mock Frontend</span>
-          <span>{formattedDate}</span>        
-          </div>
+          <span>{formattedDate}</span>
+
+          {/* ★ NEW — User info + Logout */}
+          {user && (
+            <div style={userBlockStyle}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <User size={14} />
+                {user.displayName}
+              </span>
+              <button
+                type="button"
+                style={logoutButtonStyle}
+                onClick={logout}
+                onMouseEnter={(e) => { e.target.style.background = 'rgba(255,255,255,0.2)'; }}
+                onMouseLeave={(e) => { e.target.style.background = 'rgba(255,255,255,0.1)'; }}
+              >
+                <LogOut size={14} />
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <nav className="sheet-tabs">
