@@ -17,6 +17,7 @@ import PlatformController from "@controller/platform/_PlatformController";
 import SegmentController from "@controller/segment/_SegmentController";
 import SiteController from "@controller/site/_SiteController";
 import LevelController from "@controller/level/_LevelController";
+import JobController from "@controller/job/_JobController";
 
 app.get('/', (req, res) => {
   const clientUrl =
@@ -41,6 +42,7 @@ app.use("/platform", PlatformController);
 app.use("/segment", SegmentController);
 app.use("/site", SiteController);
 app.use("/level", LevelController);
+app.use("/job", JobController);
 
 // Route không khớp → 404
 app.all("*", (req, _res, next) => {

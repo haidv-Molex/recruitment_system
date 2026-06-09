@@ -1,15 +1,16 @@
 export type candidateModel = {
   candidate_id: number;
-  candidate_code: string;
+  candidate_code: string | null;
   candidate_name: string;
-  candidate_email: string;
-  candidate_phone: string;
+  candidate_email: string | null;
+  candidate_phone: string | null;
   agency: string | null;
-  offer_date: Date;
-  onboard_date: Date;
-  feedback_date: Date;
-  current_salary: string;
-  expected_salary: string;
+  offer_date: Date | null;
+  expected_onboard_date: Date | null;
+  onboard_date: Date | null;
+  feedback_date: Date | null;
+  current_salary: string | null;
+  expected_salary: string | null;
   status: string;
   note: string;
   create_at: Date;
