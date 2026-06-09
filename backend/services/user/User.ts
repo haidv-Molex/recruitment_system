@@ -8,6 +8,7 @@ import isAdmin from "@services/user/isAdmin";
 import createHR from "@services/user/createHR";
 import updatePassword from "@services/user/updatePassword";
 import updateProfile from "@services/user/updateProfile";
+import changeRole from "@services/user/changeRole";
 
 class User {
   static create = create;
@@ -20,6 +21,7 @@ class User {
   static createHR = createHR;
   static updatePassword = updatePassword;
   static updateProfile = updateProfile;
+  static changeRole = changeRole;
 }
 
 export default User;
