@@ -11,6 +11,11 @@ import { AppError } from "@middlewares/AppError";
 
 import UserController from "@controller/user/_UserController";
 import AuthController from "@controller/auth/_AuthController";
+import CompanyController from "@controller/company/_CompanyController";
+import DepartmentController from "@controller/department/_DepartmentController";
+import PlatformController from "@controller/platform/_PlatformController";
+import SegmentController from "@controller/segment/_SegmentController";
+import SiteController from "@controller/site/_SiteController";
 
 app.get('/', (req, res) => {
   const clientUrl =
@@ -29,6 +34,11 @@ app.use('/file', express.static(path.join(process.env.PATH_SAVE_FILE as string))
 
 app.use("/user", UserController);
 app.use("/auth", AuthController);
+app.use("/company", CompanyController);
+app.use("/department", DepartmentController);
+app.use("/platform", PlatformController);
+app.use("/segment", SegmentController);
+app.use("/site", SiteController);
 
 // Route không khớp → 404
 app.all("*", (req, _res, next) => {

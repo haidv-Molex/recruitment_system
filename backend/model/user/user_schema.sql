@@ -8,7 +8,7 @@ CREATE TABLE "user" (
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     department_id INT,
-    FOREIGN KEY (department_id) REFERENCES department(department_id)
+    FOREIGN KEY (department_id) REFERENCES department(department_id) ON DELETE SET NULL
 );
 
 CREATE TRIGGER set_updated_at_user
