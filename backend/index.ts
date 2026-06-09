@@ -27,7 +27,9 @@ app.use('/file', express.static(path.join(process.env.PATH_SAVE_FILE as string))
 // Các controller hiện chưa có trong dự án mới, giữ server hoạt động với các route gốc.
 // Nếu cần bổ sung router riêng, thêm vào thư mục controller và mount ở đây.
 import UserController from "@controller/user/_UserController";
+import AuthController from "@controller/auth/_AuthController";
 app.use("/user", UserController);
+app.use("/auth", AuthController);
 
 // Route không khớp → 404
 app.all("*", (req, _res, next) => {

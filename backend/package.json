@@ -115,7 +115,7 @@
     "redis": "^5.10.0",
     "sinon": "^21.0.2",
     "socket.io": "^4.8.1",
-    "uuid": "^13.0.0",
+    "uuid": "^9.0.1",
     "winston": "^3.18.3",
     "word-extractor": "^1.0.4",
     "xml2js": "^0.6.2"
@@ -140,6 +140,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.15.6",
     "@types/sinon": "^21.0.0",
+    "@types/uuid": "^9.0.8",
     "pm2": "^6.0.13",
     "ts-mocha": "^11.1.0",
     "ts-node": "^10.9.2",

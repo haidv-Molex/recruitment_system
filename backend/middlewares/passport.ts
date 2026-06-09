@@ -79,15 +79,15 @@ export async function resetLoginAttempt(key: string) {
 passport.use(
   "login",
   new Strategy({
-    usernameField: 'email', // Sử dụng email làm username
+    usernameField: 'account', // Sử dụng account làm username
     passwordField: 'password', // Trường mật khẩu
     passReqToCallback: true,
-  }, async function verify(req, email, password, cb) {
+  }, async function verify(req, account, password, cb) {
     try {
-      //kiểm tra xem có email ko
+      //kiểm tra xem có account ko
       const user = await withTransaction(async (pool) => {
         try {
-          return await User.findByEmail(email, pool)
+          return await User.findByEmail(account, pool)
         } catch (error) {
           throw new AppError("Tài khoản hoặc mật khẩu không chính xác", 401);
         }
@@ -134,11 +134,11 @@ passport.use(
         maxAge: await jwtTimeToSeconds(process.env.EXPIRES_REFRESH_TOKEN || "30d") * 1000,
       });
 
-      return cb(null, { ...user, email, role, accessToken, refreshToken }, { message: 'Đăng nhập thành công' });
+      return cb(null, { ...user, user_account: account, user_role: role, accessToken, refreshToken }, { message: 'Đăng nhập thành công' });
 
     } catch (err) {
       if (err instanceof AppError) {
-        return cb(null, false, { message: err.message });
+        return cb(null, false, { message: err.message, status: err.statusCode } as any);
       }
 
       return cb(new AppError("Lỗi hệ thống", 500));
