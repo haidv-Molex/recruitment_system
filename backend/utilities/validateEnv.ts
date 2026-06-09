@@ -29,7 +29,7 @@ const REQUIRED_ENV = [
   "REDIS_PASSWORD",
   "REDIS_TIME_OUT",
 
-  "PATH_SAVE_IMAGE",
+  "PATH_SAVE_FILE",
   "HOST",
   "CLIENT_URL",
 ];

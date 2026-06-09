@@ -21,8 +21,8 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Đường dẫn lấy ảnh
-app.use('/image', express.static(path.join(process.env.PATH_SAVE_IMAGE as string)));
+// Đường dẫn lấy file
+app.use('/file', express.static(path.join(process.env.PATH_SAVE_FILE as string)));
 
 // Các controller hiện chưa có trong dự án mới, giữ server hoạt động với các route gốc.
 // Nếu cần bổ sung router riêng, thêm vào thư mục controller và mount ở đây.

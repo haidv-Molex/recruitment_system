@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import sharp from "sharp";
 import ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
 import path from "path";
@@ -9,7 +8,6 @@ type MulterFile = Express.Multer.File;
 
 // ----------- Common config -----------
 const MAX_DOC_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 const ALLOWED_AUDIO_TYPES = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg"];
 
 const validateFileQuality = async (
@@ -39,34 +37,6 @@ const validateFileQuality = async (
             }
           }
 
-          // ---- Rule cho ảnh ----
-          if (field === "image") {
-            tasks.push(
-              (async () => {
-                if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
-                  fs.unlinkSync(file.path);
-                  throw new AppError("Invalid image type (jpeg/png/jpg only)", 400);
-                }
-
-                try {
-                  const tempPath = file.path + "_tmp";
-
-                  await sharp(file.path)
-                    .resize(1920, 1080, { fit: "inside", withoutEnlargement: true })
-                    .jpeg({ quality: 90 })
-                    .toFile(tempPath);
-
-                  // replace original file
-                  fs.unlinkSync(file.path);
-                  fs.renameSync(tempPath, file.path);
-                } catch (err) {
-                  console.error("Sharp resize error:", err);
-                  fs.unlinkSync(file.path); // dọn file lỗi
-                  throw new AppError("Image processing failed", 500);
-                }
-              })()
-            );
-          }
 
           // ---- Rule cho audio ----
           if (field === "audio") {
