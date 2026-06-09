@@ -251,7 +251,7 @@ describe("JobController API", () => {
       .put("/job")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withQueryParams({ id: 1 })
-      .withJson({ job_code: "JOB001_NEW" })
+      .withMultiPartFormData({ job_code: "JOB001_NEW" })
       .expectStatus(200)
       .expectJson({
         result: true,

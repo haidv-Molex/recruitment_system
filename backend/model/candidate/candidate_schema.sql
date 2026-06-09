@@ -17,16 +17,16 @@ CREATE TABLE candidate (
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     source INT,
     recruiter INT NOT NULL,
-    job_id INT NOT NULL,
+    job_id INT,
     targeted_company INT,
     reference INT,
     file_id INT,
     FOREIGN KEY (source) REFERENCES platform(platform_id) ON DELETE SET NULL,
-    FOREIGN KEY (recruiter) REFERENCES "user"(user_id),
-    FOREIGN KEY (job_id) REFERENCES job(job_id),
+    FOREIGN KEY (recruiter) REFERENCES "user"(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE SET NULL,
     FOREIGN KEY (targeted_company) REFERENCES company(company_id) ON DELETE SET NULL,
-    FOREIGN KEY (reference) REFERENCES "user"(user_id),
-    FOREIGN KEY (file_id) REFERENCES file(file_id)
+    FOREIGN KEY (reference) REFERENCES "user"(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (file_id) REFERENCES file(file_id) ON DELETE SET NULL
 );
 
 CREATE TRIGGER set_updated_at_candidate

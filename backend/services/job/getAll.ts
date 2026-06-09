@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import type { jobOutputModel } from "@model/job/jobModel";
 import type { PaginationQueryMetadata } from "@type/pagination";
+import { populateJobRelations } from "./populate";
 
 type GetAllJobsParams = PaginationQueryMetadata & {
   search?: string;
@@ -55,20 +56,23 @@ async function getAll(
   const result = await pool.query(query, values);
   const host = process.env.HOST || "http://localhost:3000";
 
-  const items = result.rows.map((row) => ({
-    job_id: row.job_id,
-    job_code: row.job_code,
-    project: row.project,
-    candidate_required: row.candidate_required,
-    note: row.note,
-    create_at: row.create_at,
-    update_at: row.update_at,
-    file_id: row.file_id,
-    file: row.file_id ? {
-      file_id: row.file_id,
-      file_path: row.file_path,
-      file_url: `${host}/file/${row.file_path}`
-    } : null
+  const items = await Promise.all(result.rows.map(async (row) => {
+    const relations = await populateJobRelations(row.job_id, pool);
+    return {
+      job_id: row.job_id,
+      job_code: row.job_code,
+      project: row.project,
+      candidate_required: row.candidate_required,
+      note: row.note,
+      create_at: row.create_at,
+      update_at: row.update_at,
+      file: row.file_id ? {
+        file_id: row.file_id,
+        file_path: row.file_path,
+        file_url: `${host}/file/${row.file_path}`
+      } : null,
+      ...relations
+    };
   })) satisfies jobOutputModel[];
 
   return {

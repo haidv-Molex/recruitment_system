@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
+import { populateJobRelations } from "./populate";
 
 async function getById(
   id: number,
@@ -22,6 +23,8 @@ async function getById(
   const row = result.rows[0];
   const host = process.env.HOST || "http://localhost:3000";
 
+  const relations = await populateJobRelations(row.job_id, pool);
+
   return {
     job_id: row.job_id,
     job_code: row.job_code,
@@ -34,7 +37,8 @@ async function getById(
       file_id: row.file_id,
       file_path: row.file_path,
       file_url: `${host}/file/${row.file_path}`
-    } : null
+    } : null,
+    ...relations
   } satisfies jobOutputModel;
 }
 
