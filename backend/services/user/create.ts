@@ -3,7 +3,7 @@ import { AppError } from "@middlewares/AppError";
 import type { userModel } from "@model/user/userModel";
 
 /**
- * Tạo tài khoản người dùng cơ bản (như OAuth Google).
+ * Tạo tài khoản người dùng cơ bản (máy tạo).
  */
 async function create(account: string, provider: string, displayName: string, pool: PoolClient): Promise<userModel> {
   const checkQuery = `SELECT user_id FROM "user" WHERE user_account = $1`;

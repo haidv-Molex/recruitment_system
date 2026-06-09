@@ -145,3 +145,6 @@ certs
 
 #test
 /.test/
+
+# scratch
+/.scratch/

@@ -175,6 +175,8 @@ function main() {
 
     // 4. 999-seed-data.sql
     const seedSQL = `-- SEED: Dữ liệu mặc định
+INSERT INTO "user" (user_name, user_account, user_password, user_role)
+VALUES ('Admin', 'Admin', '$2b$10$6iccS\\mVyyHP9EEiD7nrM.OFn7xQvDpksuepRyoklOo\\YU0eta\\AS', 'admin');
 `;
     writeFileSync(`${INIT_DIR}/999-seed-default-data.sql`, seedSQL);
     console.log("999 → seed-default-data.sql");

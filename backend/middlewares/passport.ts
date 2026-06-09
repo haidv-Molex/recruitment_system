@@ -18,7 +18,7 @@ type payloadtype = {
   user_name: string
 }
 
-const cookiePath = "/Auth/token"
+const cookiePath = "/auth/token"
 const secretOrKey = process.env.SECRET_AUTH_TOKEN_KEY as string;
 const expiresToken = process.env.EXPIRES_TOKEN as SignOptions["expiresIn"];
 const expiresRefreshToken = process.env.EXPIRES_REFRESH_TOKEN as SignOptions["expiresIn"];

@@ -9,10 +9,13 @@ import redis from "@middlewares/redisClient";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 import { AppError } from "@middlewares/AppError";
 
+import UserController from "@controller/user/_UserController";
+import AuthController from "@controller/auth/_AuthController";
+
 app.get('/', (req, res) => {
   const clientUrl =
     process.env.CLIENT_URL?.split(',')[0]?.trim() ||
-    'https://e-books.info.vn';
+    'http://localhost:3000';
 
   res.redirect(clientUrl);
 });
@@ -24,10 +27,6 @@ app.get('/health', (req, res) => {
 // Đường dẫn lấy file
 app.use('/file', express.static(path.join(process.env.PATH_SAVE_FILE as string)));
 
-// Các controller hiện chưa có trong dự án mới, giữ server hoạt động với các route gốc.
-// Nếu cần bổ sung router riêng, thêm vào thư mục controller và mount ở đây.
-import UserController from "@controller/user/_UserController";
-import AuthController from "@controller/auth/_AuthController";
 app.use("/user", UserController);
 app.use("/auth", AuthController);
 
