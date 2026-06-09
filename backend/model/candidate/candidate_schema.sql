@@ -27,3 +27,8 @@ CREATE TABLE candidate (
     FOREIGN KEY (reference) REFERENCES "user"(user_id),
     FOREIGN KEY (file_id) REFERENCES file(file_id)
 );
+
+CREATE TRIGGER set_updated_at_candidate
+BEFORE UPDATE ON candidate
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

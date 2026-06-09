@@ -6,3 +6,8 @@ CREATE TABLE level (
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TRIGGER set_updated_at_level
+BEFORE UPDATE ON level
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

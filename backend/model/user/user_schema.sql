@@ -10,3 +10,8 @@ CREATE TABLE "user" (
     department_id INT,
     FOREIGN KEY (department_id) REFERENCES department(department_id)
 );
+
+CREATE TRIGGER set_updated_at_user
+BEFORE UPDATE ON "user"
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

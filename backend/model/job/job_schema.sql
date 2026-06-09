@@ -10,3 +10,8 @@ CREATE TABLE job (
     file_id INT,
     FOREIGN KEY (file_id) REFERENCES file(id)
 );
+
+CREATE TRIGGER set_updated_at_job
+BEFORE UPDATE ON job
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

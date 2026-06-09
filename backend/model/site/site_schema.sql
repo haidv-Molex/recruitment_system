@@ -6,3 +6,8 @@ CREATE TABLE site (
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TRIGGER set_updated_at_site
+BEFORE UPDATE ON site
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
