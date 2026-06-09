@@ -1,9 +1,9 @@
 import "express";
-import type { userModel } from "@model/user/userModel";
+import type { userOutputModel } from "@model/user/userModel";
 
 declare global {
     namespace Express {
-        interface User extends userModel {
+        interface User extends userOutputModel {
             email?: string;
             role?: 'user' | 'admin';
             accessToken?: string;

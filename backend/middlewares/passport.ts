@@ -134,7 +134,7 @@ passport.use(
         maxAge: await jwtTimeToSeconds(process.env.EXPIRES_REFRESH_TOKEN || "30d") * 1000,
       });
 
-      return cb(null, { ...user, user_account: account, user_role: role, accessToken, refreshToken }, { message: 'Đăng nhập thành công' });
+      return cb(null, { ...user, user_role: role, accessToken, refreshToken }, { message: 'Đăng nhập thành công' });
 
     } catch (err) {
       if (err instanceof AppError) {
@@ -170,9 +170,7 @@ passport.use(
         if (!result) {
           const newUser = await withTransaction(async (pool) => {
             return await User.create(
-              account,
-              "google", // Set mặc định cho tài khoản Google
-              profile.displayName,
+              { username: profile.displayName },
               pool
             );
           })
@@ -201,7 +199,7 @@ passport.use(
             }
           })
 
-          return cb(null, { ...newUser, user_account: account, user_role: role, accessToken, refreshToken }, { message: "tạo tài khoản thành công" });
+          return cb(null, { ...newUser, user_role: role, accessToken, refreshToken }, { message: "tạo tài khoản thành công" });
         } else {
           const [refreshToken, accessToken] = await Promise.all([
             refreshTokenGenerate(result.user_id),
@@ -228,7 +226,7 @@ passport.use(
             }
           })
 
-          return cb(null, { ...result, user_account: account, user_role: role, accessToken, refreshToken }, { message: "Đăng nhập thành công" });
+          return cb(null, { ...result, user_role: role, accessToken, refreshToken }, { message: "Đăng nhập thành công" });
         }
       } catch (err) {
         if (err instanceof AppError) {

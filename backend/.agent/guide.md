@@ -173,21 +173,32 @@ Service là pure function nhận `PoolClient` làm tham số cuối, không bi�
 ```typescript
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
-import type { userModel } from "@model/user/userModel";
+import type { userOutputModel } from "@model/user/userModel";
 
 type Props = {
     username: string;
 };
 
-async function myServiceFunction(props: Props, pool: PoolClient): Promise<userModel> {
-    const query = `SELECT * FROM "user" WHERE user_name = $1`;
+async function myServiceFunction(props: Props, pool: PoolClient): Promise<userOutputModel> {
+    const query = `
+      SELECT user_id, user_name, user_description, user_role, department_id, create_at, update_at
+      FROM "user" WHERE user_name = $1
+    `;
     const result = await pool.query(query, [props.username]);
 
     if (result.rows.length === 0) {
         throw new AppError("Not found", 404);
     }
 
-    return result.rows[0] as userModel;
+    return {
+        user_id: result.rows[0].user_id,
+        user_name: result.rows[0].user_name,
+        user_description: result.rows[0].user_description,
+        user_role: result.rows[0].user_role,
+        department_id: result.rows[0].department_id,
+        create_at: result.rows[0].create_at,
+        update_at: result.rows[0].update_at
+    } satisfies userOutputModel;
 }
 
 export default myServiceFunction;
@@ -199,6 +210,9 @@ export default myServiceFunction;
 - Throw `AppError` thay vì return null/undefined khi có lỗi
 - Dùng TypeScript types từ `@model/...`
 - Dùng parameterized query (`$1`, `$2`, ...) để tránh SQL injection
+- **Output về user phải dùng `userOutputModel`** (không có `user_account`, `user_password`)
+- **Không dùng `as Type` để cast** – phải dùng `satisfies Type` với object được map tường minh để TypeScript kiểm tra đúng shape
+- SQL `RETURNING` / `SELECT` **chỉ liệt kê cột public**, không dùng `SELECT *` hay `RETURNING *`
 
 ### 4.3 Facade Class Pattern
 
@@ -227,15 +241,23 @@ Types không phải class, chỉ là TypeScript `type` hoặc `interface`:
 export type userModel = {
   user_id: number;
   user_name: string;
-  user_account: string | null;
-  user_password: string | null;
+  user_account: string | null;  // sensitive – KHÔNG expose ra ngoài
+  user_password: string | null; // sensitive – KHÔNG expose ra ngoài
   user_description: string | null;
   user_role: string | null;
   create_at: Date;
   update_at: Date;
   department_id: number | null;
 }
+
+// Type dùng cho output (public) – loại bỏ user_account và user_password
+export type userOutputModel = Omit<userModel, 'user_password' | 'user_account'>;
 ```
+
+**Quy tắc output:**
+- Mọi service trả về thông tin user ra ngoài (controller, response) **bắt buộc** dùng `userOutputModel`
+- `userModel` (đầy đủ) chỉ được dùng nội bộ trong passport strategy khi cần xác thực mật khẩu (`bcrypt.compare`)
+- `Express.User` (req.user) cũng extend `userOutputModel` – không có account/password trong session
 
 ---
 
@@ -345,6 +367,7 @@ Upload đi qua multer config tại `utilities/multer/`. Sau upload, `validateFil
 
 ### User Model
 ```typescript
+// Đầy đủ – chỉ dùng nội bộ (passport, bcrypt compare)
 export type userModel = {
   user_id: number;
   user_name: string;
@@ -356,6 +379,9 @@ export type userModel = {
   update_at: Date;
   department_id: number | null;
 }
+
+// Public output – dùng cho mọi service và response trả về client
+export type userOutputModel = Omit<userModel, 'user_password' | 'user_account'>;
 ```
 
 ### Candidate Model
@@ -393,10 +419,27 @@ export type candidateModel = {
 
 1. **Tạo service function** tại `services/user/someFeature.ts`:
    ```typescript
-   async function someFeature(param: string, pool: PoolClient): Promise<SomeType> {
-       const result = await pool.query(`SELECT ...`, [param]);
-       if (!result.rows[0]) throw new AppError("Not found", 404);
-       return result.rows[0] as SomeType;
+   import type { userOutputModel } from "@model/user/userModel";
+
+   async function someFeature(param: string, pool: PoolClient): Promise<userOutputModel> {
+       // Chỉ SELECT cột public, không dùng SELECT *
+       const result = await pool.query(
+           `SELECT user_id, user_name, user_description, user_role, department_id, create_at, update_at
+            FROM "user" WHERE user_id = $1`,
+           [param]
+       );
+       if (result.rows.length === 0) throw new AppError("Not found", 404);
+
+       // Dùng satisfies thay vì as để TypeScript kiểm tra shape
+       return {
+           user_id: result.rows[0].user_id,
+           user_name: result.rows[0].user_name,
+           user_description: result.rows[0].user_description,
+           user_role: result.rows[0].user_role,
+           department_id: result.rows[0].department_id,
+           create_at: result.rows[0].create_at,
+           update_at: result.rows[0].update_at
+       } satisfies userOutputModel;
    }
    export default someFeature;
    ```
@@ -451,3 +494,6 @@ export type candidateModel = {
 - ❌ Không return `null` trong service khi có lỗi → dùng `throw new AppError()`
 - ❌ Không bỏ qua Joi validation cho input từ user
 - ❌ Không hardcode credential hay secret trong code
+- ❌ Không dùng `as SomeType` để cast kết quả DB – phải dùng `satisfies` với object map tường minh
+- ❌ Không trả về `userModel` (đầy đủ) từ service công khai – luôn dùng `userOutputModel`
+- ❌ Không dùng `SELECT *` hay `RETURNING *` trong query trả về user – liệt kê rõ từng cột public

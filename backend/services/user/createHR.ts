@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import bcrypt from "bcrypt";
-import type { userModel } from "@model/user/userModel";
+import type { userOutputModel } from "@model/user/userModel";
 
 type CreateHRProps = {
   username: string;
@@ -14,7 +14,7 @@ type CreateHRProps = {
 /**
  * Tạo tài khoản mới có vai trò HR.
  */
-async function createHR(props: CreateHRProps, pool: PoolClient): Promise<userModel> {
+async function createHR(props: CreateHRProps, pool: PoolClient): Promise<userOutputModel> {
   const { username, account, password, description, departmentId } = props;
 
   if (!username || !account) {
@@ -52,7 +52,15 @@ async function createHR(props: CreateHRProps, pool: PoolClient): Promise<userMod
     throw new AppError("Lỗi khi tạo tài khoản HR", 500);
   }
 
-  return result.rows[0] as userModel;
+  return {
+    user_id: result.rows[0].user_id,
+    user_name: result.rows[0].user_name,
+    user_description: result.rows[0].user_description,
+    user_role: result.rows[0].user_role,
+    department_id: result.rows[0].department_id,
+    create_at: result.rows[0].create_at,
+    update_at: result.rows[0].update_at
+  } satisfies userOutputModel;
 }
 
 export default createHR;

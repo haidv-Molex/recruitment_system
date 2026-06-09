@@ -9,3 +9,5 @@ export type userModel = {
   update_at: Date;
   department_id: number | null;
 }
+
+export type userOutputModel = Omit<userModel, 'user_password' | 'user_account'>;

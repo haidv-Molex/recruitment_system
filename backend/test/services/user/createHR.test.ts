@@ -34,7 +34,6 @@ describe("createHR service", () => {
 
     expect(result).to.have.property("user_id").that.is.a("number");
     expect(result.user_name).to.equal(hrData.username);
-    expect(result.user_account).to.equal(hrData.account);
     expect(result.user_role).to.equal("hr");
     expect(result.user_description).to.equal(hrData.description);
   });
