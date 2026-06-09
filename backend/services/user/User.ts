@@ -6,6 +6,8 @@ import checkUserBanned from "@services/user/checkUserBanned";
 import deleteAccount from "@services/user/deleteAccount";
 import isAdmin from "@services/user/isAdmin";
 import createHR from "@services/user/createHR";
+import updatePassword from "@services/user/updatePassword";
+import updateProfile from "@services/user/updateProfile";
 
 class User {
   static create = create;
@@ -16,6 +18,8 @@ class User {
   static deleteAccount = deleteAccount;
   static isAdmin = isAdmin;
   static createHR = createHR;
+  static updatePassword = updatePassword;
+  static updateProfile = updateProfile;
 }
 
 export default User;
