@@ -7,8 +7,7 @@ import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-go
 import { Strategy as JwtStrategy, ExtractJwt, StrategyOptionsWithRequest } from "passport-jwt";
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
 
-import User from "@services/Person/User/_User";
-import Admin from "@/services/Admin/_Admin";
+import User from "@services/user/User";
 import redis, { getCache, setCache } from "@middlewares/redisClient";
 import jwtTimeToSeconds from "@utilities/jwtTimeToSeconds";
 
@@ -120,8 +119,8 @@ passport.use(
 
       const role = await withTransaction(async (pool) => {
         try {
-          await Admin.checkIsAdmin(user.user_id, pool)
-          return 'admin'
+          const isUserAdmin = await User.isAdmin(user.user_id, pool);
+          return isUserAdmin ? 'admin' : 'user';
         } catch {
           return 'user';
         }
@@ -195,8 +194,8 @@ passport.use(
 
           const role = await withTransaction(async (pool) => {
             try {
-              await Admin.checkIsAdmin(newUser.user_id, pool)
-              return 'admin'
+              const isUserAdmin = await User.isAdmin(newUser.user_id, pool);
+              return isUserAdmin ? 'admin' : 'user';
             } catch {
               return 'user';
             }
@@ -222,8 +221,8 @@ passport.use(
 
           const role = await withTransaction(async (pool) => {
             try {
-              await Admin.checkIsAdmin(result.user_id, pool)
-              return 'admin'
+              const isUserAdmin = await User.isAdmin(result.user_id, pool);
+              return isUserAdmin ? 'admin' : 'user';
             } catch {
               return 'user';
             }

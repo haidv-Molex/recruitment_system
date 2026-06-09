@@ -4,7 +4,7 @@ export type userModel = {
   user_account: string | null;
   user_password: string | null;
   user_description: string | null;
-  user_role: string | null;
+  user_role: 'admin' | 'hr' | string | null;
   create_at: Date;
   update_at: Date;
   department_id: number | null;
