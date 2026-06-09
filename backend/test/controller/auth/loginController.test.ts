@@ -18,7 +18,7 @@ import assert from "assert";
 
 describe("loginController API", () => {
   let poolConnectStub: sinon.SinonStub;
-  let findByEmailStub: sinon.SinonStub;
+  let findByAccountStub: sinon.SinonStub;
   let comparePasswordStub: sinon.SinonStub;
   let isAdminStub: sinon.SinonStub;
   let redisGetStub: sinon.SinonStub;
@@ -58,7 +58,7 @@ describe("loginController API", () => {
     poolConnectStub = sinon.stub(pool, "connect").resolves(mockClient);
 
     // Stub các dịch vụ User
-    findByEmailStub = sinon.stub(User, "findByEmail");
+    findByAccountStub = sinon.stub(User, "findByAccount");
     comparePasswordStub = sinon.stub(User, "comparePassword");
     isAdminStub = sinon.stub(User, "isAdmin");
 
@@ -73,7 +73,7 @@ describe("loginController API", () => {
 
   afterEach(() => {
     poolConnectStub.restore();
-    findByEmailStub.restore();
+    findByAccountStub.restore();
     comparePasswordStub.restore();
     isAdminStub.restore();
     redisGetStub.restore();
@@ -96,7 +96,7 @@ describe("loginController API", () => {
       user_role: "hr"
     };
 
-    findByEmailStub.resolves(mockUser);
+    findByAccountStub.resolves(mockUser);
     comparePasswordStub.resolves(true);
     isAdminStub.resolves(false);
 
@@ -118,7 +118,7 @@ describe("loginController API", () => {
         }
       });
 
-    assert.strictEqual(findByEmailStub.calledOnce, true);
+    assert.strictEqual(findByAccountStub.calledOnce, true);
     assert.strictEqual(comparePasswordStub.calledOnce, true);
   });
 
@@ -130,7 +130,7 @@ describe("loginController API", () => {
       user_role: "hr"
     };
 
-    findByEmailStub.resolves(mockUser);
+    findByAccountStub.resolves(mockUser);
     comparePasswordStub.resolves(false); // Sai mật khẩu
 
     await pactum.spec()
@@ -145,12 +145,12 @@ describe("loginController API", () => {
         message: "Sai mật khẩu"
       });
 
-    assert.strictEqual(findByEmailStub.calledOnce, true);
+    assert.strictEqual(findByAccountStub.calledOnce, true);
     assert.strictEqual(comparePasswordStub.calledOnce, true);
   });
 
   it("should return 401 when account is not found", async () => {
-    findByEmailStub.rejects(new AppError("Tài khoản hoặc mật khẩu không chính xác", 401));
+    findByAccountStub.rejects(new AppError("Tài khoản hoặc mật khẩu không chính xác", 401));
 
     await pactum.spec()
       .post("/auth/login")
@@ -164,7 +164,7 @@ describe("loginController API", () => {
         message: "Tài khoản hoặc mật khẩu không chính xác"
       });
 
-    assert.strictEqual(findByEmailStub.calledOnce, true);
+    assert.strictEqual(findByAccountStub.calledOnce, true);
     assert.strictEqual(comparePasswordStub.called, false);
   });
 
@@ -176,7 +176,7 @@ describe("loginController API", () => {
       user_role: "hr"
     };
 
-    findByEmailStub.resolves(mockUser);
+    findByAccountStub.resolves(mockUser);
     // Giả lập Redis trả về số lần sai >= 5 (đã bị khóa)
     redisGetStub.resolves("5");
     redisTtlStub.resolves(900); // 15 phút
@@ -193,7 +193,7 @@ describe("loginController API", () => {
         message: "Tài khoản bị khóa. Thử lại sau 900 giây."
       });
 
-    assert.strictEqual(findByEmailStub.calledOnce, true);
+    assert.strictEqual(findByAccountStub.calledOnce, true);
     assert.strictEqual(comparePasswordStub.called, false);
   });
 

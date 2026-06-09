@@ -87,7 +87,7 @@ passport.use(
       //kiểm tra xem có account ko
       const user = await withTransaction(async (pool) => {
         try {
-          return await User.findByEmail(account, pool)
+          return await User.findByAccount(account, pool)
         } catch (error) {
           throw new AppError("Tài khoản hoặc mật khẩu không chính xác", 401);
         }
@@ -158,19 +158,19 @@ passport.use(
     },
     async (req, accessToken: string, refreshToken: string, profile: Profile, cb: VerifyCallback) => {
       try {
-        const email = profile.emails?.[0]?.value;
-        if (!email) {
+        const account = profile.emails?.[0]?.value;
+        if (!account) {
           return cb(null, false, { message: "Google profile does not contain an email", status: 400 });
         }
 
         const result = await withTransaction(async (pool) => {
-          return await User.findByEmail(email, pool);
+          return await User.findByAccount(account, pool);
         })
 
         if (!result) {
           const newUser = await withTransaction(async (pool) => {
             return await User.create(
-              email,
+              account,
               "google", // Set mặc định cho tài khoản Google
               profile.displayName,
               pool
@@ -201,7 +201,7 @@ passport.use(
             }
           })
 
-          return cb(null, { ...newUser, email, role, accessToken, refreshToken }, { message: "tạo tài khoản thành công" });
+          return cb(null, { ...newUser, user_account: account, user_role: role, accessToken, refreshToken }, { message: "tạo tài khoản thành công" });
         } else {
           const [refreshToken, accessToken] = await Promise.all([
             refreshTokenGenerate(result.user_id),
@@ -228,7 +228,7 @@ passport.use(
             }
           })
 
-          return cb(null, { ...result, email, role, accessToken, refreshToken }, { message: "Đăng nhập thành công" });
+          return cb(null, { ...result, user_account: account, user_role: role, accessToken, refreshToken }, { message: "Đăng nhập thành công" });
         }
       } catch (err) {
         if (err instanceof AppError) {
