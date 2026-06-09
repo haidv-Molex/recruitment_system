@@ -175,19 +175,6 @@ function main() {
 
     // 4. 999-seed-data.sql
     const seedSQL = `-- SEED: Dữ liệu mặc định
-
-INSERT INTO images (image_path)
-VALUES ('/images/default-avatar.png')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO users (email, password, user_name, image_id, status)
-SELECT 
-    'guest@example.com',
-    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
-    'Guest User',
-    (SELECT image_id FROM images WHERE image_path = '/images/default-avatar.png' LIMIT 1),
-    'normal'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'guest@example.com');
 `;
     writeFileSync(`${INIT_DIR}/999-seed-default-data.sql`, seedSQL);
     console.log("999 → seed-default-data.sql");
