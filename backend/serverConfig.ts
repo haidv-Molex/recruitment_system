@@ -94,6 +94,12 @@ const setupRedis = async () => {
   }
 };
 
-setupRedis();
+if (process.env.USE_REDIS === "true") {
+  setupRedis().catch((err) => {
+    console.error("❌ Failed to initialize Redis Adapter for Socket.io:", err.message);
+  });
+} else {
+  console.log("ℹ️ Redis Adapter is disabled. Socket.io is running in default in-memory mode.");
+}
 
 export { server, app, io };

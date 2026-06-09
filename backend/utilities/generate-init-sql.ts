@@ -34,7 +34,7 @@ $$ LANGUAGE plpgsql;
 `;
 
 // === BIỂU THỨC ===
-const FK_PATTERN = /FOREIGN\s+KEY\s*\([^)]+\)\s*REFERENCES\s+(\w+)/gi;
+const FK_PATTERN = /FOREIGN\s+KEY\s*\([^)]+\)\s*REFERENCES\s+(?:"([^"]+)"|(\w+))/gi;
 
 // === HÀM ===
 interface Graph {
@@ -46,12 +46,12 @@ interface TableFile {
 }
 
 function extractTableName(sql: string): string | null {
-    const match = sql.match(/CREATE\s+TABLE\s+(\w+)/i);
-    return match ? match[1].toLowerCase() : null;
+    const match = sql.match(/CREATE\s+TABLE\s+(?:"([^"]+)"|(\w+))/i);
+    return match ? (match[1] || match[2]).toLowerCase() : null;
 }
 
 function extractReferences(sql: string): string[] {
-    return [...sql.matchAll(FK_PATTERN)].map(m => m[1].toLowerCase());
+    return [...sql.matchAll(FK_PATTERN)].map(m => (m[1] || m[2]).toLowerCase());
 }
 
 function buildDependencyGraph(sqlFiles: string[]): { graph: Graph; tableToFile: TableFile } {

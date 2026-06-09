@@ -51,6 +51,7 @@ services:
       # Overrides local hostnames from .env to container names inside the Docker network
       - PG_HOST=db
       - REDIS_HOST=redis
+      - USE_REDIS=true
     env_file:
       - .env
     depends_on:
