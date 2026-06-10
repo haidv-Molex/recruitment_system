@@ -12,12 +12,12 @@ export type candidateModel = {
   current_salary: string | null;
   expected_salary: string | null;
   status: string;
-  note: string;
+  note: string | null;
   create_at: Date;
   update_at: Date;
-  source: number;
-  recruiter: number;
-  job_id: number;
+  platform_id: number | null;
+  recruiter: number | null;
+  job_id: number | null;
   targeted_company: number | null;
   reference: number | null;
   file_id: number | null;
