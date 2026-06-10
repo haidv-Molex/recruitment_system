@@ -3,7 +3,7 @@ import { Eye, EyeOff, Save, Lock, UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const ProfilePage = () => {
-  const { user, updateProfile, changePassword } = useAuth();
+  const { user, changePassword } = useAuth();
 
   const [profileData, setProfileData] = useState({
     username: '',
@@ -18,6 +18,7 @@ export const ProfilePage = () => {
     confirmPassword: '',
   });
   const [passwordMessage, setPasswordMessage] = useState({ text: '', type: '' });
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -60,7 +61,7 @@ export const ProfilePage = () => {
     setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleProfileSubmit = (e) => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
 
     // If username is empty, show validation error
@@ -75,16 +76,11 @@ export const ProfilePage = () => {
       return;
     }
 
-    const result = updateProfile(profileData);
-    // If profile update succeeded, show success message
-    if (result.success) {
-      setProfileMessage({ text: 'Profile updated successfully.', type: 'success' });
-    } else {
-      setProfileMessage({ text: result.message, type: 'error' });
-    }
+    // TODO: Thay bằng API thật khi backend có endpoint update profile
+    setProfileMessage({ text: 'Profile updated successfully. (mock — waiting for API)', type: 'success' });
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
 
     // If any password field is empty, show validation error
@@ -111,10 +107,13 @@ export const ProfilePage = () => {
       return;
     }
 
-    const result = changePassword(passwordData.oldPassword, passwordData.newPassword);
+    setSavingPassword(true);
+
+    const result = await changePassword(passwordData.oldPassword, passwordData.newPassword);
+
     // If password change succeeded, clear form and show success
     if (result.success) {
-      setPasswordMessage({ text: 'Password changed successfully.', type: 'success' });
+      setPasswordMessage({ text: result.message || 'Password changed successfully.', type: 'success' });
       setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
       setShowOldPassword(false);
       setShowNewPassword(false);
@@ -122,6 +121,8 @@ export const ProfilePage = () => {
     } else {
       setPasswordMessage({ text: result.message, type: 'error' });
     }
+
+    setSavingPassword(false);
   };
 
   const s = {
@@ -129,6 +130,8 @@ export const ProfilePage = () => {
     headerRow: { marginBottom: '28px' },
     title: { fontSize: '24px', fontWeight: 700, color: '#1e293b', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '8px' },
     subtitle: { fontSize: '14px', color: '#64748b', margin: 0 },
+    infoRow: { display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' },
+    infoPill: { display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' },
     card: { background: '#fff', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', marginBottom: '24px', overflow: 'hidden' },
     cardHeader: { padding: '18px 24px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' },
     cardTitle: { fontSize: '16px', fontWeight: 700, color: '#1e293b', margin: 0 },
@@ -142,9 +145,8 @@ export const ProfilePage = () => {
     eyeBtn: { position: 'absolute', right: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px', display: 'flex', alignItems: 'center' },
     message: (type) => ({ padding: '10px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500, marginBottom: '16px', background: type === 'success' ? '#f0fdf4' : '#fef2f2', color: type === 'success' ? '#16a34a' : '#dc2626', border: `1px solid ${type === 'success' ? '#bbf7d0' : '#fecaca'}` }),
     saveBtn: { display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 24px', fontSize: '14px', fontWeight: 600, color: '#fff', background: '#2563eb', border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '8px' },
+    passwordBtn: (disabled) => ({ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 24px', fontSize: '14px', fontWeight: 600, color: '#fff', background: disabled ? '#fca5a5' : '#dc2626', border: 'none', borderRadius: '8px', cursor: disabled ? 'not-allowed' : 'pointer', marginTop: '8px' }),
     hint: { fontSize: '12px', color: '#94a3b8', marginTop: '4px' },
-    infoPill: { display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' },
-    infoRow: { display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' },
   };
 
   return (
@@ -155,13 +157,14 @@ export const ProfilePage = () => {
         <p style={s.subtitle}>View and update your account information.</p>
       </div>
 
-      {/* Read-only info */}
+      {/* User info pills */}
       <div style={s.infoRow}>
+        <span style={s.infoPill}>Account: {user?.username}</span>
+        <span style={s.infoPill}>Name: {user?.displayName}</span>
         <span style={s.infoPill}>Role: {user?.role}</span>
-        <span style={s.infoPill}>Display Name: {user?.displayName}</span>
       </div>
 
-      {/* ═══ Profile Info Card ═══ */}
+      {/* ═══ Profile Information Card ═══ */}
       <div style={s.card}>
         <div style={s.cardHeader}>
           <UserCircle size={18} style={{ color: '#2563eb' }} />
@@ -238,6 +241,7 @@ export const ProfilePage = () => {
                   value={passwordData.oldPassword}
                   onChange={handlePasswordChange}
                   placeholder="Enter current password"
+                  disabled={savingPassword}
                 />
                 <button
                   type="button"
@@ -261,6 +265,7 @@ export const ProfilePage = () => {
                   value={passwordData.newPassword}
                   onChange={handlePasswordChange}
                   placeholder="Min 6 characters"
+                  disabled={savingPassword}
                 />
                 <button
                   type="button"
@@ -284,6 +289,7 @@ export const ProfilePage = () => {
                   value={passwordData.confirmPassword}
                   onChange={handlePasswordChange}
                   placeholder="Re-enter new password"
+                  disabled={savingPassword}
                 />
                 <button
                   type="button"
@@ -296,8 +302,9 @@ export const ProfilePage = () => {
               </div>
             </div>
 
-            <button type="submit" style={{ ...s.saveBtn, background: '#dc2626' }}>
-              <Lock size={16} /> Change Password
+            <button type="submit" style={s.passwordBtn(savingPassword)} disabled={savingPassword}>
+              <Lock size={16} />
+              {savingPassword ? 'Changing...' : 'Change Password'}
             </button>
           </form>
         </div>
