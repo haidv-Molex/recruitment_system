@@ -41,6 +41,17 @@ export const Layout = ({ children }) => {
     color: '#e2e8f0',
   };
 
+  const userLinkStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    color: '#e2e8f0',
+    textDecoration: 'none',
+    padding: '4px 8px',
+    borderRadius: '6px',
+    transition: 'background 0.2s',
+  };
+
   const logoutButtonStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -72,10 +83,15 @@ export const Layout = ({ children }) => {
 
           {user && (
             <div style={userBlockStyle}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Link
+                to="/profile"
+                style={userLinkStyle}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
                 <User size={14} />
                 {user.displayName}
-              </span>
+              </Link>
               <button
                 type="button"
                 style={logoutButtonStyle}

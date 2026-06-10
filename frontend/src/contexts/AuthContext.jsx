@@ -5,6 +5,8 @@ import {
   addUser,
   updateUser,
   deleteUser,
+  updateProfile as updateProfileService,
+  changePassword as changePasswordService,
 } from '../services/authData';
 
 const AuthContext = createContext(null);
@@ -63,6 +65,29 @@ export const AuthProvider = ({ children }) => {
     return deleteUser(id);
   }, [user]);
 
+  const updateProfile = useCallback((profileData) => {
+    // If no user is logged in, return error
+    if (!user) {
+      return { success: false, message: 'Not authenticated.' };
+    }
+
+    const result = updateProfileService(user.id, profileData);
+    // If profile update succeeded, sync user state and localStorage
+    if (result.success) {
+      setUser(result.user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
+    }
+    return result;
+  }, [user]);
+
+  const changePassword = useCallback((oldPassword, newPassword) => {
+    // If no user is logged in, return error
+    if (!user) {
+      return { success: false, message: 'Not authenticated.' };
+    }
+    return changePasswordService(user.id, oldPassword, newPassword);
+  }, [user]);
+
   const value = {
     user,
     isAuthenticated: !!user,
@@ -74,6 +99,8 @@ export const AuthProvider = ({ children }) => {
     createUser,
     editUser,
     removeUser,
+    updateProfile,
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

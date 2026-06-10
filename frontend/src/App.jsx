@@ -7,6 +7,7 @@ import { CandidateDatabasePage } from './pages/CandidateDatabase';
 import { JobTrackingPage } from './pages/JobTracking';
 import { MasterDataPage } from './pages/MasterData';
 import { AdminPage } from './pages/AdminPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { mockCandidates, mockJobs } from './services/mockData';
 import './styles/index.css';
@@ -30,6 +31,7 @@ function App() {
                     <Route path="/" element={<JobTrackingPage jobs={jobs} setJobs={setJobs} candidates={candidates} />} />
                     <Route path="/candidates" element={<CandidateDatabasePage candidates={candidates} setCandidates={setCandidates} jobs={jobs} />} />
                     <Route path="/master-data" element={<MasterDataPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
 
                     {/* Admin route: requires admin role to access */}
                     <Route

@@ -5,6 +5,8 @@ const initialUsers = [
     password: 'admin123',
     displayName: 'HR Admin',
     role: 'admin',
+    description: '',
+    department: '',
   },
   {
     id: 'user-002',
@@ -12,6 +14,8 @@ const initialUsers = [
     password: 'annie123',
     displayName: 'Annie (Recruiter)',
     role: 'recruiter',
+    description: '',
+    department: '',
   },
   {
     id: 'user-003',
@@ -19,6 +23,8 @@ const initialUsers = [
     password: 'hein123',
     displayName: 'Hein (Recruiter)',
     role: 'recruiter',
+    description: '',
+    department: '',
   },
   {
     id: 'user-004',
@@ -26,6 +32,8 @@ const initialUsers = [
     password: 'kim123',
     displayName: 'Kim (Recruiter)',
     role: 'recruiter',
+    description: '',
+    department: '',
   },
 ];
 
@@ -42,8 +50,8 @@ const loadUsers = () => {
   return [...initialUsers];
 };
 
-const saveUsers = (users) => {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+const saveUsers = (userList) => {
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(userList));
 };
 
 let users = loadUsers();
@@ -83,6 +91,8 @@ export const addUser = ({ username, password, displayName, role }) => {
     password,
     displayName: displayName.trim(),
     role: role || 'recruiter',
+    description: '',
+    department: '',
   };
 
   users = [...users, newUser];
@@ -144,6 +154,71 @@ export const deleteUser = (id) => {
 
   // Remove the user from the list
   users = users.filter((u) => u.id !== id);
+  saveUsers(users);
+
+  return { success: true };
+};
+
+export const updateProfile = (id, { username, description, department }) => {
+  // Find the index of user to update by id
+  const index = users.findIndex((u) => u.id === id);
+  // If user not found, return error
+  if (index === -1) {
+    return { success: false, message: 'User not found.' };
+  }
+
+  // If username is being changed, check for duplicates
+  if (username && username.toLowerCase() !== users[index].username.toLowerCase()) {
+    // Check if another user already has the new username
+    const duplicate = users.some(
+      (u) =>
+        u.id !== id &&
+        u.username.toLowerCase() === username.toLowerCase()
+    );
+    // If duplicate username found, return error
+    if (duplicate) {
+      return { success: false, message: 'Username already exists.' };
+    }
+  }
+
+  // Check if username contains any whitespace characters
+  if (username && /\s/.test(username)) {
+    return { success: false, message: 'Username cannot contain spaces.' };
+  }
+
+  users[index] = {
+    ...users[index],
+    username: username?.trim() || users[index].username,
+    description: description ?? users[index].description,
+    department: department ?? users[index].department,
+  };
+
+  saveUsers(users);
+
+  const { password: _removed, ...safeUser } = users[index];
+  return { success: true, user: safeUser };
+};
+
+export const changePassword = (id, oldPassword, newPassword) => {
+  // Find the user by id
+  const user = users.find((u) => u.id === id);
+  // If user not found, return error
+  if (!user) {
+    return { success: false, message: 'User not found.' };
+  }
+
+  // If old password does not match, return error
+  if (user.password !== oldPassword) {
+    return { success: false, message: 'Current password is incorrect.' };
+  }
+
+  // If new password is less than 6 characters, return error
+  if (newPassword.length < 6) {
+    return { success: false, message: 'New password must be at least 6 characters.' };
+  }
+
+  // Replace the password for the matching user
+  users = users.map((u) => (u.id === id ? { ...u, password: newPassword } : u));
   saveUsers(users);
 
   return { success: true };
