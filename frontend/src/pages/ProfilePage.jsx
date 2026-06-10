@@ -3,14 +3,14 @@ import { Eye, EyeOff, Save, Lock, UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const ProfilePage = () => {
-  const { user, changePassword } = useAuth();
+  const { user, updateProfile, changePassword } = useAuth();
 
   const [profileData, setProfileData] = useState({
     username: '',
     description: '',
-    department: '',
   });
   const [profileMessage, setProfileMessage] = useState({ text: '', type: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const [passwordData, setPasswordData] = useState({
     oldPassword: '',
@@ -28,9 +28,8 @@ export const ProfilePage = () => {
     // If user data is available, populate the profile form
     if (user) {
       setProfileData({
-        username: user.username || '',
+        username: user.displayName || '',
         description: user.description || '',
-        department: user.department || '',
       });
     }
   }, [user]);
@@ -66,18 +65,22 @@ export const ProfilePage = () => {
 
     // If username is empty, show validation error
     if (!profileData.username.trim()) {
-      setProfileMessage({ text: 'Username is required.', type: 'error' });
+      setProfileMessage({ text: 'Display name is required.', type: 'error' });
       return;
     }
 
-    // Check if username contains any whitespace characters
-    if (/\s/.test(profileData.username)) {
-      setProfileMessage({ text: 'Username cannot contain spaces.', type: 'error' });
-      return;
+    setSavingProfile(true);
+
+    const result = await updateProfile(profileData.username.trim(), profileData.description.trim());
+
+    // If profile update succeeded, show success message
+    if (result.success) {
+      setProfileMessage({ text: result.message || 'Profile updated successfully.', type: 'success' });
+    } else {
+      setProfileMessage({ text: result.message, type: 'error' });
     }
 
-    // TODO: Thay bằng API thật khi backend có endpoint update profile
-    setProfileMessage({ text: 'Profile updated successfully. (mock — waiting for API)', type: 'success' });
+    setSavingProfile(false);
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -144,7 +147,7 @@ export const ProfilePage = () => {
     passwordInput: { width: '100%', padding: '10px 44px 10px 14px', fontSize: '14px', border: '1px solid #d1d5db', borderRadius: '8px', outline: 'none', boxSizing: 'border-box' },
     eyeBtn: { position: 'absolute', right: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '4px', display: 'flex', alignItems: 'center' },
     message: (type) => ({ padding: '10px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 500, marginBottom: '16px', background: type === 'success' ? '#f0fdf4' : '#fef2f2', color: type === 'success' ? '#16a34a' : '#dc2626', border: `1px solid ${type === 'success' ? '#bbf7d0' : '#fecaca'}` }),
-    saveBtn: { display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 24px', fontSize: '14px', fontWeight: 600, color: '#fff', background: '#2563eb', border: 'none', borderRadius: '8px', cursor: 'pointer', marginTop: '8px' },
+    saveBtn: (disabled) => ({ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 24px', fontSize: '14px', fontWeight: 600, color: '#fff', background: disabled ? '#93c5fd' : '#2563eb', border: 'none', borderRadius: '8px', cursor: disabled ? 'not-allowed' : 'pointer', marginTop: '8px' }),
     passwordBtn: (disabled) => ({ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 24px', fontSize: '14px', fontWeight: 600, color: '#fff', background: disabled ? '#fca5a5' : '#dc2626', border: 'none', borderRadius: '8px', cursor: disabled ? 'not-allowed' : 'pointer', marginTop: '8px' }),
     hint: { fontSize: '12px', color: '#94a3b8', marginTop: '4px' },
   };
@@ -177,15 +180,16 @@ export const ProfilePage = () => {
             )}
 
             <div style={s.fieldGroup}>
-              <label style={s.label}>Username</label>
+              <label style={s.label}>Display Name</label>
               <input
                 style={s.input}
                 name="username"
                 value={profileData.username}
                 onChange={handleProfileChange}
-                placeholder="Your login username"
+                placeholder="e.g. Đỗ Văn Hải"
+                disabled={savingProfile}
               />
-              <p style={s.hint}>This is used to sign in. Changing it will affect your next login.</p>
+              <p style={s.hint}>This name will be displayed on the header and throughout the system.</p>
             </div>
 
             <div style={s.fieldGroup}>
@@ -197,22 +201,13 @@ export const ProfilePage = () => {
                 onChange={handleProfileChange}
                 placeholder="e.g. Senior HR Recruiter with 5 years experience in manufacturing"
                 rows={3}
+                disabled={savingProfile}
               />
             </div>
 
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Department</label>
-              <input
-                style={s.input}
-                name="department"
-                value={profileData.department}
-                onChange={handleProfileChange}
-                placeholder="e.g. Human Resources"
-              />
-            </div>
-
-            <button type="submit" style={s.saveBtn}>
-              <Save size={16} /> Save Profile
+            <button type="submit" style={s.saveBtn(savingProfile)} disabled={savingProfile}>
+              <Save size={16} />
+              {savingProfile ? 'Saving...' : 'Save Profile'}
             </button>
           </form>
         </div>

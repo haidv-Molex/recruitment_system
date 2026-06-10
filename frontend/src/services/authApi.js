@@ -71,6 +71,46 @@ export const changePasswordApi = async (oldPassword, newPassword) => {
   }
 };
 
+export const updateProfileApi = async (username, description) => {
+  try {
+    const response = await apiClient.put('/user/profile', {
+      username,
+      description,
+    });
+    const body = response.data;
+
+    // If backend returns result: false, return the error message
+    if (!body.result) {
+      return { success: false, message: body.message || 'Update profile failed.' };
+    }
+
+    const d = body.data;
+
+    const updatedUser = {
+      id: d.user_id,
+      displayName: d.user_name,
+      description: d.user_description || '',
+      role: d.user_role,
+      departmentId: d.department_id,
+    };
+
+    return { success: true, message: body.message, user: updatedUser };
+  } catch (err) {
+    // If server returned an error response (4xx, 5xx)
+    if (err.response) {
+      const msg = err.response.data?.message || 'Update profile failed.';
+      return { success: false, message: msg };
+    }
+
+    // If network error or server not running
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
+    }
+
+    return { success: false, message: err.message || 'An unexpected error occurred.' };
+  }
+};
+
 export const logoutApi = () => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginApi, logoutApi, changePasswordApi } from '../services/authApi';
+import { loginApi, logoutApi, changePasswordApi, updateProfileApi } from '../services/authApi';
 
 const AuthContext = createContext(null);
 const USER_KEY = 'recruitment_auth_user';
@@ -43,6 +43,24 @@ export const AuthProvider = ({ children }) => {
     return await changePasswordApi(oldPassword, newPassword);
   };
 
+  const updateProfile = async (username, description) => {
+    const result = await updateProfileApi(username, description);
+
+    // If profile update succeeded, sync user state and localStorage
+    if (result.success) {
+      const updatedUser = {
+        ...user,
+        displayName: result.user.displayName,
+        description: result.user.description,
+        departmentId: result.user.departmentId,
+      };
+      setUser(updatedUser);
+      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+    }
+
+    return result;
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
@@ -51,6 +69,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     changePassword,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
