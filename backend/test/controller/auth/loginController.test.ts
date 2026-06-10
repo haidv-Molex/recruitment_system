@@ -8,7 +8,7 @@ import sinon from "sinon";
 import passport from "@middlewares/passport";
 import { pool } from "@middlewares/database";
 import redis from "@middlewares/redisClient";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 import express from "express";
 import pactum from "pactum";

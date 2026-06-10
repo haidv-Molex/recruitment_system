@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 import express from "express";
 import pactum from "pactum";
 import changeAccountRoleController from "@/controller/user/changeAccountRoleController";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 import { AppError } from "@middlewares/AppError";
 

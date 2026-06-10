@@ -11,7 +11,7 @@ import express from "express";
 import pactum from "pactum";
 import JobController from "@controller/job/_JobController";
 import Job from "@services/job/_Job";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
 describe("JobController API", () => {
@@ -57,7 +57,7 @@ describe("JobController API", () => {
       release: sinon.stub()
     };
     poolConnectStub = sinon.stub(pool, "connect").resolves(mockClient);
-    
+
     // Auth stubs
     checkUserBannedStub = sinon.stub(User, "checkUserBanned").resolves();
     mockCurrentUser = { user_id: 1, user_name: "Test User", user_role: "hr" };

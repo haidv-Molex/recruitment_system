@@ -11,7 +11,7 @@ import express from "express";
 import pactum from "pactum";
 import LevelController from "@controller/level/_LevelController";
 import Level from "@services/level/_Level";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
 describe("LevelController API", () => {
@@ -57,7 +57,7 @@ describe("LevelController API", () => {
       release: sinon.stub()
     };
     poolConnectStub = sinon.stub(pool, "connect").resolves(mockClient);
-    
+
     // Auth stubs
     checkUserBannedStub = sinon.stub(User, "checkUserBanned").resolves();
     mockCurrentUser = { user_id: 1, user_name: "Test User", user_role: "hr" };

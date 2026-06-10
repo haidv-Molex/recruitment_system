@@ -1,7 +1,7 @@
 import express from "express";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
 

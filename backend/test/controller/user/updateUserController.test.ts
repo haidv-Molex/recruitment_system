@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 import express from "express";
 import pactum from "pactum";
 import updateUserController from "@controller/user/updateUserController";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
 describe("updateUserController API", () => {
@@ -52,7 +52,7 @@ describe("updateUserController API", () => {
     poolConnectStub = sinon.stub(pool, "connect").resolves(mockClient);
     updateProfileStub = sinon.stub(User, "updateProfile");
     checkUserBannedStub = sinon.stub(User, "checkUserBanned").resolves();
-    
+
     findByIdStub = sinon.stub(User, "findById");
   });
 

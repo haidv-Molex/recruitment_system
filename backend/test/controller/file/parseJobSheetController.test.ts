@@ -11,7 +11,7 @@ import express from "express";
 import pactum from "pactum";
 import FileController from "@controller/file/_FileController";
 import FileService from "@services/file/_File";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
 describe("parseJobSheetController API", () => {

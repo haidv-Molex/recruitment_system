@@ -7,7 +7,7 @@ import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-go
 import { Strategy as JwtStrategy, ExtractJwt, StrategyOptionsWithRequest } from "passport-jwt";
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
 
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import redis, { getCache, setCache } from "@middlewares/redisClient";
 import jwtTimeToSeconds from "@utilities/jwtTimeToSeconds";
 
