@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Database, FileSpreadsheet, Table2, LogOut, User } from 'lucide-react';  // ★ NEW
-import { useAuth } from '../contexts/AuthContext';  // ★ NEW
+import { Database, FileSpreadsheet, Table2, LogOut, User, Shield } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Layout = ({ children }) => {
   const location = useLocation();
-  const { user, logout } = useAuth();  // ★ NEW
+  const { user, isAdmin, logout } = useAuth();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -26,9 +26,13 @@ export const Layout = ({ children }) => {
     { path: '/master-data', label: 'Master Data', icon: FileSpreadsheet },
   ];
 
+  // If logged-in user has admin role, add the Admin tab to navigation
+  if (isAdmin) {
+    tabs.push({ path: '/admin', label: 'Admin', icon: Shield });
+  }
+
   const isActive = (path) => location.pathname === path;
 
-  // ★ NEW — Style cho user info
   const userBlockStyle = {
     display: 'flex',
     alignItems: 'center',
@@ -66,7 +70,6 @@ export const Layout = ({ children }) => {
           <span>Mode: Mock Frontend</span>
           <span>{formattedDate}</span>
 
-          {/* ★ NEW — User info + Logout */}
           {user && (
             <div style={userBlockStyle}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -89,6 +92,7 @@ export const Layout = ({ children }) => {
       </header>
 
       <nav className="sheet-tabs">
+        {/* Loop through all tabs to render navigation links */}
         {tabs.map(({ path, label, icon: Icon }) => (
           <Link key={path} to={path} className={`sheet-tab ${isActive(path) ? 'active' : ''}`}>
             <Icon size={16} />

@@ -23,7 +23,6 @@ export const LoginPage = () => {
 
     setLoading(true);
 
-    // Giả lập delay (giống API thật)
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     const result = login(username.trim(), password);
@@ -37,7 +36,6 @@ export const LoginPage = () => {
     setLoading(false);
   };
 
-  /* ── Styles (inline để không cần file CSS riêng) ── */
   const styles = {
     wrapper: {
       minHeight: '100vh',
@@ -180,7 +178,6 @@ export const LoginPage = () => {
           </button>
         </form>
 
-        {/* Hint (xóa phần này khi lên production) */}
         <div style={styles.hint}>
           <strong>Demo accounts:</strong><br />
           admin / admin123<br />
