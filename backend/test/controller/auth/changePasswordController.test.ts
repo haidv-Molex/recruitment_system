@@ -9,7 +9,7 @@ import { pool } from "@middlewares/database";
 import jwt from "jsonwebtoken";
 import express from "express";
 import pactum from "pactum";
-import changePasswordController from "@controller/user/changePasswordController";
+import changePasswordController from "@/controller/auth/changePasswordController";
 import User from "@services/user/User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
@@ -28,7 +28,7 @@ describe("changePasswordController API", () => {
     const app = express();
     app.use(express.json());
     app.use(passport.initialize());
-    app.use("/user/change-password", changePasswordController);
+    app.use("/auth/change-password", changePasswordController);
     app.use(globalErrorHandler);
 
     await new Promise<void>((resolve) => {
@@ -50,7 +50,7 @@ describe("changePasswordController API", () => {
     comparePasswordStub = sinon.stub(User, "comparePassword");
     updatePasswordStub = sinon.stub(User, "updatePassword");
     checkUserBannedStub = sinon.stub(User, "checkUserBanned").resolves();
-    
+
     findByIdStub = sinon.stub(User, "findById").callsFake(async () => {
       return mockCurrentUser;
     });
@@ -88,7 +88,7 @@ describe("changePasswordController API", () => {
     updatePasswordStub.resolves();
 
     await pactum.spec()
-      .post("/user/change-password")
+      .post("/auth/change-password")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         oldPassword: "oldPassword123",
@@ -116,7 +116,7 @@ describe("changePasswordController API", () => {
     comparePasswordStub.resolves(false); // Incorrect current password
 
     await pactum.spec()
-      .post("/user/change-password")
+      .post("/auth/change-password")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         oldPassword: "wrongOldPassword",
@@ -142,7 +142,7 @@ describe("changePasswordController API", () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
-      .post("/user/change-password")
+      .post("/auth/change-password")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         oldPassword: "123",
