@@ -23,16 +23,19 @@ const REQUIRED_ENV = [
   "PG_PASSWORD",
   "PG_PORT",
 
-  //Redis
-  "REDIS_HOST",
-  "REDIS_PORT",
-  "REDIS_PASSWORD",
-  "REDIS_TIME_OUT",
-
-  "PATH_SAVE_IMAGE",
+  "PATH_SAVE_FILE",
   "HOST",
   "CLIENT_URL",
 ];
+
+if (process.env.USE_REDIS === "true") {
+  REQUIRED_ENV.push(
+    "REDIS_HOST",
+    "REDIS_PORT",
+    "REDIS_PASSWORD",
+    "REDIS_TIME_OUT"
+  );
+}
 
 const missing = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missing.length > 0) {

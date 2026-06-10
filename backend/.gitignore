@@ -143,5 +143,8 @@ certs
 /firebase-service/
 /docs/
 
-#test
-/.test/
+# scratch
+/scratch/
+
+#image
+/uploads/

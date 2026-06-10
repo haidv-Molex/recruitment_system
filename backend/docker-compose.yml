@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Database Service (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: recruitment_db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: recruitment_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Mount the generated SQL schema folder for automatic initialization
+      - ./init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d recruitment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Cache & PubSub Service (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: recruitment_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis_password
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_password", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend App Service (Express & Socket.io Server)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: recruitment_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # Overrides local hostnames from .env to container names inside the Docker network
+      - PG_HOST=db
+      - REDIS_HOST=redis
+      - USE_REDIS=true
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+      - /app/node_modules # Avoid mapping local node_modules inside container workspace
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local

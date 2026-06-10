@@ -7,8 +7,7 @@ import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-go
 import { Strategy as JwtStrategy, ExtractJwt, StrategyOptionsWithRequest } from "passport-jwt";
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
 
-import User from "@services/Person/User/_User";
-import Admin from "@/services/Admin/_Admin";
+import User from "@services/user/User";
 import redis, { getCache, setCache } from "@middlewares/redisClient";
 import jwtTimeToSeconds from "@utilities/jwtTimeToSeconds";
 
@@ -19,7 +18,7 @@ type payloadtype = {
   user_name: string
 }
 
-const cookiePath = "/Auth/token"
+const cookiePath = "/auth/token"
 const secretOrKey = process.env.SECRET_AUTH_TOKEN_KEY as string;
 const expiresToken = process.env.EXPIRES_TOKEN as SignOptions["expiresIn"];
 const expiresRefreshToken = process.env.EXPIRES_REFRESH_TOKEN as SignOptions["expiresIn"];
@@ -80,15 +79,15 @@ export async function resetLoginAttempt(key: string) {
 passport.use(
   "login",
   new Strategy({
-    usernameField: 'email', // Sử dụng email làm username
+    usernameField: 'account', // Sử dụng account làm username
     passwordField: 'password', // Trường mật khẩu
     passReqToCallback: true,
-  }, async function verify(req, email, password, cb) {
+  }, async function verify(req, account, password, cb) {
     try {
-      //kiểm tra xem có email ko
+      //kiểm tra xem có account ko
       const user = await withTransaction(async (pool) => {
         try {
-          return await User.findByEmail(email, pool)
+          return await User.findByAccount(account, pool)
         } catch (error) {
           throw new AppError("Tài khoản hoặc mật khẩu không chính xác", 401);
         }
@@ -120,8 +119,8 @@ passport.use(
 
       const role = await withTransaction(async (pool) => {
         try {
-          await Admin.checkIsAdmin(user.user_id, pool)
-          return 'admin'
+          const isUserAdmin = await User.isAdmin(user.user_id, pool);
+          return isUserAdmin ? 'admin' : 'user';
         } catch {
           return 'user';
         }
@@ -135,11 +134,11 @@ passport.use(
         maxAge: await jwtTimeToSeconds(process.env.EXPIRES_REFRESH_TOKEN || "30d") * 1000,
       });
 
-      return cb(null, { ...user, email, role, accessToken, refreshToken }, { message: 'Đăng nhập thành công' });
+      return cb(null, { ...user, user_role: role, accessToken, refreshToken }, { message: 'Đăng nhập thành công' });
 
     } catch (err) {
       if (err instanceof AppError) {
-        return cb(null, false, { message: err.message });
+        return cb(null, false, { message: err.message, status: err.statusCode } as any);
       }
 
       return cb(new AppError("Lỗi hệ thống", 500));
@@ -159,21 +158,19 @@ passport.use(
     },
     async (req, accessToken: string, refreshToken: string, profile: Profile, cb: VerifyCallback) => {
       try {
-        const email = profile.emails?.[0]?.value;
-        if (!email) {
+        const account = profile.emails?.[0]?.value;
+        if (!account) {
           return cb(null, false, { message: "Google profile does not contain an email", status: 400 });
         }
 
         const result = await withTransaction(async (pool) => {
-          return await User.findByEmail(email, pool);
+          return await User.findByAccount(account, pool);
         })
 
         if (!result) {
           const newUser = await withTransaction(async (pool) => {
             return await User.create(
-              email,
-              "google", // Set mặc định cho tài khoản Google
-              profile.displayName,
+              { username: profile.displayName },
               pool
             );
           })
@@ -195,14 +192,14 @@ passport.use(
 
           const role = await withTransaction(async (pool) => {
             try {
-              await Admin.checkIsAdmin(newUser.user_id, pool)
-              return 'admin'
+              const isUserAdmin = await User.isAdmin(newUser.user_id, pool);
+              return isUserAdmin ? 'admin' : 'user';
             } catch {
               return 'user';
             }
           })
 
-          return cb(null, { ...newUser, email, role, accessToken, refreshToken }, { message: "tạo tài khoản thành công" });
+          return cb(null, { ...newUser, user_role: role, accessToken, refreshToken }, { message: "tạo tài khoản thành công" });
         } else {
           const [refreshToken, accessToken] = await Promise.all([
             refreshTokenGenerate(result.user_id),
@@ -222,14 +219,14 @@ passport.use(
 
           const role = await withTransaction(async (pool) => {
             try {
-              await Admin.checkIsAdmin(result.user_id, pool)
-              return 'admin'
+              const isUserAdmin = await User.isAdmin(result.user_id, pool);
+              return isUserAdmin ? 'admin' : 'user';
             } catch {
               return 'user';
             }
           })
 
-          return cb(null, { ...result, email, role, accessToken, refreshToken }, { message: "Đăng nhập thành công" });
+          return cb(null, { ...result, user_role: role, accessToken, refreshToken }, { message: "Đăng nhập thành công" });
         }
       } catch (err) {
         if (err instanceof AppError) {

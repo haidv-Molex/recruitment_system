@@ -60,6 +60,7 @@ function joiValidate(
         "array.min": "{{#label}} phải có ít nhất {{#limit}} phần tử",
         "array.max": "{{#label}} không được vượt quá {{#limit}} phần tử",
         "any.invalid": "{{#label}} không hợp lệ",
+        "object.unknown": "{{#label}} không được phép",
       },
     });
 

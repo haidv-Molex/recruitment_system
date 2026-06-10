@@ -9,10 +9,21 @@ import redis from "@middlewares/redisClient";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 import { AppError } from "@middlewares/AppError";
 
+import UserController from "@controller/user/_UserController";
+import AuthController from "@controller/auth/_AuthController";
+import CompanyController from "@controller/company/_CompanyController";
+import DepartmentController from "@controller/department/_DepartmentController";
+import PlatformController from "@controller/platform/_PlatformController";
+import SegmentController from "@controller/segment/_SegmentController";
+import SiteController from "@controller/site/_SiteController";
+import LevelController from "@controller/level/_LevelController";
+import JobController from "@controller/job/_JobController";
+import CandidateController from "@controller/candidate/_CandidateController";
+
 app.get('/', (req, res) => {
   const clientUrl =
     process.env.CLIENT_URL?.split(',')[0]?.trim() ||
-    'https://e-books.info.vn';
+    'http://localhost:3000';
 
   res.redirect(clientUrl);
 });
@@ -21,11 +32,19 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Đường dẫn lấy ảnh
-app.use('/image', express.static(path.join(process.env.PATH_SAVE_IMAGE as string)));
+// Đường dẫn lấy file
+app.use('/file', express.static(path.join(process.env.PATH_SAVE_FILE as string)));
 
-// Các controller hiện chưa có trong dự án mới, giữ server hoạt động với các route gốc.
-// Nếu cần bổ sung router riêng, thêm vào thư mục controller và mount ở đây.
+app.use("/user", UserController);
+app.use("/auth", AuthController);
+app.use("/company", CompanyController);
+app.use("/department", DepartmentController);
+app.use("/platform", PlatformController);
+app.use("/segment", SegmentController);
+app.use("/site", SiteController);
+app.use("/level", LevelController);
+app.use("/job", JobController);
+app.use("/candidate", CandidateController);
 
 // Route không khớp → 404
 app.all("*", (req, _res, next) => {
