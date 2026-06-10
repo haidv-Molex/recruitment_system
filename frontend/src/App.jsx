@@ -6,6 +6,7 @@ import { Layout } from './components/Layout';
 import { CandidateDatabasePage } from './pages/CandidateDatabase';
 import { JobTrackingPage } from './pages/JobTracking';
 import { MasterDataPage } from './pages/MasterData';
+import { JDLibraryPage } from './pages/JDLibraryPage';
 import { AdminPage } from './pages/AdminPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
@@ -31,6 +32,7 @@ function App() {
                     <Route path="/" element={<JobTrackingPage jobs={jobs} setJobs={setJobs} candidates={candidates} />} />
                     <Route path="/candidates" element={<CandidateDatabasePage candidates={candidates} setCandidates={setCandidates} jobs={jobs} />} />
                     <Route path="/master-data" element={<MasterDataPage />} />
+                    <Route path="/jd-library" element={<JDLibraryPage jobs={jobs} />} />
                     <Route path="/profile" element={<ProfilePage />} />
 
                     {/* Admin route: requires admin role to access */}

@@ -23,6 +23,7 @@ export const Layout = ({ children }) => {
   const tabs = [
     { path: '/', label: 'Job Tracking', icon: Table2 },
     { path: '/candidates', label: 'Candidate Database', icon: Database },
+    { path: '/jd-library', label: 'JD Library', icon: FolderOpen },
     { path: '/master-data', label: 'Master Data', icon: FileSpreadsheet },
   ];
 
