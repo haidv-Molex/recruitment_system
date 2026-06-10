@@ -126,7 +126,7 @@ export const createCompanyApi = async (name, description) => {
 
 export const deleteCompanyApi = async (id) => {
   try {
-    const response = await apiClient.delete(`/company/${id}`);
+    const response = await apiClient.delete('/company', { params: { id } });
     const body = response.data;
 
     // If backend returns result: false, return the error message
@@ -136,10 +136,15 @@ export const deleteCompanyApi = async (id) => {
 
     return { success: true, message: body.message };
   } catch (err) {
-    // If server returned an error response
+    // If server returned an error response (4xx, 5xx)
     if (err.response) {
       const msg = err.response.data?.message || 'Delete company failed.';
       return { success: false, message: msg };
+    }
+
+    // If network error or server not running
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
     }
 
     return { success: false, message: err.message || 'An unexpected error occurred.' };
@@ -148,10 +153,14 @@ export const deleteCompanyApi = async (id) => {
 
 export const updateCompanyApi = async (id, name, description) => {
   try {
-    const response = await apiClient.put(`/company/${id}`, {
-      company_name: name,
-      company_description: description,
-    });
+    const response = await apiClient.put(
+      '/company',
+      {
+        company_name: name,
+        company_description: description,
+      },
+      { params: { id } }
+    );
     const body = response.data;
 
     // If backend returns result: false, return the error message
@@ -173,6 +182,11 @@ export const updateCompanyApi = async (id, name, description) => {
     if (err.response) {
       const msg = err.response.data?.message || 'Update company failed.';
       return { success: false, message: msg };
+    }
+
+    // If network error or server not running
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
     }
 
     return { success: false, message: err.message || 'An unexpected error occurred.' };
