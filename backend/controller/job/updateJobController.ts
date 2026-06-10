@@ -1,7 +1,27 @@
+/**
+ * API Update Job Controller
+ * Method: PUT /job?id=:id
+ * Content-Type: multipart/form-data
+ *
+ * Request Fields (tất cả optional – chỉ cập nhật những gì được truyền):
+ * - job_code (string, optional): Mã công việc
+ * - project (string, optional): Dự án tuyển dụng
+ * - candidate_required (number, optional): Số lượng ứng viên yêu cầu
+ * - note (string, optional): Ghi chú bổ sung
+ * - file (file, optional): File mô tả công việc (JD), max 5MB
+ * - partners (number[] / string, optional): Mảng user_id đối tác
+ * - departments (number[] / string, optional): Mảng department_id
+ * - segments (number[] / string, optional): Mảng segment_id
+ * - sites (number[] / string, optional): Mảng site_id
+ * - titles (number[] / string, optional): Mảng level_id chức danh
+ * - managers (number[] / string, optional): Mảng user_id hiring managers
+ * - employee_levels (number[] / string, optional): Mảng level_id cấp bậc
+ */
 import express from "express";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
 import multer from "multer";
+import { numberArray } from "@utilities/joiTypes";
 import Job from "@services/job/_Job";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -9,7 +29,7 @@ import passport from "@middlewares/passport";
 const updateJobController = express.Router({ mergeParams: true });
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
 const paramsSchema = Joi.object({
@@ -17,69 +37,76 @@ const paramsSchema = Joi.object({
     "number.base": "Mã công việc phải là số",
     "number.integer": "Mã công việc phải là số nguyên",
     "number.positive": "Mã công việc phải là số dương",
-    "any.required": "Mã công việc là bắt buộc"
-  })
+    "any.required": "Mã công việc là bắt buộc",
+  }),
 });
 
-function parseArrayField(field: any): number[] {
-  if (!field) return [];
-  if (Array.isArray(field)) {
-    return field.map(v => parseInt(v, 10)).filter(v => !isNaN(v));
-  }
-  if (typeof field === "string") {
-    if (field.startsWith("[") && field.endsWith("]")) {
-      try {
-        const parsed = JSON.parse(field);
-        if (Array.isArray(parsed)) {
-          return parsed.map(v => parseInt(v, 10)).filter(v => !isNaN(v));
-        }
-      } catch (e) {
-        // Fall back
-      }
-    }
-    return field.split(",").map(v => parseInt(v.trim(), 10)).filter(v => !isNaN(v));
-  }
-  return [];
-}
 
-updateJobController.put("",
+
+/**
+ * Schema cho body update – tất cả trường đều optional.
+ * Joi với convert:true sẽ tự chuyển candidate_required từ string sang number.
+ * unknown() cho phép các key không khai báo bị bỏ qua (không lỗi).
+ */
+const bodySchema = Joi.object({
+  job_code: Joi.string().min(1).max(255).optional().messages({
+    "string.empty": "Mã công việc không được để trống",
+    "string.max": "Mã công việc không được vượt quá 255 ký tự",
+  }),
+  project: Joi.string().min(1).max(255).optional().messages({
+    "string.empty": "Dự án không được để trống",
+    "string.max": "Dự án không được vượt quá 255 ký tự",
+  }),
+  candidate_required: Joi.number().integer().min(1).optional().messages({
+    "number.base": "Số lượng ứng viên phải là số",
+    "number.integer": "Số lượng ứng viên phải là số nguyên",
+    "number.min": "Số lượng ứng viên phải lớn hơn 0",
+  }),
+  note: Joi.string().max(5000).allow("", null).optional(),
+  partners: numberArray().optional(),
+  departments: numberArray().optional(),
+  segments: numberArray().optional(),
+  sites: numberArray().optional(),
+  titles: numberArray().optional(),
+  managers: numberArray().optional(),
+  employee_levels: numberArray().optional(),
+});
+
+updateJobController.put(
+  "",
   passport.authenticate("jwt", { session: false }),
   joiValidate(paramsSchema, "query"),
   upload.single("file"),
+  joiValidate(bodySchema, "body"),
   async (req, res) => {
-    const id = parseInt(req.query.id as string, 10);
-    const body = req.body || {};
+    const id = Number(req.query.id);
+    const body = req.body;
 
+    // Chỉ truyền vào updateData những key thực sự có trong request body
     const updateData: any = {};
-    if (body.job_code !== undefined) updateData.job_code = body.job_code;
-    if (body.project !== undefined) updateData.project = body.project;
-    if (body.candidate_required !== undefined) {
-      updateData.candidate_required = parseInt(body.candidate_required, 10);
-      if (isNaN(updateData.candidate_required) || updateData.candidate_required <= 0) {
-        return res.status(400).json({
-          result: false,
-          message: "Dữ liệu không hợp lệ",
-          details: ["Số lượng ứng viên yêu cầu phải là số nguyên dương"]
-        });
+    const keys = [
+      "job_code",
+      "project",
+      "candidate_required",
+      "note",
+      "partners",
+      "departments",
+      "segments",
+      "sites",
+      "titles",
+      "managers",
+      "employee_levels",
+    ];
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(body, key)) {
+        updateData[key] = body[key];
       }
     }
-    if (body.note !== undefined) updateData.note = body.note;
-
-    // Parse relationship fields only if they were passed (using prototype check for safety)
-    const hasProp = (o: any, p: string) => Object.prototype.hasOwnProperty.call(o, p);
-
-    if (hasProp(body, "partners")) updateData.partners = parseArrayField(body.partners);
-    if (hasProp(body, "departments")) updateData.departments = parseArrayField(body.departments);
-    if (hasProp(body, "segments")) updateData.segments = parseArrayField(body.segments);
-    if (hasProp(body, "sites")) updateData.sites = parseArrayField(body.sites);
-    if (hasProp(body, "titles")) updateData.titles = parseArrayField(body.titles);
-    if (hasProp(body, "managers")) updateData.managers = parseArrayField(body.managers);
-    if (hasProp(body, "employee_levels")) updateData.employee_levels = parseArrayField(body.employee_levels);
 
     if (req.file) {
       updateData.file = {
         originalname: req.file.originalname,
-        buffer: req.file.buffer
+        buffer: req.file.buffer,
       };
     }
 
@@ -90,7 +117,7 @@ updateJobController.put("",
     res.status(200).json({
       result: true,
       message: "Cập nhật thông tin công việc thành công",
-      data: result
+      data: result,
     });
   }
 );

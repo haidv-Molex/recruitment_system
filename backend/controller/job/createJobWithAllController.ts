@@ -13,7 +13,10 @@
  * - employee_levels_name (string / JSON array, optional): Tên cấp bậc nhân viên mới (gộp với titles_name)
  */
 import express from "express";
+import Joi from "joi";
 import multer from "multer";
+import joiValidate from "@middlewares/joiValidate";
+import { numberArray, stringArray } from "@utilities/joiTypes";
 import Job from "@services/job/_Job";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -24,85 +27,54 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
-function parseArrayField(field: any): number[] {
-  if (!field) return [];
-  if (Array.isArray(field)) {
-    return field.map((v) => parseInt(v, 10)).filter((v) => !isNaN(v));
-  }
-  if (typeof field === "string") {
-    if (field.startsWith("[") && field.endsWith("]")) {
-      try {
-        const parsed = JSON.parse(field);
-        if (Array.isArray(parsed)) {
-          return parsed.map((v) => parseInt(v, 10)).filter((v) => !isNaN(v));
-        }
-      } catch (_) {
-        // fall back
-      }
-    }
-    return field
-      .split(",")
-      .map((v) => parseInt(v.trim(), 10))
-      .filter((v) => !isNaN(v));
-  }
-  return [];
-}
 
-function parseStringArrayField(field: any): string[] {
-  if (!field) return [];
-  if (Array.isArray(field)) {
-    return field.map((v) => String(v).trim()).filter((v) => v.length > 0);
-  }
-  if (typeof field === "string") {
-    if (field.startsWith("[") && field.endsWith("]")) {
-      try {
-        const parsed = JSON.parse(field);
-        if (Array.isArray(parsed)) {
-          return parsed.map((v) => String(v).trim()).filter((v) => v.length > 0);
-        }
-      } catch (_) {
-        // fall back
-      }
-    }
-    return field
-      .split(",")
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0);
-  }
-  return [];
-}
+
+const bodySchema = Joi.object({
+  // --- Trường Job bắt buộc ---
+  job_code: Joi.string().min(1).max(255).required().messages({
+    "any.required": "Mã công việc là bắt buộc",
+    "string.empty": "Mã công việc không được để trống",
+    "string.max": "Mã công việc không được vượt quá 255 ký tự",
+  }),
+  project: Joi.string().min(1).max(255).required().messages({
+    "any.required": "Dự án là bắt buộc",
+    "string.empty": "Dự án không được để trống",
+    "string.max": "Dự án không được vượt quá 255 ký tự",
+  }),
+  candidate_required: Joi.number().integer().min(1).required().messages({
+    "any.required": "Số lượng ứng viên là bắt buộc",
+    "number.base": "Số lượng ứng viên phải là số",
+    "number.integer": "Số lượng ứng viên phải là số nguyên",
+    "number.min": "Số lượng ứng viên phải lớn hơn 0",
+  }),
+  note: Joi.string().max(5000).allow("", null).optional(),
+
+  // --- ID gốc (các record đã tồn tại) ---
+  partners: numberArray().optional(),
+  departments: numberArray().optional(),
+  segments: numberArray().optional(),
+  sites: numberArray().optional(),
+  titles: numberArray().optional(),
+  managers: numberArray().optional(),
+  employee_levels: numberArray().optional(),
+
+  // --- _name: tự động tạo record mới ---
+  partners_name: stringArray().optional(),
+  managers_name: stringArray().optional(),
+  departments_name: stringArray().optional(),
+  segments_name: stringArray().optional(),
+  sites_name: stringArray().optional(),
+  titles_name: stringArray().optional(),
+  employee_levels_name: stringArray().optional(),
+});
 
 createJobWithAllController.post(
   "",
   passport.authenticate("jwt", { session: false }),
   upload.single("file"),
+  joiValidate(bodySchema, "body"),
   async (req, res) => {
-    const body = req.body || {};
-    const candidate_required = parseInt(body.candidate_required, 10);
-
-    if (!body.job_code || body.job_code.trim() === "") {
-      return res.status(400).json({
-        result: false,
-        message: "Dữ liệu không hợp lệ",
-        details: ["Mã công việc là bắt buộc"],
-      });
-    }
-
-    if (!body.project || body.project.trim() === "") {
-      return res.status(400).json({
-        result: false,
-        message: "Dữ liệu không hợp lệ",
-        details: ["Dự án là bắt buộc"],
-      });
-    }
-
-    if (isNaN(candidate_required) || candidate_required <= 0) {
-      return res.status(400).json({
-        result: false,
-        message: "Dữ liệu không hợp lệ",
-        details: ["Số lượng ứng viên yêu cầu phải là số nguyên dương"],
-      });
-    }
+    const body = req.body;
 
     const file = req.file
       ? { originalname: req.file.originalname, buffer: req.file.buffer }
@@ -113,27 +85,27 @@ createJobWithAllController.post(
         {
           job_code: body.job_code,
           project: body.project,
-          candidate_required,
+          candidate_required: body.candidate_required,
           note: body.note || null,
           file,
 
           // ID gốc
-          partners: parseArrayField(body.partners),
-          departments: parseArrayField(body.departments),
-          segments: parseArrayField(body.segments),
-          sites: parseArrayField(body.sites),
-          titles: parseArrayField(body.titles),
-          managers: parseArrayField(body.managers),
-          employee_levels: parseArrayField(body.employee_levels),
+          partners: body.partners ?? [],
+          departments: body.departments ?? [],
+          segments: body.segments ?? [],
+          sites: body.sites ?? [],
+          titles: body.titles ?? [],
+          managers: body.managers ?? [],
+          employee_levels: body.employee_levels ?? [],
 
           // _name: tự động tạo mới
-          partners_name: parseStringArrayField(body.partners_name),
-          managers_name: parseStringArrayField(body.managers_name),
-          departments_name: parseStringArrayField(body.departments_name),
-          segments_name: parseStringArrayField(body.segments_name),
-          sites_name: parseStringArrayField(body.sites_name),
-          titles_name: parseStringArrayField(body.titles_name),
-          employee_levels_name: parseStringArrayField(body.employee_levels_name),
+          partners_name: body.partners_name ?? [],
+          managers_name: body.managers_name ?? [],
+          departments_name: body.departments_name ?? [],
+          segments_name: body.segments_name ?? [],
+          sites_name: body.sites_name ?? [],
+          titles_name: body.titles_name ?? [],
+          employee_levels_name: body.employee_levels_name ?? [],
         },
         pool
       );

@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
 import type { jobOutputModel } from "@model/job/jobModel";
-import User from "@services/user/_User";
 import Department from "@services/department/_Department";
+import User from "@services/user/_User";
 import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import Level from "@services/level/_Level";
