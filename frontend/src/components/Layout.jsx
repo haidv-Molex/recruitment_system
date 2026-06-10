@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Database, FileSpreadsheet, Table2, LogOut, User, Shield, FolderOpen, Building2 } from 'lucide-react';
+import { Database, FileSpreadsheet, Table2, LogOut, User, Shield, FolderOpen, Building2, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Layout = ({ children }) => {
@@ -25,6 +25,7 @@ export const Layout = ({ children }) => {
     { path: '/candidates', label: 'Candidate Database', icon: Database },
     { path: '/jd-library', label: 'JD Library', icon: FolderOpen },
     { path: '/companies', label: 'Companies', icon: Building2 },
+    { path: '/departments', label: 'Departments', icon: Layers },
     { path: '/master-data', label: 'Master Data', icon: FileSpreadsheet },
   ];
 
