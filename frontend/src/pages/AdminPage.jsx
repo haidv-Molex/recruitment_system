@@ -1,46 +1,49 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Edit2, Plus, Trash2, Shield, User, Eye, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { UserForm } from '../components/UserForm';
+import { ToastContainer } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../hooks/useToast';
+import { createHRApi } from '../services/userApi';
 
 const ITEMS_PER_PAGE = 5;
 
 const roleColors = {
   admin: { background: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+  hr: { background: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
   recruiter: { background: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
+  viewer: { background: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
 };
 
 const roleIcons = {
   admin: Shield,
+  hr: User,
   recruiter: User,
+  viewer: Eye,
 };
 
 export const AdminPage = () => {
-  const { user: currentUser, fetchUsers, createUser, editUser, removeUser } = useAuth();
+  const { user: currentUser, fetchUsers, removeUser } = useAuth();
+  const { toasts, removeToast, toast } = useToast();
   const [users, setUsers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [message, setMessage] = useState({ text: '', type: '' });
+  const [saving, setSaving] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
   const loadUsers = () => {
-    setUsers(fetchUsers());
+    // If fetchUsers exists (from mock context), use it
+    if (fetchUsers) {
+      setUsers(fetchUsers());
+    }
   };
 
   useEffect(() => {
     loadUsers();
   }, [fetchUsers]);
-
-  useEffect(() => {
-    // If a message is displayed, auto-hide it after 3 seconds
-    if (message.text) {
-      const timer = setTimeout(() => setMessage({ text: '', type: '' }), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
 
   const filteredUsers = useMemo(() => {
     let result = users;
@@ -50,8 +53,9 @@ export const AdminPage = () => {
       const query = searchQuery.trim().toLowerCase();
       result = result.filter(
         (u) =>
-          u.username.toLowerCase().includes(query) ||
-          u.displayName.toLowerCase().includes(query)
+          (u.username || '').toLowerCase().includes(query) ||
+          (u.displayName || '').toLowerCase().includes(query) ||
+          (u.account || '').toLowerCase().includes(query)
       );
     }
 
@@ -77,50 +81,57 @@ export const AdminPage = () => {
     return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredUsers, currentPage]);
 
-  const handleCreate = (formData) => {
-    const result = createUser(formData);
-    // If account creation succeeded, show success message and refresh list
+  const handleCreate = async (formData) => {
+    setSaving(true);
+
+    const result = await createHRApi({
+      username: formData.username,
+      account: formData.account,
+      password: formData.password,
+      description: formData.description || undefined,
+    });
+
+    // If account creation succeeded, show success toast and add to local list
     if (result.success) {
-      setMessage({ text: `Account "${formData.username}" created successfully.`, type: 'success' });
+      toast.success(result.message || `Account "${formData.account}" created successfully.`);
       setShowForm(false);
-      loadUsers();
+      setUsers((prev) => [...prev, result.user]);
     } else {
-      setMessage({ text: result.message, type: 'error' });
+      toast.error(result.message);
     }
+
+    setSaving(false);
   };
 
   const handleEdit = (formData) => {
-    const result = editUser(editingUser.id, formData);
-    // If account update succeeded, show success message and refresh list
-    if (result.success) {
-      setMessage({ text: `Account "${formData.username}" updated successfully.`, type: 'success' });
-      setShowForm(false);
-      setEditingUser(null);
-      loadUsers();
-    } else {
-      setMessage({ text: result.message, type: 'error' });
-    }
+    // TODO: Replace with API when backend provides update user endpoint
+    toast.warning('Edit account — waiting for backend API.');
+    setShowForm(false);
+    setEditingUser(null);
   };
 
   const handleDelete = (userToDelete) => {
-    // If trying to delete own account, show error
-    if (userToDelete.id === currentUser.id) {
-      setMessage({ text: 'You cannot delete your own account.', type: 'error' });
+    // If trying to delete own account, show error toast
+    if (currentUser && userToDelete.id === currentUser.id) {
+      toast.error('You cannot delete your own account.');
       return;
     }
 
     // If user cancels the confirmation dialog, abort deletion
-    if (!confirm(`Are you sure you want to delete account "${userToDelete.username}"?`)) {
+    if (!confirm(`Are you sure you want to delete account "${userToDelete.displayName || userToDelete.username}"?`)) {
       return;
     }
 
-    const result = removeUser(userToDelete.id);
-    // If deletion succeeded, show success message and refresh list
-    if (result.success) {
-      setMessage({ text: `Account "${userToDelete.username}" deleted.`, type: 'success' });
-      loadUsers();
-    } else {
-      setMessage({ text: result.message, type: 'error' });
+    // TODO: Replace with API when backend provides delete user endpoint
+    if (removeUser) {
+      const result = removeUser(userToDelete.id);
+      // If deletion succeeded, show success toast and remove from local list
+      if (result.success) {
+        toast.success(`Account "${userToDelete.displayName || userToDelete.username}" deleted.`);
+        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+      } else {
+        toast.error(result.message);
+      }
     }
   };
 
@@ -140,13 +151,12 @@ export const AdminPage = () => {
     setShowForm(true);
   };
 
-  const styles = {
+  const s = {
     page: { maxWidth: '900px', margin: '0 auto', padding: '24px' },
     headerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' },
     title: { fontSize: '24px', fontWeight: 700, color: '#1e293b', margin: '0 0 4px' },
     subtitle: { fontSize: '14px', color: '#64748b', margin: 0 },
     addBtn: { display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', fontSize: '14px', fontWeight: 600, color: '#fff', background: '#2563eb', border: 'none', borderRadius: '8px', cursor: 'pointer' },
-    message: (type) => ({ padding: '12px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: 500, marginBottom: '16px', background: type === 'success' ? '#f0fdf4' : '#fef2f2', color: type === 'success' ? '#16a34a' : '#dc2626', border: `1px solid ${type === 'success' ? '#bbf7d0' : '#fecaca'}` }),
     table: { width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' },
     th: { textAlign: 'left', padding: '14px 16px', fontSize: '13px', fontWeight: 600, color: '#64748b', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' },
     td: { padding: '14px 16px', fontSize: '14px', color: '#334155', borderBottom: '1px solid #f1f5f9' },
@@ -174,8 +184,10 @@ export const AdminPage = () => {
   const totalUsers = users.length;
   // Filter users to count how many have admin role
   const adminCount = users.filter((u) => u.role === 'admin').length;
-  // Filter users to count how many have recruiter role
-  const recruiterCount = users.filter((u) => u.role === 'recruiter').length;
+  // Filter users to count how many have hr role
+  const hrCount = users.filter((u) => u.role === 'hr' || u.role === 'recruiter').length;
+  // Filter users to count how many have viewer role
+  const viewerCount = users.filter((u) => u.role === 'viewer').length;
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length);
@@ -187,96 +199,93 @@ export const AdminPage = () => {
   }
 
   return (
-    <div style={styles.page}>
+    <div style={s.page}>
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
       {/* Header */}
-      <div style={styles.headerRow}>
+      <div style={s.headerRow}>
         <div>
-          <h1 style={styles.title}>👤 Account Management</h1>
-          <p style={styles.subtitle}>
-            Manage HR user accounts. Only administrators can access this page.
-          </p>
+          <h1 style={s.title}>👤 Account Management</h1>
+          <p style={s.subtitle}>Manage HR user accounts. Only administrators can access this page.</p>
         </div>
-        <button type="button" style={styles.addBtn} onClick={openCreateForm}>
-          <Plus size={16} /> Create Account
+        <button type="button" style={s.addBtn} onClick={openCreateForm}>
+          <Plus size={16} /> Create HR Account
         </button>
       </div>
 
       {/* Stats */}
-      <div style={styles.statsRow}>
-        <div style={styles.statCard('#3b82f6')}>
-          <p style={styles.statNumber}>{totalUsers}</p>
-          <p style={styles.statLabel}>Total Accounts</p>
+      <div style={s.statsRow}>
+        <div style={s.statCard('#3b82f6')}>
+          <p style={s.statNumber}>{totalUsers}</p>
+          <p style={s.statLabel}>Total Accounts</p>
         </div>
-        <div style={styles.statCard('#dc2626')}>
-          <p style={styles.statNumber}>{adminCount}</p>
-          <p style={styles.statLabel}>Admins</p>
+        <div style={s.statCard('#dc2626')}>
+          <p style={s.statNumber}>{adminCount}</p>
+          <p style={s.statLabel}>Admins</p>
         </div>
-        <div style={styles.statCard('#2563eb')}>
-          <p style={styles.statNumber}>{recruiterCount}</p>
-          <p style={styles.statLabel}>Recruiters</p>
+        <div style={s.statCard('#2563eb')}>
+          <p style={s.statNumber}>{hrCount}</p>
+          <p style={s.statLabel}>HR</p>
+        </div>
+        <div style={s.statCard('#16a34a')}>
+          <p style={s.statNumber}>{viewerCount}</p>
+          <p style={s.statLabel}>Viewers</p>
         </div>
       </div>
 
-      {/* Message */}
-      {message.text && (
-        <div style={styles.message(message.type)}>{message.text}</div>
-      )}
-
       {/* Search + Filter */}
-      <div style={styles.filterBar}>
-        <div style={styles.searchWrap}>
+      <div style={s.filterBar}>
+        <div style={s.searchWrap}>
           <Search size={16} style={{ color: '#94a3b8' }} />
           <input
-            style={styles.searchInput}
+            style={s.searchInput}
             type="text"
-            placeholder="Search by username or display name..."
+            placeholder="Search by name or account..."
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
           />
         </div>
 
         <select
-          style={styles.filterSelect}
+          style={s.filterSelect}
           value={filterRole}
           onChange={(e) => { setFilterRole(e.target.value); setCurrentPage(1); }}
         >
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
-          <option value="recruiter">Recruiter</option>
+          <option value="hr">HR</option>
+          <option value="viewer">Viewer</option>
         </select>
 
         {/* If any filter is active, show the Clear button */}
         {(searchQuery || filterRole) && (
-          <button type="button" style={styles.clearBtn} onClick={handleClearFilters}>
-            Clear
-          </button>
+          <button type="button" style={s.clearBtn} onClick={handleClearFilters}>Clear</button>
         )}
       </div>
 
-      {/* Filter info */}
-      <p style={styles.filterInfo}>
+      <p style={s.filterInfo}>
         Showing {filteredUsers.length} of {totalUsers} accounts
         {searchQuery && ` • Search: "${searchQuery}"`}
         {filterRole && ` • Role: ${filterRole}`}
       </p>
 
       {/* Table */}
-      <table style={styles.table}>
+      <table style={s.table}>
         <thead>
           <tr>
-            <th style={styles.th}>Username</th>
-            <th style={styles.th}>Display Name</th>
-            <th style={styles.th}>Role</th>
-            <th style={{ ...styles.th, textAlign: 'center' }}>Actions</th>
+            <th style={s.th}>Account</th>
+            <th style={s.th}>Display Name</th>
+            <th style={s.th}>Description</th>
+            <th style={s.th}>Role</th>
+            <th style={{ ...s.th, textAlign: 'center' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {/* If no users match the filter, show empty message */}
           {paginatedUsers.length === 0 ? (
             <tr>
-              <td colSpan={4} style={styles.emptyRow}>
-                No accounts found matching your search.
-              </td>
+              <td colSpan={5} style={s.emptyRow}>No accounts found.</td>
             </tr>
           ) : (
             // Loop through paginated users to render each row
@@ -286,22 +295,25 @@ export const AdminPage = () => {
 
               return (
                 <tr key={u.id}>
-                  <td style={styles.td}>
-                    <strong>{u.username}</strong>
-                    {isCurrentUser && <span style={styles.youBadge}>(you)</span>}
+                  <td style={s.td}>
+                    <strong>{u.account || u.username}</strong>
+                    {isCurrentUser && <span style={s.youBadge}>(you)</span>}
                   </td>
-                  <td style={styles.td}>{u.displayName}</td>
-                  <td style={styles.td}>
-                    <span style={styles.rolePill(u.role)}>
+                  <td style={s.td}>{u.displayName}</td>
+                  <td style={{ ...s.td, color: '#64748b', fontSize: '13px' }}>
+                    {u.description || '—'}
+                  </td>
+                  <td style={s.td}>
+                    <span style={s.rolePill(u.role)}>
                       <RoleIcon size={12} />
-                      {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                      {u.role.toUpperCase()}
                     </span>
                   </td>
-                  <td style={{ ...styles.td, textAlign: 'center' }}>
+                  <td style={{ ...s.td, textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                       <button
                         type="button"
-                        style={{ ...styles.actionBtn, color: '#3b82f6' }}
+                        style={{ ...s.actionBtn, color: '#3b82f6' }}
                         onClick={() => openEditForm(u)}
                         title="Edit account"
                       >
@@ -310,7 +322,7 @@ export const AdminPage = () => {
                       <button
                         type="button"
                         style={{
-                          ...styles.actionBtn,
+                          ...s.actionBtn,
                           color: isCurrentUser ? '#cbd5e1' : '#ef4444',
                           cursor: isCurrentUser ? 'not-allowed' : 'pointer',
                         }}
@@ -331,15 +343,15 @@ export const AdminPage = () => {
 
       {/* Pagination */}
       {filteredUsers.length > 0 && (
-        <div style={styles.paginationRow}>
-          <span style={styles.paginationInfo}>
+        <div style={s.paginationRow}>
+          <span style={s.paginationInfo}>
             Showing {startIndex}–{endIndex} of {filteredUsers.length} accounts
           </span>
 
-          <div style={styles.paginationButtons}>
+          <div style={s.paginationButtons}>
             <button
               type="button"
-              style={styles.navBtn(currentPage <= 1)}
+              style={s.navBtn(currentPage <= 1)}
               onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
               disabled={currentPage <= 1}
             >
@@ -351,7 +363,7 @@ export const AdminPage = () => {
               <button
                 key={num}
                 type="button"
-                style={styles.pageBtn(num === currentPage)}
+                style={s.pageBtn(num === currentPage)}
                 onClick={() => setCurrentPage(num)}
               >
                 {num}
@@ -360,7 +372,7 @@ export const AdminPage = () => {
 
             <button
               type="button"
-              style={styles.navBtn(currentPage >= totalPages)}
+              style={s.navBtn(currentPage >= totalPages)}
               onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
               disabled={currentPage >= totalPages}
             >
@@ -374,6 +386,7 @@ export const AdminPage = () => {
       {showForm && (
         <UserForm
           user={editingUser}
+          saving={saving}
           onSubmit={editingUser ? handleEdit : handleCreate}
           onClose={() => { setShowForm(false); setEditingUser(null); }}
         />

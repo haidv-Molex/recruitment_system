@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { availableRoles } from '../services/authData';
 
 const emptyUser = {
   username: '',
+  account: '',
   password: '',
-  displayName: '',
-  role: 'recruiter',
+  description: '',
 };
 
-export const UserForm = ({ user, onSubmit, onClose }) => {
+export const UserForm = ({ user, onSubmit, onClose, saving }) => {
   const [formData, setFormData] = useState(emptyUser);
   const [error, setError] = useState('');
 
@@ -19,10 +18,10 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
     // If editing an existing user, populate form with their data
     if (user) {
       setFormData({
-        username: user.username || '',
+        username: user.displayName || '',
+        account: user.account || user.username || '',
         password: '',
-        displayName: user.displayName || '',
-        role: user.role || 'recruiter',
+        description: user.description || '',
       });
     } else {
       setFormData(emptyUser);
@@ -38,15 +37,21 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
     e.preventDefault();
     setError('');
 
-    // If username is empty, show validation error
+    // If display name is empty, show validation error
     if (!formData.username.trim()) {
-      setError('Username is required.');
+      setError('Display Name is required.');
       return;
     }
 
-    // If display name is empty, show validation error
-    if (!formData.displayName.trim()) {
-      setError('Display Name is required.');
+    // If account is empty, show validation error
+    if (!formData.account.trim()) {
+      setError('Account is required.');
+      return;
+    }
+
+    // If account contains whitespace, show validation error
+    if (/\s/.test(formData.account)) {
+      setError('Account cannot contain spaces.');
       return;
     }
 
@@ -59,12 +64,6 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
     // If password is provided but less than 6 characters, show validation error
     if (formData.password && formData.password.length < 6) {
       setError('Password must be at least 6 characters.');
-      return;
-    }
-
-    // Check if username contains any whitespace characters
-    if (/\s/.test(formData.username)) {
-      setError('Username cannot contain spaces.');
       return;
     }
 
@@ -129,16 +128,6 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
       outline: 'none',
       boxSizing: 'border-box',
     },
-    select: {
-      width: '100%',
-      padding: '10px 14px',
-      fontSize: '14px',
-      border: '1px solid #d1d5db',
-      borderRadius: '8px',
-      outline: 'none',
-      boxSizing: 'border-box',
-      background: '#fff',
-    },
     error: {
       background: '#fef2f2',
       color: '#dc2626',
@@ -171,16 +160,16 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
       borderRadius: '8px',
       cursor: 'pointer',
     },
-    saveBtn: {
+    saveBtn: (disabled) => ({
       padding: '8px 20px',
       fontSize: '14px',
       fontWeight: 600,
       color: '#fff',
-      background: '#2563eb',
+      background: disabled ? '#93c5fd' : '#2563eb',
       border: 'none',
       borderRadius: '8px',
-      cursor: 'pointer',
-    },
+      cursor: disabled ? 'not-allowed' : 'pointer',
+    }),
   };
 
   return (
@@ -188,7 +177,7 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
       <div style={styles.modal}>
         <div style={styles.header}>
           <h2 style={styles.headerTitle}>
-            {isEditing ? 'Edit Account' : 'Create New Account'}
+            {isEditing ? 'Edit Account' : 'Create New HR Account'}
           </h2>
           <button type="button" style={styles.closeButton} onClick={onClose}>
             <X size={20} />
@@ -200,17 +189,34 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
             {error && <div style={styles.error}>{error}</div>}
 
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>Username *</label>
+              <label style={styles.label}>Display Name *</label>
               <input
                 style={styles.input}
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                placeholder="e.g. annie"
-                disabled={isEditing}
+                placeholder="e.g. Nguyễn Văn A"
+                disabled={saving}
               />
+              <p style={styles.hint}>This name will be displayed throughout the system.</p>
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Account (Login ID) *</label>
+              <input
+                style={styles.input}
+                name="account"
+                value={formData.account}
+                onChange={handleChange}
+                placeholder="e.g. hr02"
+                disabled={isEditing || saving}
+              />
+              {/* If editing, show hint that account cannot be changed */}
               {isEditing && (
-                <p style={styles.hint}>Username cannot be changed.</p>
+                <p style={styles.hint}>Account cannot be changed.</p>
+              )}
+              {!isEditing && (
+                <p style={styles.hint}>Used to sign in. No spaces allowed.</p>
               )}
             </div>
 
@@ -225,40 +231,30 @@ export const UserForm = ({ user, onSubmit, onClose }) => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder={isEditing ? 'Leave blank to keep current' : 'Min 6 characters'}
+                disabled={saving}
               />
             </div>
 
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>Display Name *</label>
+              <label style={styles.label}>Description</label>
               <input
                 style={styles.input}
-                name="displayName"
-                value={formData.displayName}
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                placeholder="e.g. Annie (Recruiter)"
+                placeholder="e.g. Recruiter phụ trách tuyển dụng nhà máy MXV"
+                disabled={saving}
               />
-            </div>
-
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Role *</label>
-              <select
-                style={styles.select}
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-              >
-                {/* Loop through available roles to render dropdown options */}
-                {availableRoles.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
             </div>
           </div>
 
           <div style={styles.footer}>
             <button type="button" style={styles.cancelBtn} onClick={onClose}>Cancel</button>
-            <button type="submit" style={styles.saveBtn}>
-              {isEditing ? 'Save Changes' : 'Create Account'}
+            <button type="submit" style={styles.saveBtn(saving)} disabled={saving}>
+              {saving
+                ? (isEditing ? 'Saving...' : 'Creating...')
+                : (isEditing ? 'Save Changes' : 'Create Account')
+              }
             </button>
           </div>
         </form>
