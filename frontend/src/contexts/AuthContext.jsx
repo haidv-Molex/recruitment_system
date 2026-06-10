@@ -1,16 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import {
-  authenticateUser,
-  getAllUsers,
-  addUser,
-  updateUser,
-  deleteUser,
-  updateProfile as updateProfileService,
-  changePassword as changePasswordService,
-} from '../services/authData';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { loginApi, logoutApi } from '../services/authApi';
 
 const AuthContext = createContext(null);
-const STORAGE_KEY = 'recruitment_auth_user';
+const USER_KEY = 'recruitment_auth_user';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -18,75 +10,34 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(USER_KEY);
       // If a saved session exists, restore the user state
       if (saved) {
         setUser(JSON.parse(saved));
       }
     } catch {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(USER_KEY);
     }
     setIsLoading(false);
   }, []);
 
-  const login = (username, password) => {
-    const result = authenticateUser(username, password);
-    // If authentication succeeded, save user to state and localStorage
-    if (result) {
-      setUser(result);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(result));
+  const login = async (account, password) => {
+    const result = await loginApi(account, password);
+
+    // If login API succeeded, save user to state and localStorage
+    if (result.success) {
+      setUser(result.user);
+      localStorage.setItem(USER_KEY, JSON.stringify(result.user));
       return { success: true };
     }
-    return { success: false, message: 'Invalid username or password.' };
+
+    return { success: false, message: result.message };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+    logoutApi();
   };
-
-  const fetchUsers = useCallback(() => {
-    return getAllUsers();
-  }, []);
-
-  const createUser = useCallback((userData) => {
-    return addUser(userData);
-  }, []);
-
-  const editUser = useCallback((id, updates) => {
-    return updateUser(id, updates);
-  }, []);
-
-  const removeUser = useCallback((id) => {
-    // If the user tries to delete their own account, block it
-    if (user && user.id === id) {
-      return { success: false, message: 'You cannot delete your own account.' };
-    }
-    return deleteUser(id);
-  }, [user]);
-
-  const updateProfile = useCallback((profileData) => {
-    // If no user is logged in, return error
-    if (!user) {
-      return { success: false, message: 'Not authenticated.' };
-    }
-
-    const result = updateProfileService(user.id, profileData);
-    // If profile update succeeded, sync user state and localStorage
-    if (result.success) {
-      setUser(result.user);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
-    }
-    return result;
-  }, [user]);
-
-  const changePassword = useCallback((oldPassword, newPassword) => {
-    // If no user is logged in, return error
-    if (!user) {
-      return { success: false, message: 'Not authenticated.' };
-    }
-    return changePasswordService(user.id, oldPassword, newPassword);
-  }, [user]);
 
   const value = {
     user,
@@ -95,12 +46,6 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     login,
     logout,
-    fetchUsers,
-    createUser,
-    editUser,
-    removeUser,
-    updateProfile,
-    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

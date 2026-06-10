@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export const LoginPage = () => {
-  const [username, setUsername] = useState('');
+  const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,18 +15,17 @@ export const LoginPage = () => {
     e.preventDefault();
     setError('');
 
-    // Validation
-    if (!username.trim() || !password.trim()) {
-      setError('Please enter both username and password.');
+    // If account or password is empty, show validation error
+    if (!account.trim() || !password.trim()) {
+      setError('Please enter both account and password.');
       return;
     }
 
     setLoading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    const result = await login(account.trim(), password);
 
-    const result = login(username.trim(), password);
-
+    // If login succeeded, redirect to home page
     if (result.success) {
       navigate('/', { replace: true });
     } else {
@@ -93,12 +92,7 @@ export const LoginPage = () => {
       border: '1px solid #d1d5db',
       borderRadius: '8px',
       outline: 'none',
-      transition: 'border-color 0.2s',
       boxSizing: 'border-box',
-    },
-    inputFocus: {
-      borderColor: '#3b82f6',
-      boxShadow: '0 0 0 3px rgba(59,130,246,0.15)',
     },
     fieldGroup: {
       marginBottom: '18px',
@@ -113,7 +107,6 @@ export const LoginPage = () => {
       border: 'none',
       borderRadius: '8px',
       cursor: loading ? 'not-allowed' : 'pointer',
-      transition: 'background 0.2s',
       marginTop: '8px',
     },
     error: {
@@ -125,37 +118,26 @@ export const LoginPage = () => {
       marginBottom: '16px',
       border: '1px solid #fecaca',
     },
-    hint: {
-      marginTop: '24px',
-      padding: '12px',
-      background: '#f8fafc',
-      borderRadius: '8px',
-      fontSize: '12px',
-      color: '#64748b',
-      lineHeight: '1.6',
-    },
   };
 
   return (
     <div style={styles.wrapper}>
       <div style={styles.card}>
-        {/* Logo */}
         <div style={styles.logo}>HR</div>
         <h1 style={styles.title}>Molex IDL Recruitment</h1>
         <p style={styles.subtitle}>Sign in to access the tracking system</p>
 
-        {/* Form */}
         <form onSubmit={handleSubmit}>
           {error && <div style={styles.error}>{error}</div>}
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Username</label>
+            <label style={styles.label}>Account</label>
             <input
               style={styles.input}
               type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your account"
+              value={account}
+              onChange={(e) => setAccount(e.target.value)}
               autoFocus
               disabled={loading}
             />
@@ -177,14 +159,6 @@ export const LoginPage = () => {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-
-        <div style={styles.hint}>
-          <strong>Demo accounts:</strong><br />
-          admin / admin123<br />
-          annie / annie123<br />
-          hein / hein123<br />
-          kim / kim123
-        </div>
       </div>
     </div>
   );

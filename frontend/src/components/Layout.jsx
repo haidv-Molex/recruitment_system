@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Database, FileSpreadsheet, Table2, LogOut, User, Shield } from 'lucide-react';
+import { Database, FileSpreadsheet, Table2, LogOut, User, Shield, FolderOpen } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Layout = ({ children }) => {
