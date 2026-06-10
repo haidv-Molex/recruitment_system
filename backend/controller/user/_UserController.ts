@@ -11,10 +11,10 @@ const UserController = express.Router();
 
 UserController.use("/hr", createHRController);
 UserController.use("/profile", updateProfileController);
-UserController.use("/profile/:user_id", getUserController);
+UserController.use("/", getUserController);
 UserController.use("/", createUserController);
-UserController.use("/:user_id", updateUserController);
-UserController.use("/:user_id", deleteUserController);
-UserController.use("/:user_id", changeAccountRoleController);
+UserController.use("/", updateUserController);
+UserController.use("/", deleteUserController);
+UserController.use("/", changeAccountRoleController);
 
 export default UserController;

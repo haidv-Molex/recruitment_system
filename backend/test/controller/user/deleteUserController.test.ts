@@ -31,7 +31,7 @@ describe("deleteUserController API", () => {
     const app = express();
     app.use(express.json());
     app.use(passport.initialize());
-    app.use("/user/:user_id", deleteUserController);
+    app.use("/user", deleteUserController);
     app.use(globalErrorHandler);
 
     await new Promise<void>((resolve) => {
@@ -83,7 +83,7 @@ describe("deleteUserController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .delete("/user/99")
+      .delete("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(200)
       .expectJson({ result: true, message: "Xóa người dùng thành công" });
@@ -99,7 +99,7 @@ describe("deleteUserController API", () => {
     const token = generateTestToken(2, "HR Person");
 
     await pactum.spec()
-      .delete("/user/99")
+      .delete("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(200)
       .expectJson({ result: true, message: "Xóa người dùng thành công" });
@@ -113,7 +113,7 @@ describe("deleteUserController API", () => {
     const token = generateTestToken(3, "Regular");
 
     await pactum.spec()
-      .delete("/user/99")
+      .delete("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(403)
       .expectJsonLike({ result: false, message: "Chỉ Admin hoặc HR mới có quyền xóa tài khoản người dùng" });
@@ -128,7 +128,7 @@ describe("deleteUserController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .delete("/user/99")
+      .delete("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(403)
       .expectJsonLike({ result: false, message: "Không thể xóa tài khoản Admin hoặc HR" });
@@ -143,7 +143,7 @@ describe("deleteUserController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .delete("/user/99")
+      .delete("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(403)
       .expectJsonLike({ result: false, message: "Không thể xóa tài khoản Admin hoặc HR" });
@@ -156,7 +156,7 @@ describe("deleteUserController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .delete("/user/abc")
+      .delete("/user?id=abc")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(400)
       .expectJsonLike({ result: false, message: "Dữ liệu không hợp lệ" });
@@ -166,7 +166,7 @@ describe("deleteUserController API", () => {
 
   it("should return 401 if request is unauthenticated", async () => {
     await pactum.spec()
-      .delete("/user/99")
+      .delete("/user?id=99")
       .expectStatus(401);
 
     expectLocal(deleteAccountStub.called).to.be.false;

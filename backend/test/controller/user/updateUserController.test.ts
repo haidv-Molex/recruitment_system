@@ -31,7 +31,7 @@ describe("updateUserController API", () => {
     const app = express();
     app.use(express.json());
     app.use(passport.initialize());
-    app.use("/user/:user_id", updateUserController);
+    app.use("/user", updateUserController);
     app.use(globalErrorHandler);
 
     await new Promise<void>((resolve) => {
@@ -105,7 +105,7 @@ describe("updateUserController API", () => {
     const token = generateTestToken(1, "Requester");
 
     await pactum.spec()
-      .put("/user/99")
+      .put("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         username: "New Name",
@@ -147,7 +147,7 @@ describe("updateUserController API", () => {
     const token = generateTestToken(1, "Requester");
 
     await pactum.spec()
-      .put("/user/99")
+      .put("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         username: "Modified Admin Name"
@@ -180,7 +180,7 @@ describe("updateUserController API", () => {
     const token = generateTestToken(1, "Requester");
 
     await pactum.spec()
-      .put("/user/99")
+      .put("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         username: "Modified HR Name"
@@ -206,7 +206,7 @@ describe("updateUserController API", () => {
     const token = generateTestToken(1, "Requester");
 
     await pactum.spec()
-      .put("/user/99")
+      .put("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({})
       .expectStatus(400)
@@ -221,7 +221,7 @@ describe("updateUserController API", () => {
 
   it("should return 401 if request is unauthenticated", async () => {
     await pactum.spec()
-      .put("/user/99")
+      .put("/user?id=99")
       .withJson({
         username: "Some Name"
       })

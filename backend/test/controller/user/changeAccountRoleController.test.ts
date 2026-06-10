@@ -31,7 +31,7 @@ describe("banAccountController API", () => {
     const app = express();
     app.use(express.json());
     app.use(passport.initialize());
-    app.use("/user/:user_id", changeAccountRoleController);
+    app.use("/user", changeAccountRoleController);
     app.use(globalErrorHandler);
 
     await new Promise<void>((resolve) => {
@@ -79,7 +79,7 @@ describe("banAccountController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .patch("/user/99/role")
+      .patch("/user/role?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({ role: "banned" })
       .expectStatus(200)
@@ -96,7 +96,7 @@ describe("banAccountController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .patch("/user/99/role")
+      .patch("/user/role?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({ role: "hr" })
       .expectStatus(200)
@@ -112,7 +112,7 @@ describe("banAccountController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .patch("/user/99/role")
+      .patch("/user/role?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({ role: "admin" })
       .expectStatus(400)
@@ -127,7 +127,7 @@ describe("banAccountController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .patch("/user/99/role")
+      .patch("/user/role?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({})
       .expectStatus(400)
@@ -142,7 +142,7 @@ describe("banAccountController API", () => {
     const token = generateTestToken(2, "HR Person");
 
     await pactum.spec()
-      .patch("/user/99/role")
+      .patch("/user/role?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({ role: "banned" })
       .expectStatus(403)
@@ -158,7 +158,7 @@ describe("banAccountController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .patch("/user/999/role")
+      .patch("/user/role?id=999")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({ role: "banned" })
       .expectStatus(404);
@@ -169,7 +169,7 @@ describe("banAccountController API", () => {
     const token = generateTestToken(1, "Admin");
 
     await pactum.spec()
-      .patch("/user/abc/role")
+      .patch("/user/role?id=abc")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({ role: "banned" })
       .expectStatus(400)
@@ -180,7 +180,7 @@ describe("banAccountController API", () => {
 
   it("should return 401 if request is unauthenticated", async () => {
     await pactum.spec()
-      .patch("/user/99/role")
+      .patch("/user/role?id=99")
       .withJson({ role: "banned" })
       .expectStatus(401);
 

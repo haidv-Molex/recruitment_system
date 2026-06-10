@@ -31,10 +31,12 @@ describe("excelCsvReader utility", () => {
       writeFileSync(csvPath, "name,age,city\nJohn Doe,30,New York\nJane Smith,25,London");
 
       const result = await readExcelOrCsvToJson(csvPath);
-      expect(result).to.deep.equal([
-        { name: "John Doe", age: 30, city: "New York" },
-        { name: "Jane Smith", age: 25, city: "London" }
-      ]);
+      expect(result).to.deep.equal({
+        sheet1: [
+          { name: "John Doe", age: 30, city: "New York" },
+          { name: "Jane Smith", age: 25, city: "London" }
+        ]
+      });
     });
 
     it("should throw AppError 404 when file does not exist", async () => {
@@ -76,7 +78,9 @@ describe("excelCsvReader utility", () => {
       expect(existsSync(csvPath)).to.be.true;
 
       const readData = await readExcelOrCsvToJson(csvPath);
-      expect(readData).to.deep.equal(testData);
+      expect(readData).to.deep.equal({
+        sheet1: testData
+      });
     });
 
     it("should write JSON to an XLSX file and read it back correctly", async () => {

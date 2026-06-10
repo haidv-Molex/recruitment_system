@@ -31,7 +31,7 @@ describe("getUserController API", () => {
     const app = express();
     app.use(express.json());
     app.use(passport.initialize());
-    app.use("/user/:user_id", getUserController);
+    app.use("/user", getUserController);
     app.use(globalErrorHandler);
 
     await new Promise<void>((resolve) => {
@@ -95,7 +95,7 @@ describe("getUserController API", () => {
     findByIdStub.onSecondCall().resolves(targetUser);
 
     const response = await pactum.spec()
-      .get("/user/99")
+      .get("/user?id=99")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(200);
 
@@ -125,7 +125,7 @@ describe("getUserController API", () => {
     findByIdStub.onSecondCall().rejects(new AppError("Không tìm thấy người dùng", 404));
 
     await pactum.spec()
-      .get("/user/999")
+      .get("/user?id=999")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(404)
       .expectJsonLike({
@@ -147,7 +147,7 @@ describe("getUserController API", () => {
     findByIdStub.resolves(mockCurrentUser);
 
     await pactum.spec()
-      .get("/user/-5")
+      .get("/user?id=-5")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(400)
       .expectJsonLike({
@@ -157,7 +157,7 @@ describe("getUserController API", () => {
       });
 
     await pactum.spec()
-      .get("/user/abc")
+      .get("/user?id=abc")
       .withHeaders("Authorization", `Bearer ${token}`)
       .expectStatus(400)
       .expectJsonLike({
@@ -171,7 +171,7 @@ describe("getUserController API", () => {
 
   it("should return 401 if request is unauthenticated", async () => {
     await pactum.spec()
-      .get("/user/99")
+      .get("/user?id=99")
       .expectStatus(401);
 
     sinon.assert.notCalled(findByIdStub);

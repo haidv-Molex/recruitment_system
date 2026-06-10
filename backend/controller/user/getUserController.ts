@@ -7,8 +7,8 @@ import passport from "@middlewares/passport";
 
 const getUserController = express.Router({ mergeParams: true });
 
-const paramsSchema = Joi.object({
-  user_id: Joi.number().integer().positive().required().messages({
+const querySchema = Joi.object({
+  id: Joi.number().integer().positive().required().messages({
     "number.base": "Mã người dùng phải là số",
     "number.integer": "Mã người dùng phải là số nguyên",
     "number.positive": "Mã người dùng phải là số dương",
@@ -18,9 +18,9 @@ const paramsSchema = Joi.object({
 
 getUserController.get("",
   passport.authenticate("jwt", { session: false }),
-  joiValidate(paramsSchema, "params"),
+  joiValidate(querySchema, "query"),
   async (req, res) => {
-    const targetUserId = parseInt(req.params.user_id as string, 10);
+    const targetUserId = parseInt(req.query.id as string, 10);
 
     const user = await withTransaction(async (pool) => {
       return await User.findById(targetUserId, pool);

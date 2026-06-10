@@ -8,8 +8,8 @@ import { AppError } from "@middlewares/AppError";
 
 const updateUserController = express.Router({ mergeParams: true });
 
-const paramsSchema = Joi.object({
-  user_id: Joi.number().integer().positive().required().messages({
+const querySchema = Joi.object({
+  id: Joi.number().integer().positive().required().messages({
     "number.base": "Mã người dùng phải là số",
     "number.integer": "Mã người dùng phải là số nguyên",
     "number.positive": "Mã người dùng phải là số dương",
@@ -37,10 +37,10 @@ const bodySchema = Joi.object({
 
 updateUserController.put("",
   passport.authenticate("jwt", { session: false }),
-  joiValidate(paramsSchema, "params"),
+  joiValidate(querySchema, "query"),
   joiValidate(bodySchema, "body"),
   async (req, res) => {
-    const targetUserId = parseInt(req.params.user_id as string, 10);
+    const targetUserId = parseInt(req.query.id as string, 10);
     const { username, description, departmentId } = req.body;
 
     const updatedUser = await withTransaction(async (pool) => {
