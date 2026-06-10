@@ -19,6 +19,7 @@ import SiteController from "@controller/site/_SiteController";
 import LevelController from "@controller/level/_LevelController";
 import JobController from "@controller/job/_JobController";
 import CandidateController from "@controller/candidate/_CandidateController";
+import FileController from "@controller/file/_FileController";
 
 app.get('/', (req, res) => {
   const clientUrl =
@@ -33,6 +34,7 @@ app.get('/health', (req, res) => {
 });
 
 // Đường dẫn lấy file
+app.use("/file", FileController);
 app.use('/file', express.static(path.join(process.env.PATH_SAVE_FILE as string)));
 
 app.use("/user", UserController);

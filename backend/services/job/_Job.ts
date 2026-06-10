@@ -3,7 +3,6 @@ import getAll from "./getAll";
 import getById from "./getById";
 import update from "./update";
 import deleteJob from "./delete";
-import parseSheet from "./parseSheet";
 
 class Job {
   static create = create;
@@ -11,7 +10,6 @@ class Job {
   static getById = getById;
   static update = update;
   static delete = deleteJob;
-  static parseSheet = parseSheet;
 }
 
 export default Job;
