@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Edit2, FileUp, Plus, Trash2 } from 'lucide-react';
 import { CandidateForm } from '../components/CandidateForm';
+import { BulkCVUpload } from '../components/BulkCVUpload';
 import { ExcelTable, formatDate } from '../components/ExcelTable';
 import { hasDuplicateCandidate, masterData } from '../services/mockData';
 
@@ -9,12 +10,14 @@ const statusClass = (status) => `status-pill status-${String(status || '').toLow
 export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState(null);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   const jobCodes = useMemo(() => jobs.map((job) => job.jobCode), [jobs]);
   const recruiters = useMemo(() => Array.from(new Set(candidates.map((candidate) => candidate.recruiter).filter(Boolean))), [candidates]);
 
   const handleSaveCandidate = (candidate) => {
     setCandidates((prev) => {
+      // If candidate already exists, update it; otherwise add new
       const exists = prev.some((item) => item.id === candidate.id);
       return exists ? prev.map((item) => (item.id === candidate.id ? candidate : item)) : [...prev, candidate];
     });
@@ -23,6 +26,7 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   };
 
   const duplicateError = (candidate, excludeId) => {
+    // If duplicate found by email or name+phone, return error message
     if (hasDuplicateCandidate(candidate, candidates, excludeId)) {
       return 'Duplicate candidate detected. Candidate already exists by Email or Name + Phone Number.';
     }
@@ -30,9 +34,16 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   };
 
   const handleDeleteCandidate = (candidate) => {
+    // If user confirms deletion, remove candidate from list
     if (confirm(`Delete candidate ${candidate.name}?`)) {
       setCandidates((prev) => prev.filter((item) => item.id !== candidate.id));
     }
+  };
+
+  const handleBulkUpload = (fileArray) => {
+    // For now, show confirmation with file count (backend integration later)
+    alert(`${fileArray.length} CV file(s) uploaded successfully.\n\nNote: Files are stored in memory. Backend integration needed for permanent storage.`);
+    setShowBulkUpload(false);
   };
 
   const columns = [
@@ -89,7 +100,7 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
           <p>Main candidate-level data source. Job Code links candidates to Job Tracking.</p>
         </div>
         <div className="hero-actions">
-          <button type="button" className="excel-button secondary" onClick={() => alert('Bulk upload is a UI placeholder for future Excel/CV import integration.')}>
+          <button type="button" className="excel-button secondary" onClick={() => setShowBulkUpload(true)}>
             <FileUp size={16} /> Bulk Upload
           </button>
           <button type="button" className="excel-button primary" onClick={() => { setEditingCandidate(null); setShowForm(true); }}>
@@ -112,6 +123,13 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
           duplicateError={duplicateError}
           onSubmit={handleSaveCandidate}
           onClose={() => { setShowForm(false); setEditingCandidate(null); }}
+        />
+      )}
+
+      {showBulkUpload && (
+        <BulkCVUpload
+          onUpload={handleBulkUpload}
+          onClose={() => setShowBulkUpload(false)}
         />
       )}
     </div>
