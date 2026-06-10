@@ -10,6 +10,7 @@
     "build": "tspc",
     "// === MIGRATION & INIT DB ===": "",
     "init-db": "ts-node utilities/generate-init-sql.ts",
+    "run-init-db": "ts-node utilities/run-init-sql.ts",
     "// === TESTING ===": "",
     "test": "ts-mocha -p tsconfig.json --paths --timeout 30000 --exit 'test/**/*.test.ts'",
     "test:file": "ts-mocha -p tsconfig.json --paths --timeout 30000 --exit",
