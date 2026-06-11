@@ -56,10 +56,11 @@ async function createValidationSheet(pool: PoolClient): Promise<ExcelJS.Workbook
 
   // PIC
   const picRes = await pool.query<{ user_name: string }>(
-    `SELECT DISTINCT user_name 
-     FROM "user" 
-     WHERE user_name IS NOT NULL AND user_name <> '' 
-     ORDER BY user_name`
+    `SELECT DISTINCT u.user_name 
+     FROM "user" u
+     JOIN candidate c ON u.user_id = c.recruiter
+     WHERE u.user_name IS NOT NULL AND u.user_name <> '' 
+     ORDER BY u.user_name`
   );
   const pics = picRes.rows.length > 0 
     ? picRes.rows.map((r) => r.user_name) 

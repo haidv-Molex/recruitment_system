@@ -47,6 +47,18 @@ describe("createValidationSheet Service", () => {
       [testSiteCode, "Test Site"]
     );
 
+    const testUserName = "TEST_PIC_" + Date.now();
+    const userRes = await client.query<{ user_id: number }>(
+      `INSERT INTO "user" (user_name, user_account, user_password, user_role) VALUES ($1, $2, $3, $4) RETURNING user_id`,
+      [testUserName, "test_pic_acc_" + Date.now(), "pass", "hr"]
+    );
+    const userId = userRes.rows[0].user_id;
+
+    await client.query(
+      `INSERT INTO candidate (candidate_name, status, recruiter) VALUES ($1, $2, $3)`,
+      ["Test Candidate", "CV Sent", userId]
+    );
+
     // Call service with our active transaction client
     const workbook = await createValidationSheet(client);
 
@@ -74,11 +86,13 @@ describe("createValidationSheet Service", () => {
 
     // Check that our seeded data is present in the columns
     const deptColIdx = headers.indexOf("Dept") + 1;
+    const picColIdx = headers.indexOf("PIC") + 1;
     const sourceColIdx = headers.indexOf("Source") + 1;
     const levelColIdx = headers.indexOf("EE Level") + 1;
     const siteColIdx = headers.indexOf("Data source") + 1;
 
     const deptValues: string[] = [];
+    const picValues: string[] = [];
     const sourceValues: string[] = [];
     const levelValues: string[] = [];
     const siteValues: string[] = [];
@@ -88,6 +102,9 @@ describe("createValidationSheet Service", () => {
       
       const deptVal = row.getCell(deptColIdx).text;
       if (deptVal) deptValues.push(deptVal);
+
+      const picVal = row.getCell(picColIdx).text;
+      if (picVal) picValues.push(picVal);
 
       const sourceVal = row.getCell(sourceColIdx).text;
       if (sourceVal) sourceValues.push(sourceVal);
@@ -100,6 +117,7 @@ describe("createValidationSheet Service", () => {
     }
 
     expect(deptValues).to.include(testDeptCode);
+    expect(picValues).to.include(testUserName);
     expect(sourceValues).to.include(testPlatformName);
     expect(levelValues).to.include(testLevelName);
     expect(siteValues).to.include(testSiteCode);
