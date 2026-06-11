@@ -2,6 +2,12 @@
 
 import ExcelJS from "exceljs";
 
+import {
+    applyDataStyle,
+    setupSheetHeader,
+} from "./sheetStyles";
+
+
 // ======================== TYPES ========================
 
 export interface CandidateRow {
@@ -97,31 +103,6 @@ const DB_FROM_JD: Record<string, string> = {
     recruiter: "recruiter",
     dl_idl: "sites",
 };
-
-// ======================== STYLES ========================
-
-const DATE_FMT = "mm/dd/yyyy";
-
-const HEADER_FONT: Partial<ExcelJS.Font> = {
-    name: "Calibri", size: 11, bold: true,
-};
-
-const DATA_FONT: Partial<ExcelJS.Font> = {
-    name: "Calibri", size: 11, bold: false,
-};
-
-const HEADER_FILL: ExcelJS.Fill = {
-    type: "pattern", pattern: "solid",
-    fgColor: { argb: "FFD9E1F2" },
-};
-
-const THIN_BORDER: Partial<ExcelJS.Borders> = {
-    top: { style: "thin" },
-    left: { style: "thin" },
-    bottom: { style: "thin" },
-    right: { style: "thin" },
-};
-
 // ======================== HELPERS ========================
 
 function toExcelValue(val: any): any {
@@ -156,6 +137,7 @@ function enrichCandidate(
  * Các trường auto (department, job_title, ee_level, project,
  * hiring_manager, recruiter, dl_idl) sẽ tự fill từ jd_list qua job_code.
  */
+
 export function createDatabaseSheet(
     workbook: ExcelJS.Workbook,
     input: DatabaseSheetInput
@@ -168,26 +150,8 @@ export function createDatabaseSheet(
         for (const jd of input.jd_list) jdLookup.set(jd.job_code, jd);
     }
 
-    // --- Column widths ---
-    FIELD_ORDER.forEach((f, i) => {
-        ws.getColumn(i + 1).width = f.width;
-    });
-
-    // --- Header row ---
-    const headerRow = ws.getRow(1);
-    FIELD_ORDER.forEach((f, i) => {
-        const cell = headerRow.getCell(i + 1);
-        cell.value = f.header;
-        cell.font = { ...HEADER_FONT };
-        cell.fill = { ...HEADER_FILL } as ExcelJS.Fill;
-        cell.border = { ...THIN_BORDER };
-        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    });
-    headerRow.height = 30;
-    headerRow.commit();
-
-    // --- Freeze header ---
-    ws.views = [{ state: "frozen", xSplit: 0, ySplit: 1 }];
+    // --- Header (dùng shared style) ---
+    setupSheetHeader(ws, FIELD_ORDER);
 
     // --- Data rows ---
     input.candidates.forEach((candidate, rowIdx) => {
@@ -198,14 +162,7 @@ export function createDatabaseSheet(
             const cell = row.getCell(colIdx + 1);
             const val = toExcelValue(enriched[f.key] ?? null);
             cell.value = val;
-            cell.font = { ...DATA_FONT };
-            cell.border = { ...THIN_BORDER };
-            cell.alignment = { vertical: "middle" };
-
-            // Date format
-            if (f.isDate && val instanceof Date) {
-                cell.numFmt = DATE_FMT;
-            }
+            applyDataStyle(cell, !!f.isDate);
         });
 
         row.commit();
