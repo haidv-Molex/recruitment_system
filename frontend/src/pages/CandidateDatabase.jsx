@@ -6,7 +6,8 @@ import { ExcelTable, formatDate } from '../components/ExcelTable';
 import { masterData } from '../services/mockData';
 import { ToastContainer } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import { createCandidateApi, searchCandidatesApi, deleteCandidateApi } from '../services/candidateApi';
+import { FileBadge, FilePreviewModal } from '../components/FilePreview';
+import { createCandidateApi, searchCandidatesApi, deleteCandidateApi, updateCandidateApi } from '../services/candidateApi';
 
 const statusClass = (status) => `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
@@ -40,6 +41,7 @@ const mapCandidateToRow = (c) => ({
   headhuntAgency: c.agency,
   targetedCompany: !!c.targetedCompany,
   targetedCompanyName: c.targetedCompany?.name || '',
+  file: c.file || null,
   // Keep API data for editing
   _apiData: c,
 });
@@ -51,6 +53,7 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const jobCodes = useMemo(() => jobs.map((job) => job.jobCode), [jobs]);
   const recruiters = useMemo(() => Array.from(new Set(candidates.map((c) => c.recruiter).filter(Boolean))), [candidates]);
@@ -74,18 +77,20 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   const handleSaveCandidate = async (formData) => {
     setSaving(true);
 
-    // If editing, local update for now (TODO: update API)
+    // If editing, call update API
     if (editingCandidate) {
-      setCandidates((prev) =>
-        prev.map((item) =>
-          item.id === editingCandidate.id
-            ? { ...item, name: formData.candidateName, email: formData.candidateEmail, phone: formData.candidatePhone, note: formData.note, status: formData.status }
-            : item
-        )
-      );
-      toast.success('Candidate updated (local).');
-      setShowForm(false);
-      setEditingCandidate(null);
+      const result = await updateCandidateApi(editingCandidate.id, formData);
+
+      if (result.success) {
+        toast.success(result.message || 'Candidate updated successfully.');
+        setShowForm(false);
+        setEditingCandidate(null);
+        // Reload from API to get fresh data (including file)
+        await loadCandidatesFromApi();
+      } else {
+        toast.error(result.message);
+      }
+
       setSaving(false);
       return;
     }
@@ -96,7 +101,7 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
     if (result.success) {
       toast.success(result.message || 'Candidate created successfully.');
       setShowForm(false);
-      // Reload from API to get fresh data
+      // Reload from API to get fresh data (including file)
       await loadCandidatesFromApi();
     } else {
       toast.error(result.message);
@@ -143,6 +148,18 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
       ),
     },
     { key: 'candidateCode', label: 'Code', width: 140 },
+    {
+      key: 'file',
+      label: 'CV File',
+      width: 160,
+      disableFilter: true,
+      render: (candidate) => (
+        <FileBadge
+          file={candidate.file}
+          onClick={() => setPreviewFile(candidate.file)}
+        />
+      ),
+    },
     { key: 'inputDate', label: 'Input Date', width: 130, render: (_, value) => formatDate(value) },
     { key: 'name', label: 'Candidate Name', width: 190 },
     { key: 'email', label: 'Email', width: 220 },
@@ -189,7 +206,7 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
           title="Candidate Database"
           rows={candidates}
           columns={columns}
-          defaultVisibleColumns={['actions', 'candidateCode', 'inputDate', 'name', 'email', 'phone', 'recruiter', 'jobCode', 'status', 'onboardingDate', 'offerSentDate', 'source', 'currentSalary', 'expectedSalary', 'note']}
+          defaultVisibleColumns={['actions', 'candidateCode', 'file', 'inputDate', 'name', 'email', 'phone', 'recruiter', 'jobCode', 'status', 'onboardingDate', 'offerSentDate', 'source', 'currentSalary', 'expectedSalary', 'note']}
         />
       )}
 
@@ -206,6 +223,13 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
         <BulkCVUpload
           onUpload={handleBulkUpload}
           onClose={() => setShowBulkUpload(false)}
+        />
+      )}
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
         />
       )}
     </div>

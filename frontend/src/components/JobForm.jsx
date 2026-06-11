@@ -5,12 +5,14 @@ import { searchSegmentsApi } from '../services/segmentApi';
 import { searchSitesApi } from '../services/siteApi';
 import { searchLevelsApi } from '../services/levelApi';
 import { fetchUsersApi } from '../services/userApi';
+import { FileLink, FilePreviewModal } from './FilePreview';
 
 const emptyJob = {
   jobCode: '',
   project: '',
   candidateRequired: 1,
   note: '',
+  requestDate: '',
   file: null,
   // Multi-select IDs
   departments: [],
@@ -24,6 +26,7 @@ const emptyJob = {
 
 export const JobForm = ({ job, onSubmit, onClose, saving }) => {
   const [formData, setFormData] = useState(emptyJob);
+  const [previewFile, setPreviewFile] = useState(null);
   const [error, setError] = useState('');
   const [loadingOptions, setLoadingOptions] = useState(true);
 
@@ -37,22 +40,35 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
   });
 
   useEffect(() => {
-  // If editing, populate form with job data; otherwise reset
   if (job) {
     setFormData({
       jobCode: job.code || job.jobCode || '',
       project: job.project || '',
       candidateRequired: job.candidateRequired || job.hcRequested || 1,
       note: job.note || '',
+      requestDate: job.requestDate ? job.requestDate.slice(0, 10) : '',
       file: null,
-      // If data is array of objects (from API), extract IDs; otherwise use empty array
-      departments: Array.isArray(job.departments) ? job.departments.map((d) => typeof d === 'object' ? d.id : d) : [],
-      segments: Array.isArray(job.segments) ? job.segments.map((s) => typeof s === 'object' ? s.id : s) : [],
-      sites: Array.isArray(job.sitesData || job.sites) ? (job.sitesData || job.sites).map((s) => typeof s === 'object' ? s.id : s) : [],
-      titles: Array.isArray(job.titles) ? job.titles.map((t) => typeof t === 'object' ? t.id : t) : [],
-      employeeLevels: Array.isArray(job.employeeLevels) ? job.employeeLevels.map((el) => typeof el === 'object' ? el.id : el) : [],
-      partners: Array.isArray(job.partners) ? job.partners.map((p) => typeof p === 'object' ? p.id : p) : [],
-      managers: Array.isArray(job.managers) ? job.managers.map((m) => typeof m === 'object' ? m.id : m) : [],
+      departments: Array.isArray(job.departments)
+        ? job.departments.map((d) => (typeof d === 'object' ? d.id : d))
+        : [],
+      segments: Array.isArray(job.segments)
+        ? job.segments.map((s) => (typeof s === 'object' ? s.id : s))
+        : [],
+      sites: Array.isArray(job.sitesData || job.sites)
+        ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])).map((s) => (typeof s === 'object' ? s.id : s))
+        : [],
+      titles: Array.isArray(job.titles)
+        ? job.titles.map((t) => (typeof t === 'object' ? t.id : t))
+        : [],
+      employeeLevels: Array.isArray(job.employeeLevels)
+        ? job.employeeLevels.map((el) => (typeof el === 'object' ? el.id : el))
+        : [],
+      partners: Array.isArray(job.partners)
+        ? job.partners.map((p) => (typeof p === 'object' ? p.id : p))
+        : [],
+      managers: Array.isArray(job.managers)
+        ? job.managers.map((m) => (typeof m === 'object' ? m.id : m))
+        : [],
     });
   } else {
     setFormData(emptyJob);
@@ -228,6 +244,10 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
               <input type="number" min="1" name="candidateRequired" value={formData.candidateRequired} onChange={handleChange} disabled={saving} />
             </label>
           </div>
+          <label>
+              Request Date
+              <input type="date" name="requestDate" value={formData.requestDate} onChange={handleChange} disabled={saving} />
+            </label>
 
           <label>
             Note
@@ -235,9 +255,19 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
           </label>
 
           <label>
-            JD File (optional)
-            <input style={styles.fileInput} type="file" onChange={handleFileChange} disabled={saving} accept=".pdf,.doc,.docx" />
-          </label>
+              JD File (optional)
+              {/* If job has existing file, show link */}
+              {job?.file && (
+                <FileLink
+                  file={job.file}
+                  onClick={() => setPreviewFile(job.file)}
+                />
+              )}
+              <input style={styles.fileInput} type="file" onChange={handleFileChange} disabled={saving} accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.png" />
+              {formData.file && (
+                <p style={styles.hint}>New file selected: {formData.file.name}</p>
+              )}
+            </label>
 
           {/* ═══ Linking Sections ═══ */}
           <p style={styles.sectionTitle}>🏬 Departments</p>
@@ -269,6 +299,13 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
           </div>
         </form>
       </div>
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };

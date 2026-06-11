@@ -40,7 +40,16 @@ const mapCandidate = (d) => ({
     id: d.reference.user_id,
     name: d.reference.user_name,
   } : null,
-  file: d.file || null,
+  
+    file: d.file
+        ? {
+            id: d.file.file_id,
+            path: d.file.file_path,
+            url: d.file.file_url,
+            name: d.file.file_path ? d.file.file_path.split('/').pop() : 'file',
+        }
+        : null,
+
 });
 
 export const createCandidateApi = async (formData) => {
@@ -310,5 +319,51 @@ export const updateCandidateApi = async (id, formData) => {
       return { success: false, message: 'Cannot connect to server.' };
     }
     return { success: false, message: err.message || 'An unexpected error occurred.' };
+  }
+};
+
+export const fetchAgenciesApi = async () => {
+  try {
+    const response = await apiClient.get('/candidate/agencies');
+    const data = response.data;
+
+    if (!data.result) {
+      return { success: false, agencies: [], message: data.message };
+    }
+
+    const agencies = Array.isArray(data.data) ? data.data : [];
+
+    return { success: true, agencies };
+  } catch (err) {
+    if (err.response && err.response.status === 404) {
+      return { success: true, agencies: [] };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, agencies: [], message: 'Cannot connect to server.' };
+    }
+    return { success: false, agencies: [], message: err.message };
+  }
+};
+
+export const fetchStatusesApi = async () => {
+  try {
+    const response = await apiClient.get('/candidate/statuses');
+    const data = response.data;
+
+    if (!data.result) {
+      return { success: false, statuses: [], message: data.message };
+    }
+
+    const statuses = Array.isArray(data.data) ? data.data : [];
+
+    return { success: true, statuses };
+  } catch (err) {
+    if (err.response && err.response.status === 404) {
+      return { success: true, statuses: [] };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, statuses: [], message: 'Cannot connect to server.' };
+    }
+    return { success: false, statuses: [], message: err.message };
   }
 };

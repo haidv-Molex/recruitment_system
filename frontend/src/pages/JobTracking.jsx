@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Edit2, Eye, Plus, Trash2, Users } from 'lucide-react';
+import { Edit2, Eye, FileUp, Plus, Trash2, Users } from 'lucide-react';
 import { ExcelTable, formatDate } from '../components/ExcelTable';
 import { JobForm } from '../components/JobForm';
 import { ToastContainer } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import { calculatePipelineForJob, masterData } from '../services/mockData';
-import { createJobApi, searchJobsApi } from '../services/jobApi';
+import { createJobApi, createJobExtendedApi, searchJobsApi, updateJobApi, deleteJobApi } from '../services/jobApi';
+import { FileBadge, FilePreviewModal } from '../components/FilePreview';
+import { JobExcelImport } from '../components/JobExcelImport';
 
 const statusClass = (status) => `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
@@ -23,7 +25,7 @@ const mapApiJobToRow = (j) => ({
   hiringManager: j.managers.map((m) => m.name).join(', '),
   hrbp: j.partners.map((p) => p.name).join(', '),
   recruiter: '',
-  myhrRequestDate: '',
+  myhrRequestDate: j.requestDate ? j.requestDate.slice(0, 10) : '',
   expectedOnboardDate: '',
   status: 'Searching',
   source: '',
@@ -31,7 +33,6 @@ const mapApiJobToRow = (j) => ({
   onboardDate: '',
   offerDate: '',
   note: j.note,
-  // Keep API data for editing
   departments: j.departments,
   segments: j.segments,
   sitesData: j.sites,
@@ -39,6 +40,7 @@ const mapApiJobToRow = (j) => ({
   employeeLevels: j.employeeLevels,
   partners: j.partners,
   managers: j.managers,
+  file: j.file,
 });
 
 export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
@@ -49,6 +51,8 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
   const [saving, setSaving] = useState(false);
   const [autoCalculate, setAutoCalculate] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [showExcelImport, setShowExcelImport] = useState(false);
 
   // Load jobs from API on mount
   const loadJobsFromApi = useCallback(async () => {
@@ -95,21 +99,23 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     });
   }, [jobs, candidates, autoCalculate]);
 
+  // Save job (create or update)
   const handleSaveJob = async (formData) => {
     setSaving(true);
 
-    // If editing existing job, use local update (TODO: replace with update API later)
+    // If editing existing job, call update API
     if (editingJob) {
-      setJobs((prev) =>
-        prev.map((item) =>
-          item.id === editingJob.id
-            ? { ...item, jobCode: formData.jobCode, project: formData.project, hcRequested: formData.candidateRequired, note: formData.note }
-            : item
-        )
-      );
-      toast.success('Job updated (local).');
-      setShowJobForm(false);
-      setEditingJob(null);
+      const result = await updateJobApi(editingJob.id, formData);
+
+      if (result.success) {
+        toast.success(result.message || 'Job updated successfully.');
+        setShowJobForm(false);
+        setEditingJob(null);
+        await loadJobsFromApi();
+      } else {
+        toast.error(result.message);
+      }
+
       setSaving(false);
       return;
     }
@@ -120,7 +126,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     if (result.success) {
       toast.success(result.message || 'Job created successfully.');
       setShowJobForm(false);
-      // Reload jobs from API to get fresh data from database
       await loadJobsFromApi();
     } else {
       toast.error(result.message);
@@ -129,16 +134,75 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     setSaving(false);
   };
 
-  const handleDeleteJob = (job) => {
-    const hasCandidates = candidates.some((candidate) => candidate.jobCode === job.jobCode);
-    if (hasCandidates) {
-      toast.warning('This job has linked candidates. Remove or move candidates before deleting.');
-      return;
+  // Delete job
+  const handleDeleteJob = async (job) => {
+    if (!confirm(`Delete job ${job.jobCode}?`)) return;
+
+    const result = await deleteJobApi(job.id);
+
+    if (result.success) {
+      toast.success(result.message || 'Job deleted.');
+      await loadJobsFromApi();
+    } else {
+      toast.error(result.message);
     }
-    if (confirm(`Delete job ${job.jobCode}?`)) {
-      setJobs((prev) => prev.filter((item) => item.id !== job.id));
-      toast.success(`Job ${job.jobCode} deleted.`);
-    }
+  };
+
+  // Import a single parsed job from Excel (use extended API to auto-create entities)
+  const handleImportJob = async (parsedJob) => {
+    // Separate items with ID (existing) vs without ID (new, need auto-create by name)
+    const splitByIdExists = (items) => {
+      const ids = [];
+      const names = [];
+      (items || []).forEach((item) => {
+        if (item.id !== null && item.id !== undefined) {
+          ids.push(item.id);
+        } else if (item.name) {
+          names.push(item.name);
+        }
+      });
+      return { ids, names };
+    };
+
+    const partners = splitByIdExists(parsedJob.partners);
+    const managers = splitByIdExists(parsedJob.managers);
+    const departments = splitByIdExists(parsedJob.departments);
+    const segments = splitByIdExists(parsedJob.segments);
+    const sites = splitByIdExists(parsedJob.sites);
+    const titles = splitByIdExists(parsedJob.titles);
+    const employeeLevels = splitByIdExists(parsedJob.employeeLevels);
+
+    const formData = {
+      jobCode: parsedJob.jobCode,
+      project: parsedJob.project,
+      candidateRequired: parsedJob.candidateRequired,
+      note: parsedJob.note || '',
+      requestDate: parsedJob.requestDate || '',
+      file: null,
+      // Existing IDs
+      partners: partners.ids,
+      departments: departments.ids,
+      segments: segments.ids,
+      sites: sites.ids,
+      titles: titles.ids,
+      managers: managers.ids,
+      employeeLevels: employeeLevels.ids,
+      // New names (backend auto-creates)
+      partnersName: partners.names,
+      managersName: managers.names,
+      departmentsName: departments.names,
+      segmentsName: segments.names,
+      sitesName: sites.names,
+      titlesName: titles.names,
+      employeeLevelsName: employeeLevels.names,
+    };
+
+    return await createJobExtendedApi(formData);
+  };
+
+  const handleExcelImportClose = () => {
+    setShowExcelImport(false);
+    loadJobsFromApi();
   };
 
   const columns = [
@@ -162,6 +226,18 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
       ),
     },
     { key: 'jobCode', label: 'Job Code', width: 130 },
+    {
+      key: 'file',
+      label: 'JD File',
+      width: 160,
+      disableFilter: true,
+      render: (job) => (
+        <FileBadge
+          file={job.file}
+          onClick={() => setPreviewFile(job.file)}
+        />
+      ),
+    },
     { key: 'project', label: 'Project', width: 170 },
     { key: 'department', label: 'Department', width: 120, filterOptions: masterData.department },
     { key: 'hcRequested', label: 'HC Requested', width: 120, align: 'right' },
@@ -215,6 +291,9 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
             <input type="checkbox" checked={autoCalculate} onChange={(event) => setAutoCalculate(event.target.checked)} />
             Auto-calc pipeline
           </label>
+          <button type="button" className="excel-button secondary" onClick={() => setShowExcelImport(true)}>
+            <FileUp size={16} /> Import Excel
+          </button>
           <button type="button" className="excel-button primary" onClick={() => { setEditingJob(null); setShowJobForm(true); }}>
             <Plus size={16} /> Add Job
           </button>
@@ -228,7 +307,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
           title="Job Tracking"
           rows={rows}
           columns={columns}
-          defaultVisibleColumns={['actions', 'jobCode', 'project', 'department', 'hcRequested', 'jobTitle', 'eeLevel', 'hiringManager', 'recruiter', 'status', 'cvSent', 'interview', 'offered', 'offerAccepted', 'onboarded', 'offerRejected', 'candidateName', 'note']}
+          defaultVisibleColumns={['actions', 'jobCode', 'file', 'project', 'department', 'hcRequested', 'jobTitle', 'eeLevel', 'hiringManager', 'recruiter', 'status', 'cvSent', 'interview', 'offered', 'offerAccepted', 'onboarded', 'offerRejected', 'candidateName', 'note']}
         />
       )}
 
@@ -259,6 +338,20 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
           saving={saving}
           onSubmit={handleSaveJob}
           onClose={() => { setShowJobForm(false); setEditingJob(null); }}
+        />
+      )}
+
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
+
+      {showExcelImport && (
+        <JobExcelImport
+          onImport={handleImportJob}
+          onClose={handleExcelImportClose}
         />
       )}
     </div>

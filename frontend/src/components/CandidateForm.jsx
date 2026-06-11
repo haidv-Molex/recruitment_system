@@ -4,6 +4,8 @@ import { searchJobsApi } from '../services/jobApi';
 import { searchPlatformsApi } from '../services/platformApi';
 import { searchCompaniesApi } from '../services/companyApi';
 import { fetchUsersApi } from '../services/userApi';
+import { FileLink, FilePreviewModal } from './FilePreview';
+import { fetchAgenciesApi, fetchStatusesApi } from '../services/candidateApi';
 
 const emptyCandidate = {
   candidateCode: '',
@@ -27,17 +29,13 @@ const emptyCandidate = {
   file: null,
 };
 
-const statusOptions = [
-  'CV Sent', 'INTERVIEW', 'Offered', 'Offer Accepted', 'Offer Rejected',
-  'Onboarded', 'Rejected', 'Withdrawn', 'On Hold', 'Searching',
-];
-
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
   const [formData, setFormData] = useState(emptyCandidate);
   const [error, setError] = useState('');
   const [loadingOptions, setLoadingOptions] = useState(true);
+  const [previewFile, setPreviewFile] = useState(null);
 
   // Dropdown options from APIs
   const [options, setOptions] = useState({
@@ -45,6 +43,8 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
     platforms: [],
     companies: [],
     users: [],
+    agencies: [],
+    statuses: [],
   });
 
   useEffect(() => {
@@ -83,11 +83,13 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
   const loadOptions = async () => {
     setLoadingOptions(true);
 
-    const [jobsRes, platformsRes, companiesRes, usersRes] = await Promise.all([
+    const [jobsRes, platformsRes, companiesRes, usersRes, agenciesRes, statusesRes] = await Promise.all([
       searchJobsApi({ page: 1, limit: 100 }),
       searchPlatformsApi({ page: 1, limit: 100 }),
       searchCompaniesApi({ page: 1, limit: 100 }),
       fetchUsersApi(),
+      fetchAgenciesApi(),
+      fetchStatusesApi(),
     ]);
 
     setOptions({
@@ -95,6 +97,8 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
       platforms: platformsRes.success ? platformsRes.platforms : [],
       companies: companiesRes.success ? companiesRes.companies : [],
       users: usersRes.success ? usersRes.users : [],
+      agencies: agenciesRes.success ? agenciesRes.agencies : [],
+      statuses: statusesRes.success ? statusesRes.statuses : [],
     });
 
     setLoadingOptions(false);
@@ -199,7 +203,8 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
             <label>
               Status
               <select name="status" value={formData.status} onChange={handleChange} style={selectStyle} disabled={saving}>
-                {statusOptions.map((s) => (
+                <option value="">Select Status</option>
+                {options.statuses.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
@@ -242,7 +247,12 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
             </label>
             <label>
               Agency
-              <input name="agency" value={formData.agency} onChange={handleChange} placeholder="e.g. Global Talent Hub" disabled={saving} />
+              <select name="agency" value={formData.agency} onChange={handleChange} style={selectStyle} disabled={saving}>
+                <option value="">Select Agency</option>
+                {options.agencies.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
             </label>
             <label>
               Current Salary
@@ -270,7 +280,17 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
             </label>
             <label>
               CV File (optional)
-              <input style={fileInputStyle} type="file" onChange={handleFileChange} disabled={saving} accept=".pdf,.doc,.docx,.jpg,.png" />
+              {/* If candidate has existing file, show link */}
+              {candidate?.file && (
+                <FileLink
+                  file={candidate.file}
+                  onClick={() => setPreviewFile(candidate.file)}
+                />
+              )}
+              <input style={fileInputStyle} type="file" onChange={handleFileChange} disabled={saving} accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.png" />
+              {formData.file && (
+                <p style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px' }}>New file selected: {formData.file.name}</p>
+              )}
             </label>
           </div>
 
@@ -287,6 +307,13 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
           </div>
         </form>
       </div>
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };

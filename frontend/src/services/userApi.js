@@ -51,37 +51,52 @@ export const createHRApi = async ({ username, account, password, description, de
   }
 };
 
-export const fetchUsersApi = async () => {
+export const fetchUsersApi = async ({ page = 1, limit = 100, search = '' } = {}) => {
   try {
-    const response = await apiClient.get('/user/list');
+    const params = { page, limit };
+    if (search.trim()) {
+      params.search = search.trim();
+    }
+
+    const response = await apiClient.get('/user/search', { params });
     const data = response.data;
 
     // If backend returns result: false, return empty array
     if (!data.result) {
-      return { success: false, users: [], message: data.message };
+      return { success: false, users: [], pagination: null, message: data.message };
     }
 
+    const list = Array.isArray(data.data) ? data.data : [];
+
     // Loop through backend user list and map to frontend format
-    const users = data.data.map((d) => ({
+    const users = list.map((d) => ({
       id: d.user_id,
       displayName: d.user_name,
-      account: d.user_account || '',
       description: d.user_description || '',
       role: d.user_role,
       departmentId: d.department_id,
+      createdAt: d.create_at,
+      updatedAt: d.update_at,
     }));
 
-    return { success: true, users };
+    const pagination = data.pagination
+      ? {
+          currentPage: data.pagination.current_page,
+          totalPages: data.pagination.total_pages,
+          totalItems: data.pagination.total_items,
+        }
+      : null;
+
+    return { success: true, users, pagination };
   } catch (err) {
-    // If API returns 404, it means endpoint doesn't exist yet
     if (err.response && err.response.status === 404) {
-      console.warn('GET /user/list not available yet.');
-      return { success: true, users: [] };
+      console.warn('GET /user/search not available yet.');
+      return { success: true, users: [], pagination: null };
     }
     if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
-      return { success: false, users: [], message: 'Cannot connect to server.' };
+      return { success: false, users: [], pagination: null, message: 'Cannot connect to server.' };
     }
-    return { success: false, users: [], message: err.message };
+    return { success: false, users: [], pagination: null, message: err.message };
   }
 };
 
@@ -109,6 +124,130 @@ export const getUserApi = async (id) => {
   } catch (err) {
     if (err.response) {
       return { success: false, message: err.response.data?.message || 'Get user failed.' };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
+    }
+    return { success: false, message: err.message || 'An unexpected error occurred.' };
+  }
+};
+
+export const createUserApi = async ({ username, description, departmentId }) => {
+  try {
+    const body = { username };
+
+    // If description is provided, include it
+    if (description) {
+      body.description = description;
+    }
+
+    // If departmentId is provided, include it
+    if (departmentId) {
+      body.departmentId = departmentId;
+    }
+
+    const response = await apiClient.post('/user', body);
+    const data = response.data;
+
+    if (!data.result) {
+      return { success: false, message: data.message || 'Create user failed.' };
+    }
+
+    const d = data.data;
+    const user = {
+      id: d.user_id,
+      displayName: d.user_name,
+      description: d.user_description || '',
+      role: d.user_role,
+      departmentId: d.department_id,
+      createdAt: d.create_at,
+    };
+
+    return { success: true, message: data.message, user };
+  } catch (err) {
+    if (err.response) {
+      return { success: false, message: err.response.data?.message || 'Create user failed.' };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
+    }
+    return { success: false, message: err.message || 'An unexpected error occurred.' };
+  }
+};
+
+export const updateUserApi = async (id, { username, description, departmentId }) => {
+  try {
+    const body = {};
+
+    // Only include fields that are provided
+    if (username) body.username = username;
+    if (description !== undefined) body.description = description;
+    if (departmentId !== undefined) body.departmentId = departmentId;
+
+    const response = await apiClient.put('/user', body, { params: { id } });
+    const data = response.data;
+
+    if (!data.result) {
+      return { success: false, message: data.message || 'Update user failed.' };
+    }
+
+    const d = data.data;
+    const user = {
+      id: d.user_id,
+      displayName: d.user_name,
+      description: d.user_description || '',
+      role: d.user_role,
+      departmentId: d.department_id,
+      createdAt: d.create_at,
+      updatedAt: d.update_at,
+    };
+
+    return { success: true, message: data.message, user };
+  } catch (err) {
+    if (err.response) {
+      return { success: false, message: err.response.data?.message || 'Update user failed.' };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
+    }
+    return { success: false, message: err.message || 'An unexpected error occurred.' };
+  }
+};
+
+export const deleteUserApi = async (id) => {
+  try {
+    const response = await apiClient.delete('/user', { params: { id } });
+    const data = response.data;
+
+    if (!data.result) {
+      return { success: false, message: data.message || 'Delete user failed.' };
+    }
+
+    return { success: true, message: data.message };
+  } catch (err) {
+    if (err.response) {
+      return { success: false, message: err.response.data?.message || 'Delete user failed.' };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
+    }
+    return { success: false, message: err.message || 'An unexpected error occurred.' };
+  }
+};
+
+export const changeUserRoleApi = async (id, role) => {
+  try {
+    const response = await apiClient.patch('/user/role', { role }, { params: { id } });
+    const data = response.data;
+
+    if (!data.result) {
+      return { success: false, message: data.message || 'Change role failed.' };
+    }
+
+    return { success: true, message: data.message };
+  } catch (err) {
+    if (err.response) {
+      return { success: false, message: err.response.data?.message || 'Change role failed.' };
     }
     if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
       return { success: false, message: 'Cannot connect to server.' };
