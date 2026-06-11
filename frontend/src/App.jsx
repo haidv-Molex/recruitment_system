@@ -9,6 +9,7 @@ import { MasterDataPage } from './pages/MasterData';
 import { JDLibraryPage } from './pages/JDLibraryPage';
 import { CompanyPage } from './pages/CompanyPage';
 import { DepartmentPage } from './pages/DepartmentPage';
+import { PlatformPage } from './pages/PlatformPage';
 import { AdminPage } from './pages/AdminPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
@@ -37,6 +38,7 @@ function App() {
                     <Route path="/jd-library" element={<JDLibraryPage jobs={jobs} />} />
                     <Route path="/companies" element={<CompanyPage />} />
                     <Route path="/departments" element={<DepartmentPage />} />
+                    <Route path="/platforms" element={<PlatformPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
 
                     {/* Admin route: requires admin role to access */}
