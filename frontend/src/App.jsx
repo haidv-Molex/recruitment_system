@@ -12,6 +12,7 @@ import { DepartmentPage } from './pages/DepartmentPage';
 import { PlatformPage } from './pages/PlatformPage';
 import { SegmentPage } from './pages/SegmentPage';
 import { SitePage } from './pages/SitePage';
+import { LevelPage } from './pages/LevelPage';
 import { AdminPage } from './pages/AdminPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
@@ -43,6 +44,7 @@ function App() {
                     <Route path="/platforms" element={<PlatformPage />} />
                     <Route path="/segments" element={<SegmentPage />} />
                     <Route path="/sites" element={<SitePage />} />
+                    <Route path="/levels" element={<LevelPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
 
                     {/* Admin route: requires admin role to access */}

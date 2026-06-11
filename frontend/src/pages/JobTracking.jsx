@@ -2,14 +2,19 @@ import React, { useMemo, useState } from 'react';
 import { Edit2, Eye, Plus, Trash2, Users } from 'lucide-react';
 import { ExcelTable, formatDate } from '../components/ExcelTable';
 import { JobForm } from '../components/JobForm';
+import { ToastContainer } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import { calculatePipelineForJob, masterData } from '../services/mockData';
+import { createJobApi } from '../services/jobApi';
 
 const statusClass = (status) => `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
 export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
+  const { toasts, removeToast, toast } = useToast();
   const [selectedJobCode, setSelectedJobCode] = useState('');
   const [editingJob, setEditingJob] = useState(null);
   const [showJobForm, setShowJobForm] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [autoCalculate, setAutoCalculate] = useState(true);
 
   const selectedJob = jobs.find((job) => job.jobCode === selectedJobCode);
@@ -41,23 +46,82 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     });
   }, [jobs, candidates, autoCalculate]);
 
-  const handleSaveJob = (job) => {
-    setJobs((prev) => {
-      const exists = prev.some((item) => item.id === job.id);
-      return exists ? prev.map((item) => (item.id === job.id ? job : item)) : [...prev, job];
-    });
-    setShowJobForm(false);
-    setEditingJob(null);
+  const handleSaveJob = async (formData) => {
+    setSaving(true);
+
+    // If editing existing job, use local update (TODO: replace with update API later)
+    if (editingJob) {
+      setJobs((prev) =>
+        prev.map((item) =>
+          item.id === editingJob.id
+            ? { ...item, jobCode: formData.jobCode, project: formData.project, hcRequested: formData.candidateRequired, note: formData.note }
+            : item
+        )
+      );
+      toast.success('Job updated (local).');
+      setShowJobForm(false);
+      setEditingJob(null);
+      setSaving(false);
+      return;
+    }
+
+    // Call API to create new job
+    const result = await createJobApi(formData);
+
+    if (result.success) {
+      const j = result.job;
+
+      // Map API response to local job format for the table
+      const newJob = {
+        id: j.id,
+        jobCode: j.code,
+        project: j.project,
+        department: j.departments.map((d) => d.code).join(', '),
+        hcRequested: j.candidateRequired,
+        jobTitle: j.titles.map((t) => t.name).join(', '),
+        eeLevel: j.employeeLevels.map((el) => el.name).join(', '),
+        sites: j.sites.map((s) => s.code).join(', '),
+        projectSegment: j.segments.map((sg) => sg.name).join(', '),
+        hiringManager: j.managers.map((m) => m.name).join(', '),
+        hrbp: j.partners.map((p) => p.name).join(', '),
+        recruiter: '',
+        myhrRequestDate: '',
+        expectedOnboardDate: '',
+        status: 'Searching',
+        source: '',
+        candidateName: '',
+        onboardDate: '',
+        offerDate: '',
+        note: j.note,
+        // Keep API data for editing
+        departments: j.departments,
+        segments: j.segments,
+        sitesData: j.sites,
+        titles: j.titles,
+        employeeLevels: j.employeeLevels,
+        partners: j.partners,
+        managers: j.managers,
+      };
+
+      setJobs((prev) => [...prev, newJob]);
+      toast.success(result.message || 'Job created successfully.');
+      setShowJobForm(false);
+    } else {
+      toast.error(result.message);
+    }
+
+    setSaving(false);
   };
 
   const handleDeleteJob = (job) => {
     const hasCandidates = candidates.some((candidate) => candidate.jobCode === job.jobCode);
     if (hasCandidates) {
-      alert('This job has linked candidates. Remove or move candidates before deleting the job.');
+      toast.warning('This job has linked candidates. Remove or move candidates before deleting.');
       return;
     }
     if (confirm(`Delete job ${job.jobCode}?`)) {
       setJobs((prev) => prev.filter((item) => item.id !== job.id));
+      toast.success(`Job ${job.jobCode} deleted.`);
     }
   };
 
@@ -122,6 +186,8 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
 
   return (
     <div className="page-stack">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
       <section className="hero-strip">
         <div>
           <p className="eyebrow">Module 1</p>
@@ -170,7 +236,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
       {showJobForm && (
         <JobForm
           job={editingJob}
-          jobs={jobs}
+          saving={saving}
           onSubmit={handleSaveJob}
           onClose={() => { setShowJobForm(false); setEditingJob(null); }}
         />
