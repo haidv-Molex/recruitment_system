@@ -10,6 +10,7 @@ type CreateJobData = {
   project: string;
   candidate_required: number;
   note?: string | null;
+  request_date?: string | Date | null;
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -32,6 +33,7 @@ async function create(
     project,
     candidate_required,
     note = null,
+    request_date = null,
     file = null,
     partners = [],
     departments = [],
@@ -59,11 +61,11 @@ async function create(
 
     // 2. Insert Job record
     const query = `
-      INSERT INTO job (job_code, project, candidate_required, note, file_id)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING job_id, job_code, project, candidate_required, note, create_at, update_at, file_id
+      INSERT INTO job (job_code, project, candidate_required, note, file_id, request_date)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING job_id, job_code, project, candidate_required, note, request_date, create_at, update_at, file_id
     `;
-    const result = await pool.query(query, [job_code, project, candidate_required, note, file_id]);
+    const result = await pool.query(query, [job_code, project, candidate_required, note, file_id, request_date]);
 
     if (result.rows.length === 0) {
       throw new AppError("Lỗi khi tạo công việc mới", 500);
@@ -209,6 +211,7 @@ async function create(
       project: jobRow.project,
       candidate_required: jobRow.candidate_required,
       note: jobRow.note,
+      request_date: jobRow.request_date,
       create_at: jobRow.create_at,
       update_at: jobRow.update_at,
       file: fileInfo,

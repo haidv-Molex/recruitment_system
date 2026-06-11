@@ -63,6 +63,10 @@ const bodySchema = Joi.object({
     "number.min": "Số lượng ứng viên phải lớn hơn 0",
   }),
   note: Joi.string().max(5000).allow("", null).optional(),
+  request_date: Joi.date().iso().empty(["", "null"]).allow(null).optional().messages({
+    "date.format": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)",
+    "date.base": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"
+  }),
   partners: numberArray().optional(),
   departments: numberArray().optional(),
   segments: numberArray().optional(),
@@ -89,6 +93,7 @@ updateJobController.put(
       "project",
       "candidate_required",
       "note",
+      "request_date",
       "partners",
       "departments",
       "segments",

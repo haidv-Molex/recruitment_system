@@ -100,6 +100,7 @@ describe("JobController API", () => {
       project: "Project X",
       candidate_required: 5,
       note: "Urgent",
+      request_date: new Date("2026-06-11"),
       create_at: new Date(),
       update_at: new Date(),
       file_id: 2,
@@ -121,6 +122,7 @@ describe("JobController API", () => {
         project: "Project X",
         candidate_required: "5",
         note: "Urgent",
+        request_date: "2026-06-11",
         partners: "[1, 2]",
         departments: "3,4"
       })
@@ -134,6 +136,7 @@ describe("JobController API", () => {
         message: "Tạo công việc thành công",
         data: {
           ...mockJob,
+          request_date: mockJob.request_date.toISOString(),
           create_at: mockJob.create_at.toISOString(),
           update_at: mockJob.update_at.toISOString()
         }
@@ -144,6 +147,7 @@ describe("JobController API", () => {
     expectLocal(args.job_code).to.equal("JOB001");
     expectLocal(args.project).to.equal("Project X");
     expectLocal(args.candidate_required).to.equal(5);
+    expectLocal(args.request_date.toISOString().slice(0, 10)).to.equal("2026-06-11");
     expectLocal(args.partners).to.deep.equal([1, 2]);
     expectLocal(args.departments).to.deep.equal([3, 4]);
     expectLocal(args.file).to.not.be.null;
@@ -238,6 +242,7 @@ describe("JobController API", () => {
       project: "Project X",
       candidate_required: 5,
       note: "Urgent",
+      request_date: new Date("2026-06-12"),
       create_at: new Date(),
       update_at: new Date(),
       file_id: null,
@@ -251,19 +256,23 @@ describe("JobController API", () => {
       .put("/job")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withQueryParams({ id: 1 })
-      .withMultiPartFormData({ job_code: "JOB001_NEW" })
+      .withMultiPartFormData({ job_code: "JOB001_NEW", request_date: "2026-06-12" })
       .expectStatus(200)
       .expectJson({
         result: true,
         message: "Cập nhật thông tin công việc thành công",
         data: {
           ...mockJob,
+          request_date: mockJob.request_date.toISOString(),
           create_at: mockJob.create_at.toISOString(),
           update_at: mockJob.update_at.toISOString()
         }
       });
 
-    expectLocal(updateStub.calledOnceWith(1, { job_code: "JOB001_NEW" })).to.be.true;
+    expectLocal(updateStub.calledOnce).to.be.true;
+    const updateArgs = updateStub.firstCall.args[1];
+    expectLocal(updateArgs.job_code).to.equal("JOB001_NEW");
+    expectLocal(new Date(updateArgs.request_date).toISOString().slice(0, 10)).to.equal("2026-06-12");
   });
 
   it("DELETE /job - should delete job successfully", async () => {

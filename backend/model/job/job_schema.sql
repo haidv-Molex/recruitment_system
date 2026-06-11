@@ -4,6 +4,7 @@ CREATE TABLE job (
     project VARCHAR(255) NOT NULL,
     candidate_required INT NOT NULL,
     note TEXT,
+    request_date DATE,
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     file_id INT,
