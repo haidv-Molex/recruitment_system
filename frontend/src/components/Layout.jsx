@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Database, FileSpreadsheet, Table2, LogOut, User, Shield, FolderOpen, Building2, Layers, Globe } from 'lucide-react';
+import { Database, FileSpreadsheet, Table2, LogOut, User, Shield, FolderOpen, Building2, Layers, Globe, LayoutGrid } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Layout = ({ children }) => {
@@ -27,6 +27,7 @@ export const Layout = ({ children }) => {
     { path: '/companies', label: 'Companies', icon: Building2 },
     { path: '/departments', label: 'Departments', icon: Layers },
     { path: '/platforms', label: 'Platforms', icon: Globe },
+    { path: '/segments', label: 'Segments', icon: LayoutGrid },
     { path: '/master-data', label: 'Master Data', icon: FileSpreadsheet },
   ];
 
