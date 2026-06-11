@@ -37,26 +37,27 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
   });
 
   useEffect(() => {
-    // If editing, populate form with job data; otherwise reset
-    if (job) {
-      setFormData({
-        jobCode: job.code || job.jobCode || '',
-        project: job.project || '',
-        candidateRequired: job.candidateRequired || job.hcRequested || 1,
-        note: job.note || '',
-        file: null,
-        departments: job.departments?.map((d) => d.id) || [],
-        segments: job.segments?.map((s) => s.id) || [],
-        sites: job.sites?.map((s) => s.id) || [],
-        titles: job.titles?.map((t) => t.id) || [],
-        employeeLevels: job.employeeLevels?.map((el) => el.id) || [],
-        partners: job.partners?.map((p) => p.id) || [],
-        managers: job.managers?.map((m) => m.id) || [],
-      });
-    } else {
-      setFormData(emptyJob);
-    }
-  }, [job]);
+  // If editing, populate form with job data; otherwise reset
+  if (job) {
+    setFormData({
+      jobCode: job.code || job.jobCode || '',
+      project: job.project || '',
+      candidateRequired: job.candidateRequired || job.hcRequested || 1,
+      note: job.note || '',
+      file: null,
+      // If data is array of objects (from API), extract IDs; otherwise use empty array
+      departments: Array.isArray(job.departments) ? job.departments.map((d) => typeof d === 'object' ? d.id : d) : [],
+      segments: Array.isArray(job.segments) ? job.segments.map((s) => typeof s === 'object' ? s.id : s) : [],
+      sites: Array.isArray(job.sitesData || job.sites) ? (job.sitesData || job.sites).map((s) => typeof s === 'object' ? s.id : s) : [],
+      titles: Array.isArray(job.titles) ? job.titles.map((t) => typeof t === 'object' ? t.id : t) : [],
+      employeeLevels: Array.isArray(job.employeeLevels) ? job.employeeLevels.map((el) => typeof el === 'object' ? el.id : el) : [],
+      partners: Array.isArray(job.partners) ? job.partners.map((p) => typeof p === 'object' ? p.id : p) : [],
+      managers: Array.isArray(job.managers) ? job.managers.map((m) => typeof m === 'object' ? m.id : m) : [],
+    });
+  } else {
+    setFormData(emptyJob);
+  }
+}, [job]);
 
   useEffect(() => {
     loadOptions();
@@ -99,15 +100,14 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
 
   // Toggle checkbox for multi-select fields
   const toggleSelection = (field, id) => {
-    setFormData((prev) => {
-      const current = prev[field];
-      // If already selected, remove; otherwise add
-      if (current.includes(id)) {
-        return { ...prev, [field]: current.filter((v) => v !== id) };
-      }
-      return { ...prev, [field]: [...current, id] };
-    });
-  };
+  setFormData((prev) => {
+    const current = prev[field];
+    const updated = current.includes(id)
+      ? current.filter((v) => v !== id)
+      : [...current, id];
+    return { ...prev, [field]: updated };
+  });
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();

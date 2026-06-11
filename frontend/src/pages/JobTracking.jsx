@@ -1,13 +1,45 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Edit2, Eye, Plus, Trash2, Users } from 'lucide-react';
 import { ExcelTable, formatDate } from '../components/ExcelTable';
 import { JobForm } from '../components/JobForm';
 import { ToastContainer } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import { calculatePipelineForJob, masterData } from '../services/mockData';
-import { createJobApi } from '../services/jobApi';
+import { createJobApi, searchJobsApi } from '../services/jobApi';
 
 const statusClass = (status) => `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
+
+// Map API job to local table format
+const mapApiJobToRow = (j) => ({
+  id: j.id,
+  jobCode: j.code,
+  project: j.project,
+  department: j.departments.map((d) => d.code).join(', '),
+  hcRequested: j.candidateRequired,
+  jobTitle: j.titles.map((t) => t.name).join(', '),
+  eeLevel: j.employeeLevels.map((el) => el.name).join(', '),
+  sites: j.sites.map((s) => s.code).join(', '),
+  projectSegment: j.segments.map((sg) => sg.name).join(', '),
+  hiringManager: j.managers.map((m) => m.name).join(', '),
+  hrbp: j.partners.map((p) => p.name).join(', '),
+  recruiter: '',
+  myhrRequestDate: '',
+  expectedOnboardDate: '',
+  status: 'Searching',
+  source: '',
+  candidateName: '',
+  onboardDate: '',
+  offerDate: '',
+  note: j.note,
+  // Keep API data for editing
+  departments: j.departments,
+  segments: j.segments,
+  sitesData: j.sites,
+  titles: j.titles,
+  employeeLevels: j.employeeLevels,
+  partners: j.partners,
+  managers: j.managers,
+});
 
 export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
   const { toasts, removeToast, toast } = useToast();
@@ -16,6 +48,23 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
   const [showJobForm, setShowJobForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [autoCalculate, setAutoCalculate] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  // Load jobs from API on mount
+  const loadJobsFromApi = useCallback(async () => {
+    setLoading(true);
+    const result = await searchJobsApi({ page: 1, limit: 100 });
+
+    if (result.success && result.jobs.length > 0) {
+      setJobs(result.jobs.map(mapApiJobToRow));
+    }
+
+    setLoading(false);
+  }, [setJobs]);
+
+  useEffect(() => {
+    loadJobsFromApi();
+  }, []);
 
   const selectedJob = jobs.find((job) => job.jobCode === selectedJobCode);
   const selectedCandidates = selectedJobCode
@@ -69,43 +118,10 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     const result = await createJobApi(formData);
 
     if (result.success) {
-      const j = result.job;
-
-      // Map API response to local job format for the table
-      const newJob = {
-        id: j.id,
-        jobCode: j.code,
-        project: j.project,
-        department: j.departments.map((d) => d.code).join(', '),
-        hcRequested: j.candidateRequired,
-        jobTitle: j.titles.map((t) => t.name).join(', '),
-        eeLevel: j.employeeLevels.map((el) => el.name).join(', '),
-        sites: j.sites.map((s) => s.code).join(', '),
-        projectSegment: j.segments.map((sg) => sg.name).join(', '),
-        hiringManager: j.managers.map((m) => m.name).join(', '),
-        hrbp: j.partners.map((p) => p.name).join(', '),
-        recruiter: '',
-        myhrRequestDate: '',
-        expectedOnboardDate: '',
-        status: 'Searching',
-        source: '',
-        candidateName: '',
-        onboardDate: '',
-        offerDate: '',
-        note: j.note,
-        // Keep API data for editing
-        departments: j.departments,
-        segments: j.segments,
-        sitesData: j.sites,
-        titles: j.titles,
-        employeeLevels: j.employeeLevels,
-        partners: j.partners,
-        managers: j.managers,
-      };
-
-      setJobs((prev) => [...prev, newJob]);
       toast.success(result.message || 'Job created successfully.');
       setShowJobForm(false);
+      // Reload jobs from API to get fresh data from database
+      await loadJobsFromApi();
     } else {
       toast.error(result.message);
     }
@@ -205,12 +221,16 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
         </div>
       </section>
 
-      <ExcelTable
-        title="Job Tracking"
-        rows={rows}
-        columns={columns}
-        defaultVisibleColumns={['actions', 'jobCode', 'project', 'department', 'hcRequested', 'jobTitle', 'eeLevel', 'hiringManager', 'recruiter', 'status', 'cvSent', 'interview', 'offered', 'offerAccepted', 'onboarded', 'offerRejected', 'candidateName', 'note']}
-      />
+      {loading ? (
+        <p style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Loading jobs from database...</p>
+      ) : (
+        <ExcelTable
+          title="Job Tracking"
+          rows={rows}
+          columns={columns}
+          defaultVisibleColumns={['actions', 'jobCode', 'project', 'department', 'hcRequested', 'jobTitle', 'eeLevel', 'hiringManager', 'recruiter', 'status', 'cvSent', 'interview', 'offered', 'offerAccepted', 'onboarded', 'offerRejected', 'candidateName', 'note']}
+        />
+      )}
 
       {selectedJobCode && (
         <section className="linked-panel">

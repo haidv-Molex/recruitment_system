@@ -1,258 +1,289 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { masterData } from '../services/mockData';
+import { searchJobsApi } from '../services/jobApi';
+import { searchPlatformsApi } from '../services/platformApi';
+import { searchCompaniesApi } from '../services/companyApi';
+import { fetchUsersApi } from '../services/userApi';
 
 const emptyCandidate = {
-  inputDate: new Date().toISOString().slice(0, 10),
-  department: '',
-  name: '',
-  email: '',
-  phone: '',
-  recruiter: '',
-  jobCode: '',
-  jobTitle: '',
-  eeLevel: '',
-  project: '',
-  hiringManager: '',
-  dlIdl: 'IDL',
-  status: 'CV Sent',
-  onboardingDate: '',
-  offerSentDate: '',
-  source: '',
-  employeeId: '',
-  referrerName: '',
-  referrerDepartment: '',
-  note: '',
+  candidateCode: '',
+  candidateName: '',
+  candidateEmail: '',
+  candidatePhone: '',
+  agency: '',
+  offerDate: '',
+  onboardDate: '',
+  expectedOnboardDate: '',
+  feedbackDate: '',
   currentSalary: '',
   expectedSalary: '',
-  candidateResultFeedbackDate: '',
-  headhuntAgency: '',
-  targetedCompany: false,
-  targetedCompanyName: '',
+  status: 'CV Sent',
+  note: '',
+  platformId: '',
+  recruiterId: '',
+  jobId: '',
+  targetedCompanyId: '',
+  referenceId: '',
+  file: null,
 };
+
+const statusOptions = [
+  'CV Sent', 'INTERVIEW', 'Offered', 'Offer Accepted', 'Offer Rejected',
+  'Onboarded', 'Rejected', 'Withdrawn', 'On Hold', 'Searching',
+];
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const CandidateForm = ({ candidate, jobs, onSubmit, onClose, duplicateError }) => {
+export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
   const [formData, setFormData] = useState(emptyCandidate);
   const [error, setError] = useState('');
+  const [loadingOptions, setLoadingOptions] = useState(true);
+
+  // Dropdown options from APIs
+  const [options, setOptions] = useState({
+    jobs: [],
+    platforms: [],
+    companies: [],
+    users: [],
+  });
 
   useEffect(() => {
-    setFormData(candidate ? { ...emptyCandidate, ...candidate } : emptyCandidate);
+    // If editing, populate form with candidate data; otherwise reset
+    if (candidate) {
+      setFormData({
+        candidateCode: candidate.code || candidate.candidateCode || '',
+        candidateName: candidate.name || candidate.candidateName || '',
+        candidateEmail: candidate.email || candidate.candidateEmail || '',
+        candidatePhone: candidate.phone || candidate.candidatePhone || '',
+        agency: candidate.agency || '',
+        offerDate: candidate.offerDate ? candidate.offerDate.slice(0, 10) : '',
+        onboardDate: candidate.onboardDate ? candidate.onboardDate.slice(0, 10) : '',
+        expectedOnboardDate: candidate.expectedOnboardDate ? candidate.expectedOnboardDate.slice(0, 10) : '',
+        feedbackDate: candidate.feedbackDate ? candidate.feedbackDate.slice(0, 10) : '',
+        currentSalary: candidate.currentSalary || '',
+        expectedSalary: candidate.expectedSalary || '',
+        status: candidate.status || 'CV Sent',
+        note: candidate.note || '',
+        platformId: candidate.platform?.id || '',
+        recruiterId: candidate.recruiter?.id || '',
+        jobId: candidate.job?.id || '',
+        targetedCompanyId: candidate.targetedCompany?.id || '',
+        referenceId: candidate.reference?.id || '',
+        file: null,
+      });
+    } else {
+      setFormData(emptyCandidate);
+    }
   }, [candidate]);
 
-  const selectedJob = useMemo(
-    () => jobs.find((job) => job.jobCode === formData.jobCode),
-    [jobs, formData.jobCode]
-  );
+  useEffect(() => {
+    loadOptions();
+  }, []);
 
-  const handleChange = (event) => {
-    const { name, value, type, checked } = event.target;
-    const nextValue = type === 'checkbox' ? checked : value;
+  const loadOptions = async () => {
+    setLoadingOptions(true);
 
-    setFormData((prev) => {
-      const next = { ...prev, [name]: nextValue };
-      if (name === 'jobCode') {
-        const job = jobs.find((item) => item.jobCode === value);
-        if (job) {
-          next.department = job.department;
-          next.jobTitle = job.jobTitle;
-          next.eeLevel = job.eeLevel;
-          next.project = job.project;
-          next.hiringManager = job.hiringManager;
-          next.recruiter = job.recruiter;
-        }
-      }
-      return next;
+    const [jobsRes, platformsRes, companiesRes, usersRes] = await Promise.all([
+      searchJobsApi({ page: 1, limit: 100 }),
+      searchPlatformsApi({ page: 1, limit: 100 }),
+      searchCompaniesApi({ page: 1, limit: 100 }),
+      fetchUsersApi(),
+    ]);
+
+    setOptions({
+      jobs: jobsRes.success ? jobsRes.jobs : [],
+      platforms: platformsRes.success ? platformsRes.platforms : [],
+      companies: companiesRes.success ? companiesRes.companies : [],
+      users: usersRes.success ? usersRes.users : [],
     });
+
+    setLoadingOptions(false);
   };
 
-  const handlePhoneInput = (event) => {
-    const digitsOnly = event.target.value.replace(/\D/g, '');
-    setFormData((prev) => ({ ...prev, phone: digitsOnly }));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handlePhoneInput = (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '');
+    setFormData((prev) => ({ ...prev, candidatePhone: digitsOnly }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setFormData((prev) => ({ ...prev, file }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     setError('');
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.jobCode.trim()) {
-      setError('Name, Email, Phone Number and Job Code are required.');
+    // Validate required fields
+    if (!formData.candidateCode.trim()) {
+      setError('Candidate Code is required.');
       return;
     }
-
-    if (!emailRegex.test(formData.email)) {
+    if (!formData.candidateName.trim()) {
+      setError('Candidate Name is required.');
+      return;
+    }
+    if (formData.candidateEmail && !emailRegex.test(formData.candidateEmail)) {
       setError('Email format is invalid.');
       return;
     }
-
-    if (!/^\d+$/.test(formData.phone)) {
+    if (formData.candidatePhone && !/^\d+$/.test(formData.candidatePhone)) {
       setError('Phone number must contain numeric characters only.');
       return;
     }
 
-    if (!selectedJob) {
-      setError('Job Code must exist in Job Tracking.');
-      return;
-    }
+    onSubmit(formData);
+  };
 
-    const normalized = {
-      ...formData,
-      id: candidate?.id || `cand-${Date.now()}`,
-      currentSalary: formData.currentSalary === '' ? '' : Number(formData.currentSalary),
-      expectedSalary: formData.expectedSalary === '' ? '' : Number(formData.expectedSalary),
-    };
+  const selectStyle = {
+    width: '100%',
+    padding: '6px 8px',
+    fontSize: '13px',
+    border: '1px solid #d1d5db',
+    borderRadius: '4px',
+    background: '#fff',
+  };
 
-    const duplicateMessage = duplicateError?.(normalized, candidate?.id);
-    if (duplicateMessage) {
-      setError(duplicateMessage);
-      return;
-    }
-
-    onSubmit(normalized);
+  const fileInputStyle = {
+    width: '100%',
+    padding: '6px',
+    fontSize: '13px',
+    border: '1px solid #d1d5db',
+    borderRadius: '4px',
+    background: '#fff',
   };
 
   return (
     <div className="modal-backdrop">
-      <div className="excel-modal wide">
+      <div className="excel-modal wide" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <div className="modal-header">
           <h2>{candidate ? 'Edit Candidate' : 'Add Candidate'}</h2>
           <button type="button" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="excel-form">
+        <form onSubmit={handleSubmit} className="excel-form" style={{ overflowY: 'auto', flex: 1 }}>
           {error && <div className="form-error">{error}</div>}
+          {loadingOptions && <p style={{ fontSize: '12px', color: '#94a3b8' }}>Loading options from server...</p>}
 
           <div className="form-grid three">
             <label>
-              Input Date
-              <input type="date" name="inputDate" value={formData.inputDate} onChange={handleChange} />
+              Candidate Code *
+              <input name="candidateCode" value={formData.candidateCode} onChange={handleChange} placeholder="e.g. CAND-001" disabled={saving} />
             </label>
             <label>
               Candidate Name *
-              <input name="name" value={formData.name} onChange={handleChange} />
+              <input name="candidateName" value={formData.candidateName} onChange={handleChange} placeholder="e.g. Nguyễn Văn A" disabled={saving} />
             </label>
             <label>
-              Email *
-              <input type="email" name="email" value={formData.email} onChange={handleChange} />
+              Email
+              <input type="email" name="candidateEmail" value={formData.candidateEmail} onChange={handleChange} placeholder="e.g. email@example.com" disabled={saving} />
             </label>
             <label>
-              Phone Number *
-              <input type="tel" name="phone" value={formData.phone} onChange={handlePhoneInput} placeholder="Numeric only" />
+              Phone
+              <input type="tel" name="candidatePhone" value={formData.candidatePhone} onChange={handlePhoneInput} placeholder="Numeric only" disabled={saving} />
             </label>
             <label>
-              Job Code *
-              <select name="jobCode" value={formData.jobCode} onChange={handleChange}>
-                <option value="">Select Job Code</option>
-                {jobs.map((job) => <option key={job.jobCode} value={job.jobCode}>{job.jobCode}</option>)}
-              </select>
-            </label>
-            <label>
-              Job Title
-              <input name="jobTitle" value={formData.jobTitle} onChange={handleChange} />
-            </label>
-            <label>
-              Department
-              <select name="department" value={formData.department} onChange={handleChange}>
-                <option value="">Select</option>
-                {masterData.department.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </label>
-            <label>
-              EE Level
-              <select name="eeLevel" value={formData.eeLevel} onChange={handleChange}>
-                <option value="">Select</option>
-                {masterData.eeLevel.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </label>
-            <label>
-              Project
-              <input name="project" value={formData.project} onChange={handleChange} />
-            </label>
-            <label>
-              Hiring Manager
-              <input name="hiringManager" value={formData.hiringManager} onChange={handleChange} />
-            </label>
-            <label>
-              Recruiter
-              <input name="recruiter" value={formData.recruiter} onChange={handleChange} />
-            </label>
-            <label>
-              DL/IDL
-              <select name="dlIdl" value={formData.dlIdl} onChange={handleChange}>
-                {masterData.dlIdl.map((item) => <option key={item} value={item}>{item}</option>)}
+              Job *
+              <select name="jobId" value={formData.jobId} onChange={handleChange} style={selectStyle} disabled={saving}>
+                <option value="">Select Job</option>
+                {options.jobs.map((j) => (
+                  <option key={j.id} value={j.id}>{j.code} — {j.project}</option>
+                ))}
               </select>
             </label>
             <label>
               Status
-              <select name="status" value={formData.status} onChange={handleChange}>
-                {masterData.status.map((item) => <option key={item} value={item}>{item}</option>)}
+              <select name="status" value={formData.status} onChange={handleChange} style={selectStyle} disabled={saving}>
+                {statusOptions.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
             </label>
             <label>
-              Source
-              <select name="source" value={formData.source} onChange={handleChange}>
-                <option value="">Select</option>
-                {masterData.source.map((item) => <option key={item} value={item}>{item}</option>)}
+              Platform (Source)
+              <select name="platformId" value={formData.platformId} onChange={handleChange} style={selectStyle} disabled={saving}>
+                <option value="">Select Platform</option>
+                {options.platforms.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
               </select>
             </label>
             <label>
-              Offer Sent Date
-              <input type="date" name="offerSentDate" value={formData.offerSentDate} onChange={handleChange} />
-            </label>
-            <label>
-              Onboarding Date
-              <input type="date" name="onboardingDate" value={formData.onboardingDate} onChange={handleChange} />
-            </label>
-            <label>
-              Employee ID
-              <input name="employeeId" value={formData.employeeId} onChange={handleChange} />
-            </label>
-            <label>
-              Referrer Name
-              <input name="referrerName" value={formData.referrerName} onChange={handleChange} />
-            </label>
-            <label>
-              Referrer Department
-              <input name="referrerDepartment" value={formData.referrerDepartment} onChange={handleChange} />
-            </label>
-            <label>
-              Current Salary (million VND)
-              <input type="number" name="currentSalary" value={formData.currentSalary} onChange={handleChange} />
-            </label>
-            <label>
-              Expected Salary (million VND)
-              <input type="number" name="expectedSalary" value={formData.expectedSalary} onChange={handleChange} />
-            </label>
-            <label>
-              Result Feedback Date
-              <input type="date" name="candidateResultFeedbackDate" value={formData.candidateResultFeedbackDate} onChange={handleChange} />
-            </label>
-            <label>
-              Headhunt Agency
-              <select name="headhuntAgency" value={formData.headhuntAgency} onChange={handleChange}>
-                <option value="">None</option>
-                {masterData.headhuntAgency.map((item) => <option key={item} value={item}>{item}</option>)}
+              Recruiter
+              <select name="recruiterId" value={formData.recruiterId} onChange={handleChange} style={selectStyle} disabled={saving}>
+                <option value="">Select Recruiter</option>
+                {options.users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.displayName} ({u.role})</option>
+                ))}
               </select>
             </label>
-            <label className="checkbox-label">
-              <input type="checkbox" name="targetedCompany" checked={formData.targetedCompany} onChange={handleChange} />
+            <label>
               Targeted Company
+              <select name="targetedCompanyId" value={formData.targetedCompanyId} onChange={handleChange} style={selectStyle} disabled={saving}>
+                <option value="">Select Company</option>
+                {options.companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </label>
             <label>
-              Targeted Company Name
-              <input name="targetedCompanyName" value={formData.targetedCompanyName} onChange={handleChange} />
+              Reference (User)
+              <select name="referenceId" value={formData.referenceId} onChange={handleChange} style={selectStyle} disabled={saving}>
+                <option value="">None</option>
+                {options.users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.displayName}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Agency
+              <input name="agency" value={formData.agency} onChange={handleChange} placeholder="e.g. Global Talent Hub" disabled={saving} />
+            </label>
+            <label>
+              Current Salary
+              <input name="currentSalary" value={formData.currentSalary} onChange={handleChange} placeholder="e.g. 2200 USD" disabled={saving} />
+            </label>
+            <label>
+              Expected Salary
+              <input name="expectedSalary" value={formData.expectedSalary} onChange={handleChange} placeholder="e.g. 2800 USD" disabled={saving} />
+            </label>
+            <label>
+              Offer Date
+              <input type="date" name="offerDate" value={formData.offerDate} onChange={handleChange} disabled={saving} />
+            </label>
+            <label>
+              Onboard Date
+              <input type="date" name="onboardDate" value={formData.onboardDate} onChange={handleChange} disabled={saving} />
+            </label>
+            <label>
+              Expected Onboard Date
+              <input type="date" name="expectedOnboardDate" value={formData.expectedOnboardDate} onChange={handleChange} disabled={saving} />
+            </label>
+            <label>
+              Feedback Date
+              <input type="date" name="feedbackDate" value={formData.feedbackDate} onChange={handleChange} disabled={saving} />
+            </label>
+            <label>
+              CV File (optional)
+              <input style={fileInputStyle} type="file" onChange={handleFileChange} disabled={saving} accept=".pdf,.doc,.docx,.jpg,.png" />
             </label>
           </div>
 
           <label>
             Note
-            <textarea name="note" value={formData.note} onChange={handleChange} rows={3} />
+            <textarea name="note" value={formData.note} onChange={handleChange} rows={3} disabled={saving} />
           </label>
 
           <div className="modal-actions">
             <button type="button" className="excel-button secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="excel-button primary">Save Candidate</button>
+            <button type="submit" className="excel-button primary" disabled={saving}>
+              {saving ? 'Saving...' : (candidate ? 'Save Candidate' : 'Create Candidate')}
+            </button>
           </div>
         </form>
       </div>

@@ -9,17 +9,23 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor: attach token to every request
+// Request interceptor: attach token + handle FormData
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('authToken');
   // If token exists, add Authorization header
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // If body is FormData, remove Content-Type so axios auto-sets multipart boundary
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
+
   return config;
 });
 
-// Response interceptor: handle 401 (token expired or invalid)
+// Response interceptor: handle 401 (token expired)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -100,9 +100,8 @@ export const createJobApi = async (formData) => {
       formData.employeeLevels.forEach((id) => fd.append('employee_levels', String(id)));
     }
 
-    const response = await apiClient.post('/job', fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    // Do NOT set Content-Type manually — api.js interceptor handles it
+    const response = await apiClient.post('/job', fd);
     const body = response.data;
 
     if (!body.result) {
