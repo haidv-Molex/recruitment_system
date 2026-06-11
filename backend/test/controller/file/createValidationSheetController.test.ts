@@ -9,12 +9,13 @@ import { pool } from "@middlewares/database";
 import jwt from "jsonwebtoken";
 import express from "express";
 import pactum from "pactum";
+import ExcelJS from "exceljs";
 import FileController from "@controller/file/_FileController";
 import FileService from "@services/file/_File";
 import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
-describe("parseJobSheetController API", () => {
+describe("createValidationSheetController API", () => {
   let expectLocal: any;
   let poolConnectStub: sinon.SinonStub;
   let mockClient: any;
@@ -25,7 +26,7 @@ describe("parseJobSheetController API", () => {
   // Stubs
   let findByIdStub: sinon.SinonStub;
   let checkUserBannedStub: sinon.SinonStub;
-  let parseJobSheetStub: sinon.SinonStub;
+  let createValidationSheetStub: sinon.SinonStub;
 
   before(async () => {
     const { expect: localExpect } = await new Function('specifier', 'return import(specifier)')('chai');
@@ -59,15 +60,15 @@ describe("parseJobSheetController API", () => {
     mockCurrentUser = { user_id: 1, user_name: "Test User", user_role: "hr" };
     findByIdStub = sinon.stub(User, "findById").resolves(mockCurrentUser);
 
-    // File parse stub
-    parseJobSheetStub = sinon.stub(FileService, "parseJobSheet");
+    // File Service stub
+    createValidationSheetStub = sinon.stub(FileService, "createValidationSheet");
   });
 
   afterEach(() => {
     poolConnectStub.restore();
     checkUserBannedStub.restore();
     findByIdStub.restore();
-    parseJobSheetStub.restore();
+    createValidationSheetStub.restore();
   });
 
   after((done) => {
@@ -83,91 +84,38 @@ describe("parseJobSheetController API", () => {
 
   it("should block request without authorization", async () => {
     await pactum.spec()
-      .post("/file/parse-job-sheet")
-      .withBody({ sheetData: [] })
+      .get("/file/validation-sheet")
       .expectStatus(401);
   });
 
-  it("should successfully parse and return sheet data via JSON body", async () => {
-    const mockOutput = [
-      {
-        job_code: "J001",
-        project: "DSS Talent Connector",
-        candidate_required: 1,
-        note: null,
-        file: null,
-        partners: [],
-        departments: [],
-        segments: [],
-        sites: [],
-        titles: [],
-        managers: [],
-        employee_levels: []
-      }
-    ];
-    parseJobSheetStub.resolves(mockOutput);
+  it("should successfully return validation Excel file with correct headers", async () => {
+    // Construct a mock workbook to be written to response stream
+    const mockWorkbook = new ExcelJS.Workbook();
+    const ws = mockWorkbook.addWorksheet("Data Validation");
+    ws.getCell("A1").value = "Dept";
+    ws.getCell("A2").value = "CA";
+
+    createValidationSheetStub.resolves(mockWorkbook);
 
     const token = generateTestToken(1, "Test User");
 
-    await pactum.spec()
-      .post("/file/parse-job-sheet")
+    const response = await pactum.spec()
+      .get("/file/validation-sheet")
       .withHeaders("Authorization", `Bearer ${token}`)
-      .withBody({
-        sheetData: [
-          {
-            "Job Code": "J001",
-            "Project": "DSS Talent Connector"
-          }
-        ]
-      })
       .expectStatus(200)
-      .expectJson({
-        result: true,
-        message: "Đọc và chuẩn hóa dữ liệu sheet thành công",
-        data: mockOutput
-      });
+      .expectHeader(
+        "content-type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+      .expectHeader(
+        "content-disposition",
+        'attachment; filename="excelTemplate.xlsx"'
+      );
 
-    expectLocal(parseJobSheetStub.calledOnce).to.be.true;
-    expectLocal(parseJobSheetStub.firstCall.args[0]).to.deep.equal([
-      {
-        "Job Code": "J001",
-        "Project": "DSS Talent Connector"
-      }
-    ]);
-  });
+    // Verify service was called once
+    expectLocal(createValidationSheetStub.calledOnce).to.be.true;
 
-  it("should reject request if input data is empty", async () => {
-    const token = generateTestToken(1, "Test User");
-
-    await pactum.spec()
-      .post("/file/parse-job-sheet")
-      .withHeaders("Authorization", `Bearer ${token}`)
-      .withBody({
-        sheetData: []
-      })
-      .expectStatus(400)
-      .expectJson({
-        result: false,
-        message: "Dữ liệu sheet rỗng hoặc không hợp lệ",
-        type: "AppError"
-      });
-  });
-
-  it("should reject invalid file format uploaded", async () => {
-    const token = generateTestToken(1, "Test User");
-
-    await pactum.spec()
-      .post("/file/parse-job-sheet")
-      .withHeaders("Authorization", `Bearer ${token}`)
-      .withMultiPartFormData("file", Buffer.from("dummy txt content"), {
-        filename: "test.txt",
-        contentType: "text/plain"
-      })
-      .expectStatus(400)
-      .expectJson({
-        result: false,
-        message: "Định dạng file không hỗ trợ. Chỉ hỗ trợ file Excel (.xlsx, .xls) hoặc CSV (.csv)",
-        type: "AppError"
-      });
+    // Verify response body has data
+    expectLocal(response.body).to.not.be.undefined;
   });
 });

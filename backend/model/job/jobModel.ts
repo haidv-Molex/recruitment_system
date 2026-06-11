@@ -10,6 +10,7 @@ export type jobModel = {
   project: string;
   candidate_required: number;
   note: string | null;
+  request_date: Date | null;
   create_at: Date;
   update_at: Date;
   file_id: number | null;

@@ -5,7 +5,7 @@ import path from "path";
 import FileService from "@services/file/_File";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
-import { readExcelOrCsvToJson } from "@utilities/excelCsvReader";
+import { readExcelOrCsvToJson } from "@/utilities/file/readExcelOrCsvToJson";
 import { AppError } from "@middlewares/AppError";
 
 const parseJobSheetController = express.Router();
@@ -60,11 +60,11 @@ parseJobSheetController.post("",
           fs.unlinkSync(tempFilePath);
         }
       }
-    } 
+    }
     // Case 2: JSON Body
     else if (req.body && (req.body.sheetData || Array.isArray(req.body))) {
       rawData = Array.isArray(req.body) ? req.body : req.body.sheetData;
-    } 
+    }
     // Case 3: No input
     else {
       throw new AppError("Vui lòng tải lên file Excel/CSV hoặc truyền dữ liệu JSON trong body", 400);

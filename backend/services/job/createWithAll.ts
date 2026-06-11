@@ -13,6 +13,7 @@ type CreateJobWithAllData = {
   project: string;
   candidate_required: number;
   note?: string | null;
+  request_date?: string | Date | null;
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -139,6 +140,7 @@ async function createWithAll(
       candidate_required,
       note,
       file,
+      request_date: data.request_date,
       partners: mergedPartners,
       departments: mergedDepartments,
       segments: mergedSegments,

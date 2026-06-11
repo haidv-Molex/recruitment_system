@@ -4,6 +4,8 @@ import { update } from "./update";
 import { getAll } from "./getAll";
 import { getById } from "./getById";
 import { deleteCandidate } from "./delete";
+import { getAgencies } from "./getAgencies";
+import { getStatuses } from "./getStatuses";
 
 const Candidate = {
   create,
@@ -11,7 +13,9 @@ const Candidate = {
   update,
   getAll,
   getById,
-  delete: deleteCandidate
+  delete: deleteCandidate,
+  getAgencies,
+  getStatuses,
 };
 
 export default Candidate;

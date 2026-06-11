@@ -5,7 +5,7 @@ import path from "path";
 import FileService from "@services/file/_File";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
-import { readExcelOrCsvToJson } from "@utilities/excelCsvReader";
+import { readExcelOrCsvToJson } from "@/utilities/file/readExcelOrCsvToJson";
 import { AppError } from "@middlewares/AppError";
 
 const parseCandidateSheetController = express.Router();

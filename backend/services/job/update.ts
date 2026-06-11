@@ -11,6 +11,7 @@ type UpdateJobData = {
   project?: string;
   candidate_required?: number;
   note?: string | null;
+  request_date?: string | Date | null;
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -69,6 +70,10 @@ async function update(
     if (data.note !== undefined) {
       fields.push(`note = $${index++}`);
       values.push(data.note);
+    }
+    if (data.request_date !== undefined) {
+      fields.push(`request_date = $${index++}`);
+      values.push(data.request_date);
     }
     if (file_id !== undefined) {
       fields.push(`file_id = $${index++}`);
@@ -195,7 +200,7 @@ async function update(
 
     // 4. Retrieve complete job output info
     const query = `
-      SELECT j.job_id, j.job_code, j.project, j.candidate_required, j.note, j.create_at, j.update_at, j.file_id,
+      SELECT j.job_id, j.job_code, j.project, j.candidate_required, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
              f.file_path
       FROM job j
       LEFT JOIN file f ON j.file_id = f.file_id
@@ -213,6 +218,7 @@ async function update(
       project: row.project,
       candidate_required: row.candidate_required,
       note: row.note,
+      request_date: row.request_date,
       create_at: row.create_at,
       update_at: row.update_at,
       file: row.file_id ? {

@@ -197,11 +197,20 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       department_id: null
     } as any));
 
+    let request_date: Date | null = null;
+    if (row["MyHR request date"]) {
+      const parsedDate = new Date(row["MyHR request date"]);
+      if (!isNaN(parsedDate.getTime())) {
+        request_date = parsedDate;
+      }
+    }
+
     formattedJobs.push({
       job_code,
       project,
       candidate_required,
       note,
+      request_date,
       file: null,
       partners,
       departments,
