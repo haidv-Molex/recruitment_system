@@ -18,7 +18,7 @@ createValidationSheetController.get("",
     );
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="excelTemplate.xlsx"'
+      'attachment; filename="dataValidation.xlsx"'
     );
 
     await workbook.xlsx.write(res);
