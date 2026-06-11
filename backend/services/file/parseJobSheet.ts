@@ -5,7 +5,11 @@ import type { segmentModel } from "@model/segment/segmentModel";
 import type { siteModel } from "@model/site/siteModel";
 import type { levelModel } from "@model/level/levelModel";
 
-function resolveRelation<T>(val: any, map: Map<string, T>): T[] {
+function resolveRelationWithPlaceholder<T>(
+  val: any,
+  map: Map<string, T>,
+  createPlaceholder: (name: string) => T
+): T[] {
   if (val === null || val === undefined) return [];
   const strVal = String(val).trim();
   if (!strVal) return [];
@@ -23,12 +27,14 @@ function resolveRelation<T>(val: any, map: Map<string, T>): T[] {
     const matched = map.get(part.toLowerCase());
     if (matched) {
       resolved.push(matched);
+    } else {
+      resolved.push(createPlaceholder(part));
     }
   }
   return resolved;
 }
 
-export default async function parseSheet(rows: any[], pool: PoolClient): Promise<any[]> {
+export default async function parseJobSheet(rows: any[], pool: PoolClient): Promise<any[]> {
   // Query all users
   const usersQuery = `
     SELECT user_id, user_name, user_description, user_role, create_at, update_at, department_id
@@ -55,11 +61,13 @@ export default async function parseSheet(rows: any[], pool: PoolClient): Promise
     FROM level
   `;
 
-  const usersRes = await pool.query(usersQuery);
-  const deptsRes = await pool.query(departmentsQuery);
-  const segmentsRes = await pool.query(segmentsQuery);
-  const sitesRes = await pool.query(sitesQuery);
-  const levelsRes = await pool.query(levelsQuery);
+  const [usersRes, deptsRes, segmentsRes, sitesRes, levelsRes] = await Promise.all([
+    pool.query(usersQuery),
+    pool.query(departmentsQuery),
+    pool.query(segmentsQuery),
+    pool.query(sitesQuery),
+    pool.query(levelsQuery)
+  ]);
 
   // Build maps using lowercase trimmed names
   const userMap = new Map<string, userOutputModel>();
@@ -124,13 +132,70 @@ export default async function parseSheet(rows: any[], pool: PoolClient): Promise
     const note = row["Note"] !== undefined && row["Note"] !== null ? String(row["Note"]).trim() : null;
 
     // Resolve relation objects by name
-    const departments = resolveRelation(row["Dept."], deptMap);
-    const segments = resolveRelation(row["Project Segment"], segmentMap);
-    const sites = resolveRelation(row["Sites"], siteMap);
-    const titles = resolveRelation(row["Job title"], levelMap);
-    const employee_levels = resolveRelation(row["EE Level"], levelMap);
-    const managers = resolveRelation(row["Hiring manager"], userMap);
-    const partners = resolveRelation(row["HRBP"], userMap);
+    const departments = resolveRelationWithPlaceholder(row["Dept."], deptMap, (name) => ({
+      department_id: null,
+      department_code: null,
+      department_name: name,
+      department_description: null,
+      create_at: null,
+      update_at: null
+    } as any));
+
+    const segments = resolveRelationWithPlaceholder(row["Project Segment"], segmentMap, (name) => ({
+      segment_id: null,
+      segment_code: null,
+      segment_name: name,
+      segment_description: null,
+      create_at: null,
+      update_at: null
+    } as any));
+
+    const sites = resolveRelationWithPlaceholder(row["Sites"], siteMap, (name) => ({
+      site_id: null,
+      site_code: null,
+      site_name: name,
+      site_description: null,
+      create_at: null,
+      update_at: null
+    } as any));
+
+    const titles = resolveRelationWithPlaceholder(row["Job title"], levelMap, (name) => ({
+      level_id: null,
+      level_code: null,
+      level_name: name,
+      level_description: null,
+      create_at: null,
+      update_at: null
+    } as any));
+
+    const employee_levels = resolveRelationWithPlaceholder(row["EE Level"], levelMap, (name) => ({
+      level_id: null,
+      level_code: null,
+      level_name: name,
+      level_description: null,
+      create_at: null,
+      update_at: null
+    } as any));
+
+    const managers = resolveRelationWithPlaceholder(row["Hiring manager"], userMap, (name) => ({
+      user_id: null,
+      user_name: name,
+      user_description: null,
+      user_role: null,
+      create_at: null,
+      update_at: null,
+      department_id: null
+    } as any));
+
+    const partners = resolveRelationWithPlaceholder(row["HRBP"], userMap, (name) => ({
+      user_id: null,
+      user_name: name,
+      user_description: null,
+      user_role: null,
+      create_at: null,
+      update_at: null,
+      department_id: null
+    } as any));
 
     formattedJobs.push({
       job_code,

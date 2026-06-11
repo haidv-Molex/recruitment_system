@@ -9,12 +9,12 @@ import { pool } from "@middlewares/database";
 import jwt from "jsonwebtoken";
 import express from "express";
 import pactum from "pactum";
-import JobController from "@controller/job/_JobController";
-import Job from "@services/job/_Job";
-import User from "@services/user/User";
+import FileController from "@controller/file/_FileController";
+import FileService from "@services/file/_File";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
-describe("parseSheetController API", () => {
+describe("parseJobSheetController API", () => {
   let expectLocal: any;
   let poolConnectStub: sinon.SinonStub;
   let mockClient: any;
@@ -25,7 +25,7 @@ describe("parseSheetController API", () => {
   // Stubs
   let findByIdStub: sinon.SinonStub;
   let checkUserBannedStub: sinon.SinonStub;
-  let parseSheetStub: sinon.SinonStub;
+  let parseJobSheetStub: sinon.SinonStub;
 
   before(async () => {
     const { expect: localExpect } = await new Function('specifier', 'return import(specifier)')('chai');
@@ -34,7 +34,7 @@ describe("parseSheetController API", () => {
     const app = express();
     app.use(express.json());
     app.use(passport.initialize());
-    app.use("/job", JobController);
+    app.use("/file", FileController);
     app.use(globalErrorHandler);
 
     await new Promise<void>((resolve) => {
@@ -59,15 +59,15 @@ describe("parseSheetController API", () => {
     mockCurrentUser = { user_id: 1, user_name: "Test User", user_role: "hr" };
     findByIdStub = sinon.stub(User, "findById").resolves(mockCurrentUser);
 
-    // Job parse stub
-    parseSheetStub = sinon.stub(Job, "parseSheet");
+    // File parse stub
+    parseJobSheetStub = sinon.stub(FileService, "parseJobSheet");
   });
 
   afterEach(() => {
     poolConnectStub.restore();
     checkUserBannedStub.restore();
     findByIdStub.restore();
-    parseSheetStub.restore();
+    parseJobSheetStub.restore();
   });
 
   after((done) => {
@@ -83,7 +83,7 @@ describe("parseSheetController API", () => {
 
   it("should block request without authorization", async () => {
     await pactum.spec()
-      .post("/job/parse-sheet")
+      .post("/file/parse-sheet")
       .withBody({ sheetData: [] })
       .expectStatus(401);
   });
@@ -105,12 +105,12 @@ describe("parseSheetController API", () => {
         employee_levels: []
       }
     ];
-    parseSheetStub.resolves(mockOutput);
+    parseJobSheetStub.resolves(mockOutput);
 
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
-      .post("/job/parse-sheet")
+      .post("/file/parse-sheet")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withBody({
         sheetData: [
@@ -127,8 +127,8 @@ describe("parseSheetController API", () => {
         data: mockOutput
       });
 
-    expectLocal(parseSheetStub.calledOnce).to.be.true;
-    expectLocal(parseSheetStub.firstCall.args[0]).to.deep.equal([
+    expectLocal(parseJobSheetStub.calledOnce).to.be.true;
+    expectLocal(parseJobSheetStub.firstCall.args[0]).to.deep.equal([
       {
         "Job Code": "J001",
         "Project": "DSS Talent Connector"
@@ -140,7 +140,7 @@ describe("parseSheetController API", () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
-      .post("/job/parse-sheet")
+      .post("/file/parse-sheet")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withBody({
         sheetData: []
@@ -157,7 +157,7 @@ describe("parseSheetController API", () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
-      .post("/job/parse-sheet")
+      .post("/file/parse-sheet")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withMultiPartFormData("file", Buffer.from("dummy txt content"), {
         filename: "test.txt",

@@ -2,19 +2,19 @@ import express from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
-import Job from "@services/job/_Job";
+import FileService from "@services/file/_File";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
 import { readExcelOrCsvToJson } from "@utilities/excelCsvReader";
 import { AppError } from "@middlewares/AppError";
 
-const parseSheetController = express.Router();
+const parseJobSheetController = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
-parseSheetController.post("",
+parseJobSheetController.post("",
   passport.authenticate("jwt", { session: false }),
   upload.single("file"),
   async (req, res) => {
@@ -75,7 +75,7 @@ parseSheetController.post("",
     }
 
     const result = await withTransaction(async (pool) => {
-      return await Job.parseSheet(rawData, pool);
+      return await FileService.parseJobSheet(rawData, pool);
     });
 
     res.status(200).json({
@@ -86,4 +86,4 @@ parseSheetController.post("",
   }
 );
 
-export default parseSheetController;
+export default parseJobSheetController;

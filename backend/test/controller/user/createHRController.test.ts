@@ -12,7 +12,7 @@ import { expect } from "chai";
 import express from "express";
 import pactum from "pactum";
 import createHRController from "@controller/user/createHRController";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
 describe("createHRController API", () => {
@@ -56,7 +56,7 @@ describe("createHRController API", () => {
     poolConnectStub = sinon.stub(pool, "connect").resolves(mockClient);
     createHRStub = sinon.stub(User, "createHR");
     checkUserBannedStub = sinon.stub(User, "checkUserBanned").resolves();
-    
+
     findByIdStub = sinon.stub(User, "findById").callsFake(async (userId, p) => {
       return mockCurrentUser;
     });

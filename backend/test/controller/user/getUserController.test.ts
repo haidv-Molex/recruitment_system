@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 import express from "express";
 import pactum from "pactum";
 import getUserController from "@controller/user/getUserController";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { AppError } from "@middlewares/AppError";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
@@ -51,7 +51,7 @@ describe("getUserController API", () => {
     };
     poolConnectStub = sinon.stub(pool, "connect").resolves(mockClient);
     checkUserBannedStub = sinon.stub(User, "checkUserBanned").resolves();
-    
+
     // findById behaves differently depending on target ID
     findByIdStub = sinon.stub(User, "findById");
   });
@@ -105,7 +105,7 @@ describe("getUserController API", () => {
     expectLocal(body.data.user_name).to.equal("Target User Profile");
     expectLocal(body.data.user_description).to.equal("Target Description");
     expectLocal(body.data.user_role).to.equal("user");
-    
+
     // Ensure sensitive information is hidden
     expectLocal(body.data.user_account).to.be.undefined;
     expectLocal(body.data.user_password).to.be.undefined;

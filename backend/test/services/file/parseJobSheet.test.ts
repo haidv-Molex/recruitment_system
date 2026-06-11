@@ -1,8 +1,8 @@
 import { PoolClient } from "pg";
 import { pool } from "@middlewares/database";
-import parseSheet from "@services/job/parseSheet";
+import parseJobSheet from "@services/file/parseJobSheet";
 
-describe("parseSheet service", () => {
+describe("parseJobSheet service", () => {
   let client: PoolClient;
   let expect: any;
   let seededManagerId: number;
@@ -88,7 +88,7 @@ describe("parseSheet service", () => {
       }
     ];
 
-    const result = await parseSheet(rawRows, client);
+    const result = await parseJobSheet(rawRows, client);
 
     expect(result).to.be.an("array").with.lengthOf(1);
     const job = result[0];
@@ -129,7 +129,7 @@ describe("parseSheet service", () => {
     expect(job.partners[0].user_name).to.equal("Thanh");
   });
 
-  it("should handle missing or invalid matching names by returning empty arrays for relations", async () => {
+  it("should output placeholder objects with null IDs for missing/invalid matching names", async () => {
     const rawRows = [
       {
         "Job Code": "J999",
@@ -146,41 +146,67 @@ describe("parseSheet service", () => {
       }
     ];
 
-    const result = await parseSheet(rawRows, client);
+    const result = await parseJobSheet(rawRows, client);
 
     expect(result).to.be.an("array").with.lengthOf(1);
     const job = result[0];
 
     expect(job.job_code).to.equal("J999");
     expect(job.project).to.equal("Unknown Project");
-    expect(job.candidate_required).to.equal(0); // Falls back to 0
+    expect(job.candidate_required).to.equal(0);
     expect(job.note).to.be.null;
 
-    expect(job.departments).to.be.an("array").that.is.empty;
-    expect(job.segments).to.be.an("array").that.is.empty;
-    expect(job.sites).to.be.an("array").that.is.empty;
-    expect(job.titles).to.be.an("array").that.is.empty;
-    expect(job.employee_levels).to.be.an("array").that.is.empty;
-    expect(job.managers).to.be.an("array").that.is.empty;
-    expect(job.partners).to.be.an("array").that.is.empty;
+    expect(job.departments).to.be.an("array").with.lengthOf(1);
+    expect(job.departments[0].department_id).to.be.null;
+    expect(job.departments[0].department_name).to.equal("Unknown Dept");
+
+    expect(job.segments).to.be.an("array").with.lengthOf(1);
+    expect(job.segments[0].segment_id).to.be.null;
+    expect(job.segments[0].segment_name).to.equal("Unknown Segment");
+
+    expect(job.sites).to.be.an("array").with.lengthOf(1);
+    expect(job.sites[0].site_id).to.be.null;
+    expect(job.sites[0].site_name).to.equal("Unknown Site");
+
+    expect(job.titles).to.be.an("array").with.lengthOf(1);
+    expect(job.titles[0].level_id).to.be.null;
+    expect(job.titles[0].level_name).to.equal("Unknown Title");
+
+    expect(job.employee_levels).to.be.an("array").with.lengthOf(1);
+    expect(job.employee_levels[0].level_id).to.be.null;
+    expect(job.employee_levels[0].level_name).to.equal("Unknown Level");
+
+    expect(job.managers).to.be.an("array").with.lengthOf(1);
+    expect(job.managers[0].user_id).to.be.null;
+    expect(job.managers[0].user_name).to.equal("Unknown Manager");
+
+    expect(job.partners).to.be.an("array").with.lengthOf(1);
+    expect(job.partners[0].user_id).to.be.null;
+    expect(job.partners[0].user_name).to.equal("Unknown HRBP");
   });
 
-  it("should support multiple comma-separated names in a single field", async () => {
+  it("should support multiple comma-separated names in a single field, returning mixed DB & placeholder values", async () => {
     const rawRows = [
       {
         "Job Code": "J002",
         "Project": "Multi Project",
-        "Hiring manager": "Nguyễn Lê Hoàng, Thanh"
+        "Hiring manager": "Nguyễn Lê Hoàng, Some Unknown Manager, Thanh"
       }
     ];
 
-    const result = await parseSheet(rawRows, client);
+    const result = await parseJobSheet(rawRows, client);
 
     expect(result).to.be.an("array").with.lengthOf(1);
     const job = result[0];
 
-    expect(job.managers).to.be.an("array").with.lengthOf(2);
+    expect(job.managers).to.be.an("array").with.lengthOf(3);
     expect(job.managers[0].user_id).to.equal(seededManagerId);
-    expect(job.managers[1].user_id).to.equal(seededBPId);
+    expect(job.managers[0].user_name).to.equal("Nguyễn Lê Hoàng");
+
+    expect(job.managers[1].user_id).to.be.null;
+    expect(job.managers[1].user_name).to.equal("Some Unknown Manager");
+
+    expect(job.managers[2].user_id).to.equal(seededBPId);
+    expect(job.managers[2].user_name).to.equal("Thanh");
   });
 });

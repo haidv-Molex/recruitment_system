@@ -11,7 +11,7 @@ import express from "express";
 import pactum from "pactum";
 import PlatformController from "@controller/platform/_PlatformController";
 import Platform from "@services/platform/_Platform";
-import User from "@services/user/User";
+import User from "@/services/user/_User";
 import { globalErrorHandler } from "@middlewares/globalErrorHandler";
 
 describe("PlatformController API", () => {
@@ -57,7 +57,7 @@ describe("PlatformController API", () => {
       release: sinon.stub()
     };
     poolConnectStub = sinon.stub(pool, "connect").resolves(mockClient);
-    
+
     // Auth stubs
     checkUserBannedStub = sinon.stub(User, "checkUserBanned").resolves();
     mockCurrentUser = { user_id: 1, user_name: "Test User", user_role: "hr" };
