@@ -220,6 +220,12 @@ INSERT INTO level (level_code, level_name) VALUES
 ('Operator', 'Operator'),
 ('Leader', 'Leader'),
 ('Intern', 'Intern');
+
+INSERT INTO site (site_code, site_name) VALUES
+('D', 'D'),
+('S', 'S'),
+('SK', 'SK'),
+('MXV', 'MXV');
 `;
     writeFileSync(`${INIT_DIR}/999-seed-default-data.sql`, seedSQL);
     console.log("999 → seed-default-data.sql");
