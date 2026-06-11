@@ -67,7 +67,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     ee_level: job.employee_levels?.[0]?.level_name ?? "",
     project: job.project,
     hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
-    recruiter: "", // recruiter giờ nằm ở từng candidate row
+    recruiter: "",
     sites: job.sites?.map((s) => s.site_code).join(", ") ?? "",
   }));
 
@@ -87,9 +87,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     referrer: row.reference_name ?? null,
     referrer_department: row.reference_department ?? null,
     note: row.note ?? null,
-    // ✅ FIX 1: Dùng recruiter riêng của từng candidate
     recruiter: row.recruiter_name ?? "",
-    // ✅ FIX 2: Xóa dấu phẩy trước khi parseFloat
     current_salary: row.current_salary != null
       ? parseFloat(row.current_salary.replace(/,/g, "")) || null
       : null,
