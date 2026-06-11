@@ -177,6 +177,49 @@ function main() {
     const seedSQL = `-- SEED: Dữ liệu mặc định
 INSERT INTO "user" (user_name, user_account, user_password, user_role)
 VALUES ('Admin', 'Admin', '$2b$10$nNypYH8ZYca/XbrsYVMFWuE25u7zOxA9LRiYYNujEGvo73Xg2QJPi', 'admin');
+
+INSERT INTO department (department_code, department_name) VALUES
+('CA', 'CA'),
+('OTC', 'OTC'),
+('BOD', 'BOD'),
+('FM/EHS', 'FM/EHS'),
+('GA', 'GA'),
+('HR', 'HR'),
+('LOG', 'LOG'),
+('ME', 'ME'),
+('PC', 'PC'),
+('PUR', 'PUR'),
+('QC', 'QC'),
+('SC', 'SC'),
+('AS', 'AS'),
+('MD', 'MD'),
+('PLT', 'PLT'),
+('STP', 'STP');
+
+INSERT INTO platform (platform_name) VALUES
+('Linkedin Job Post'),
+('Linkedin Search'),
+('Vietnamworks Job Post'),
+('Vietnamworks Search'),
+('TopCV Job Post'),
+('TopCV Search'),
+('Headhunt'),
+('Internal referral'),
+('Internal transfer'),
+('Facebook'),
+('Network'),
+('Others');
+
+INSERT INTO level (level_code, level_name) VALUES
+('Manager', 'Manager'),
+('Supervisor', 'Supervisor'),
+('Engineer', 'Engineer'),
+('Professional', 'Professional'),
+('Technician', 'Technician'),
+('Technical Operator', 'Technical Operator'),
+('Operator', 'Operator'),
+('Leader', 'Leader'),
+('Intern', 'Intern');
 `;
     writeFileSync(`${INIT_DIR}/999-seed-default-data.sql`, seedSQL);
     console.log("999 → seed-default-data.sql");
