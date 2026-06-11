@@ -1,4 +1,5 @@
-import { readExcelOrCsvToJson, writeJsonToExcelOrCsv } from "@utilities/excelCsvReader";
+import { readExcelOrCsvToJson } from "@/utilities/file/readExcelOrCsvToJson";
+import { writeJsonToExcelOrCsv } from "@/utilities/file/writeJsonToExcelOrCsv";
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "fs";
 import { resolve } from "path";
 import { AppError } from "@middlewares/AppError";

@@ -83,7 +83,7 @@ describe("parseJobSheetController API", () => {
 
   it("should block request without authorization", async () => {
     await pactum.spec()
-      .post("/file/parse-sheet")
+      .post("/file/parse-job-sheet")
       .withBody({ sheetData: [] })
       .expectStatus(401);
   });
@@ -110,7 +110,7 @@ describe("parseJobSheetController API", () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
-      .post("/file/parse-sheet")
+      .post("/file/parse-job-sheet")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withBody({
         sheetData: [
@@ -140,7 +140,7 @@ describe("parseJobSheetController API", () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
-      .post("/file/parse-sheet")
+      .post("/file/parse-job-sheet")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withBody({
         sheetData: []
@@ -157,7 +157,7 @@ describe("parseJobSheetController API", () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
-      .post("/file/parse-sheet")
+      .post("/file/parse-job-sheet")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withMultiPartFormData("file", Buffer.from("dummy txt content"), {
         filename: "test.txt",
