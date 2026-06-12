@@ -39,7 +39,7 @@ export const getMimeType = (ext: string) => {
 };
 
 interface FileBadgeProps {
-  file?: { name: string; url?: string };
+  file?: any;
   onClick?: () => void;
 }
 
@@ -47,23 +47,22 @@ interface FileBadgeProps {
 export function FileBadge({ file, onClick }: FileBadgeProps) {
   if (!file) return <span className="text-slate-400 text-xs">—</span>;
 
-  const ext = getExtension(file.name);
+  const fileName = file.name || file.file_name || file.file_path?.split('/').pop() || 'View File';
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors max-w-[160px] truncate"
-      title={'Preview: ' + file.name}
+      className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left truncate max-w-full block bg-transparent border-0 p-0 cursor-pointer"
+      title={'Preview: ' + fileName}
     >
-      {getFileIcon(ext)}
-      <span className="truncate">{file.name}</span>
+      {fileName}
     </button>
   );
 }
 
 interface FileLinkProps {
-  file?: { name: string; url?: string };
+  file?: any;
   onClick?: () => void;
 }
 
@@ -71,7 +70,8 @@ interface FileLinkProps {
 export function FileLink({ file, onClick }: FileLinkProps) {
   if (!file) return null;
 
-  const ext = getExtension(file.name);
+  const fileName = file.name || file.file_name || file.file_path?.split('/').pop() || 'File';
+  const ext = getExtension(fileName);
 
   return (
     <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg mb-2">
@@ -80,9 +80,9 @@ export function FileLink({ file, onClick }: FileLinkProps) {
         type="button"
         onClick={onClick}
         className="flex-1 text-xs font-semibold text-blue-600 bg-transparent border-none cursor-pointer text-left hover:underline truncate"
-        title={'Preview: ' + file.name}
+        title={'Preview: ' + fileName}
       >
-        {file.name}
+        {fileName}
       </button>
       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{ext}</span>
     </div>
@@ -90,7 +90,7 @@ export function FileLink({ file, onClick }: FileLinkProps) {
 }
 
 interface FilePreviewModalProps {
-  file?: { name: string; url?: string };
+  file?: any;
   onClose: () => void;
 }
 
@@ -101,14 +101,16 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const ext = getExtension(file?.name || '');
+  const fileName = file?.name || file?.file_name || file?.file_path?.split('/').pop() || 'File';
+  const fileUrl = file?.url || file?.file_url;
+  const ext = getExtension(fileName);
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
   const isPdf = ext === 'pdf';
   const isText = ['txt', 'csv'].includes(ext);
 
   // Fetch file from backend and create blob URL
   useEffect(() => {
-    if (!file || !file.url) {
+    if (!file || !fileUrl) {
       setError('File URL not available.');
       setLoading(false);
       return;
@@ -121,11 +123,16 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
       setError('');
 
       try {
-        const response = await axiosInstance.get(file.url!.replace(axiosInstance.defaults.baseURL || '', ''), {
+        const response = await axiosInstance.get(fileUrl.replace(axiosInstance.defaults.baseURL || '', ''), {
           responseType: 'blob',
         });
 
-        const blob = new Blob([response.data], { type: getMimeType(ext) });
+        let blob = response.data;
+        if (blob instanceof Blob) {
+          blob = blob.slice(0, blob.size, getMimeType(ext));
+        } else {
+          blob = new Blob([response.data], { type: getMimeType(ext) });
+        }
         objectUrl = URL.createObjectURL(blob);
         setBlobUrl(objectUrl);
 
@@ -137,10 +144,11 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
         console.error('Failed to fetch file:', err);
 
         try {
-          const response = await fetch(file.url!);
+          const response = await fetch(fileUrl);
           if (!response.ok) throw new Error('Fetch failed');
 
-          const blob = await response.blob();
+          let blob = await response.blob();
+          blob = blob.slice(0, blob.size, getMimeType(ext));
           objectUrl = URL.createObjectURL(blob);
           setBlobUrl(objectUrl);
 
@@ -163,7 +171,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [file]);
+  }, [file, fileUrl]);
 
   if (!file) return null;
 
@@ -172,12 +180,12 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
     if (blobUrl) {
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = file.name;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } else if (file.url) {
-      window.open(file.url, '_blank');
+    } else if (fileUrl) {
+      window.open(fileUrl, '_blank');
     }
   };
 
@@ -196,7 +204,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
       return (
         <div className="text-center py-12 px-6 flex flex-col items-center">
           <div className="mb-4">{getFileIcon(ext)}</div>
-          <p className="text-base font-bold text-slate-900 mb-1">{file.name}</p>
+          <p className="text-base font-bold text-slate-900 mb-1">{fileName}</p>
           <p className="text-sm text-slate-500 mb-4">{error || 'Cannot preview this file.'}</p>
           <Button onClick={handleDownload} icon={<Download size={16} />}>
             Download File
@@ -208,7 +216,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
     if (isImage) {
       return (
         <div className="flex items-center justify-center w-full h-full max-h-[60vh] bg-slate-100/50 p-4 rounded-lg">
-          <img src={blobUrl} alt={file.name} className="max-w-full max-h-[50vh] object-contain rounded shadow-md" />
+          <img src={blobUrl} alt={fileName} className="max-w-full max-h-[50vh] object-contain rounded shadow-md" />
         </div>
       );
     }
@@ -216,9 +224,9 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
     if (isPdf) {
       return (
         <iframe
-          src={blobUrl}
+          src={`${blobUrl}#toolbar=0&navpanes=0`}
           className="w-full h-[60vh] border-0 rounded-lg shadow-sm"
-          title={file.name}
+          title={fileName}
         />
       );
     }
@@ -236,7 +244,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
     return (
       <div className="text-center py-12 px-6 flex flex-col items-center">
         <div className="mb-4">{getFileIcon(ext)}</div>
-        <p className="text-base font-bold text-slate-900 mb-1">{file.name}</p>
+        <p className="text-base font-bold text-slate-900 mb-1">{fileName}</p>
         <p className="text-sm text-slate-500 mb-4">
           This file type (.{ext}) cannot be previewed directly in the browser.
           <br />
@@ -249,22 +257,28 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
     );
   };
 
+  const modalTitle = (
+    <div className="flex items-center gap-3">
+      <span className="font-semibold text-slate-800 truncate max-w-[400px]" title={fileName}>
+        {fileName}
+      </span>
+      <button
+        type="button"
+        onClick={handleDownload}
+        className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-emerald-600 transition-colors"
+        title="Download File"
+      >
+        <Download className="h-5 w-5" />
+      </button>
+    </div>
+  );
+
   return (
     <Modal
       isOpen={true}
       onClose={onClose}
-      title={file.name}
+      title={modalTitle}
       maxWidthClass="max-w-4xl"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Close
-          </Button>
-          <Button onClick={handleDownload} icon={<Download size={16} />}>
-            Download
-          </Button>
-        </>
-      }
     >
       <div className="space-y-4">
         {renderPreview()}
