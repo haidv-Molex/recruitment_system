@@ -6,90 +6,111 @@
 
 ## 1. Tổng quan dự án
 
-**Recruitment System Backend** là REST API backend cho hệ thống quản lý tuyển dụng.
-
-- **Runtime**: Node.js (CommonJS)
+**Recruitment System Backend** là hệ thống REST API phục vụ cho ứng dụng tuyển dụng.
+- **Runtime**: Node.js (CommonJS - `"type": "commonjs"`)
 - **Framework**: Express 4
 - **Language**: TypeScript (strict mode)
-- **Database**: PostgreSQL (pg Pool)
+- **Database**: PostgreSQL (pg Pool & PoolClient)
 - **Cache / Session**: Redis (ioredis)
-- **Realtime**: Socket.IO (với Redis adapter cho cluster)
+- **Realtime**: Socket.IO (với Redis adapter để scale ngang)
 - **Auth**: Passport.js (Local, JWT, Custom strategies)
 - **Validation**: Joi
-- **File Upload**: Multer
+- **File Upload**: Multer + custom quality & type check middleware
 - **Process Manager**: PM2 (cluster mode)
 - **Logging**: Winston
-- **Testing**: Mocha + Chai + Pactum
+- **Testing**: Mocha + Chai + Sinon + Pactum
 
 ---
 
 ## 2. Cấu trúc thư mục chi tiết
 
+Dự án tuân theo cấu trúc phân lớp rõ ràng:
+
 ```
-recruitment_system/
-├── index.ts                    # Entry point duy nhất
-├── serverConfig.ts             # Express setup, CORS, Rate limiter, Redis IO adapter
-├── ecosystem.config.cjs        # PM2 config
+recruitment_system/backend/
+├── index.ts                    # Entry point khởi tạo server & graceful shutdown
+├── serverConfig.ts             # Cấu hình Express, CORS, Helmet, Rate limiter, Socket.io & Redis Adapter
+├── ecosystem.config.cjs        # Cấu hình PM2 Cluster
 │
-├── controller/                 # Tầng controller – chỉ chứa Express Router
-│   ├── _*Controller.ts         # Router tổng hợp (ví dụ: _UserController.ts)
-│   ├── auth/                   # Endpoints xác thực và tài khoản
-│   ├── candidate/              # Endpoints quản lý ứng viên
-│   ├── department/             # Endpoints quản lý phòng ban
-│   ├── job/                    # Endpoints quản lý công việc (Jobs)
-│   └── user/                   # Endpoints quản lý người dùng / hệ thống
+├── controller/                 # Tầng Controller (Chỉ chứa Express Router và Middleware)
+│   ├── _*Controller.ts         # Controller tổng hợp (Facade Router) import các file controller chi tiết
+│   ├── auth/                   # API xác thực, đăng ký, đăng nhập, refresh token, logout
+│   ├── candidate/              # APIs quản lý ứng viên (Create, Read, Update, Delete)
+│   ├── company/                # APIs quản lý công ty đối tác
+│   ├── department/             # APIs quản lý phòng ban tuyển dụng
+│   ├── file/                   # APIs xử lý tải và đọc tệp tin
+│   ├── job/                    # APIs quản lý tin tuyển dụng (Jobs)
+│   ├── level/                  # APIs quản lý cấp bậc vị trí
+│   ├── platform/               # APIs quản lý nền tảng tuyển dụng
+│   ├── segment/                # APIs quản lý phân khúc/bộ phận tuyển dụng
+│   └── site/                   # APIs quản lý địa điểm làm việc (Site)
 │
-├── services/                   # Tầng business logic
-│   ├── candidate/
-│   │   └── _Candidate.ts       # Facade class export tất cả methods của Candidate
-│   ├── department/
-│   │   └── _Department.ts      # Facade class export tất cả methods của Department
-│   ├── job/
-│   │   └── _Job.ts             # Facade class export tất cả methods của Job
-│   └── user/
-│       └── _User.ts            # Facade class export tất cả methods của User
+├── services/                   # Tầng Business Logic (Không chứa Express request/response)
+│   ├── _ClassName.ts           # Facade class tổng hợp tất cả methods của domain (ví dụ: _User.ts)
+│   ├── candidate/              # Các hàm logic của ứng viên (create, update, delete, getById, v.v.)
+│   ├── company/                # Logic cho công ty
+│   ├── department/             # Logic cho phòng ban
+│   ├── file/                   # Logic xử lý file upload/download
+│   ├── job/                    # Logic cho tin tuyển dụng
+│   ├── level/                  # Logic cho cấp bậc
+│   ├── platform/               # Logic cho nền tảng
+│   ├── segment/                # Logic cho phân khúc
+│   ├── site/                   # Logic cho địa điểm
+│   └── user/                   # Logic quản lý tài khoản & phân quyền
 │
-├── model/                      # TypeScript types + SQL schema files
-│   ├── candidate/
-│   │   ├── candidateModel.ts   # candidate type definition
-│   │   └── candidate_schema.sql
-│   ├── department/
-│   │   ├── departmentModel.ts  # department type definition
-│   │   └── department_schema.sql
-│   ├── job/
-│   │   ├── jobModel.ts         # job type definition
-│   │   └── job_schema.sql
-│   ├── user/
-│   │   ├── userModel.ts        # user type definition
-│   │   └── user_schema.sql
-│   └── config/                 # DB configuration & helpers (e.g. update_updated_at_column.sql)
+├── model/                      # Định nghĩa TypeScript Types & SQL Schema files
+│   ├── candidate/              # Types & Schema cho ứng viên
+│   ├── company/                # Types & Schema cho công ty
+│   ├── department/             # Types & Schema cho phòng ban
+│   ├── file/                   # Types & Schema cho file
+│   ├── job/                    # Types & Schema cho công việc
+│   ├── level/                  # Types & Schema cho cấp bậc
+│   ├── platform/               # Types & Schema cho nền tảng
+│   ├── segment/                # Types & Schema cho phân khúc
+│   ├── site/                   # Types & Schema cho địa điểm
+│   ├── user/                   # Types & Schema cho người dùng
+│   ├── config/                 # SQL script dùng chung (ví dụ: update_updated_at_column.sql)
+│   └── linking/                # Các bảng liên kết trung gian (n-n)
+│       ├── candidate_level/
+│       ├── employee_level/
+│       ├── hiring_manager/
+│       ├── job_business_partner/
+│       ├── job_department/
+│       ├── job_segment/
+│       ├── job_site/
+│       └── job_title/
 │
-├── middlewares/                # Express middlewares
-│   ├── AppError.ts             # class AppError extends Error
-│   ├── globalErrorHandler.ts   # 4-type error handler
-│   ├── passport.ts             # Tất cả Passport strategies
-│   ├── database.ts             # pg.Client + pg.Pool
-│   ├── redisClient.ts          # ioredis + setCache/getCache/delCache helpers
-│   ├── withTransaction.ts      # DB transaction wrapper
-│   ├── joiValidate.ts          # Joi middleware factory
-│   ├── validateFileQuality.ts  # Sharp (image) + ffprobe (audio) validation
-│   └── logger.ts               # Winston instance
+├── middlewares/                # Express Middlewares dùng chung
+│   ├── AppError.ts             # Định nghĩa lớp lỗi AppError extends Error
+│   ├── database.ts             # Cấu hình PostgreSQL pg.Pool & xuất client
+│   ├── globalErrorHandler.ts   # Middleware xử lý lỗi tập trung 4 tham số
+│   ├── joiValidate.ts          # Factory validate input bằng Joi
+│   ├── logger.ts               # Khởi tạo instance Winston
+│   ├── passport.ts             # Định nghĩa các strategies Passport (jwt, local, google)
+│   ├── redisClient.ts          # Kết nối Redis & helpers cache (getCache, setCache, delCache)
+│   ├── socketErrorHandler.ts   # Xử lý lỗi Socket.IO
+│   ├── validateFileQuality.ts  # Middleware xác thực định dạng và dung lượng file tải lên
+│   └── withTransaction.ts      # Helper bọc thực thi SQL trong DB Transaction
 │
-├── utilities/                  # Pure utility functions (no Express)
-│   ├── validateEnv.ts
-│   └── generate-init-sql.ts
+├── utilities/                  # Hàm tiện ích thuần túy (Không dùng Express)
+│   ├── file/                   # Tiện ích liên quan tới file (vd: tạo bảng dữ liệu)
+│   ├── generate-init-sql.ts    # Gom và sắp xếp các file .sql theo thứ tự Foreign Key
+│   ├── joiTypes.ts             # Kiểu Joi tùy biến
+│   ├── jwtTimeToSeconds.ts     # Tiện ích đổi thời hạn JWT sang giây
+│   ├── run-init-sql.ts         # Khởi tạo/Recreate cơ sở dữ liệu từ file SQL đã sắp xếp
+│   └── validateEnv.ts          # Ràng buộc kiểm tra biến môi trường khi start
 │
 ├── types/
-│   └── express.d.ts            # Mở rộng Express.Request
+│   └── express.d.ts            # Mở rộng Express.Request (req.user, req.file, req.io, v.v.)
 │
-└── test/                       # Mocha tests
+└── test/                       # Thư mục chứa các file kiểm thử tự động (Mocha + Chai)
 ```
 
 ---
 
 ## 3. Path Aliases (tsconfig.json)
 
-Tất cả import phải dùng alias thay vì đường dẫn tương đối:
+Tất cả import phải dùng alias đã cấu hình trong `tsconfig.json`. Tuyệt đối không dùng đường dẫn tương đối dài dòng (ví dụ: `../../`).
 
 | Alias | Mapped to |
 |---|---|
@@ -112,11 +133,10 @@ import type { userModel } from "@model/user/userModel";
 
 ---
 
-## 4. Conventions & Coding Patterns
+## 4. Quy tắc & Mẫu thiết kế code chuẩn (Design Patterns)
 
 ### 4.1 Controller Pattern
-
-Mỗi controller là một file riêng biệt, export một `express.Router()`.
+Mỗi controller là một file Router Express xử lý một tính năng hoặc một tập hợp endpoint của domain. Mọi controller phải được import và mount vào Facade Router của domain đó (ví dụ: `_UserController.ts`).
 
 ```typescript
 import express from "express";
@@ -139,17 +159,18 @@ const joiQuery = Joi.object({
 });
 
 userController.post("",
-    passport.authenticate('jwt', { session: false }), // Nếu cần auth
+    passport.authenticate('jwt', { session: false }), // Nếu cần xác thực JWT
     joiValidate(joiSchema, 'body'),
     joiValidate(joiQuery, 'query'),
     async (req, res) => {
+        // Thực thi business logic thông qua database transaction wrapper
         const result = await withTransaction(async (pool) => {
             return await User.someMethod(req.body, pool);
         });
 
         res.status(200).json({
             result: true,
-            message: "Mô tả kết quả",
+            message: "Xử lý thành công",
             data: result
         });
     }
@@ -159,16 +180,15 @@ export default userController;
 ```
 
 **Quy tắc bắt buộc:**
-- Luôn dùng `withTransaction()` bọc mọi query DB
-- Validate bằng `joiValidate` trước khi vào handler
-- Response format: `{ result: boolean, message: string, data?: any }`
-- Không bao giờ viết SQL thẳng trong controller
-- Nếu route cần auth: `passport.authenticate('jwt', { session: false })`
-- Nếu route cần admin/check role: kiểm tra phân quyền bằng cách kiểm tra `req.user?.user_role` trong handler hoặc service.
+- Luôn bọc tất cả câu lệnh query/thao tác DB bằng `withTransaction(async (pool) => { ... })`.
+- Kiểm tra hợp lệ dữ liệu bằng middleware `joiValidate` trước khi xử lý logic.
+- Cấu trúc response mặc định: `{ result: boolean, message: string, data?: any, pagination?: any }`.
+- **Cấm** viết SQL raw trực tiếp trong file Controller.
+- Với routes cần xác thực: sử dụng `passport.authenticate('jwt', { session: false })`.
+- Kiểm tra phân quyền dựa vào `req.user?.user_role` trong handler hoặc service.
 
 ### 4.2 Service Pattern
-
-Service là pure function nhận `PoolClient` làm tham số cuối, không biết về Express.
+Service là tầng chứa logic nghiệp vụ thuần túy (pure functions). Hàm service nhận dữ liệu đầu vào và tham số cuối cùng bắt buộc là `PoolClient` (DB client trong transaction). Service không được phép biết về đối tượng Request/Response của Express.
 
 ```typescript
 import { PoolClient } from "pg";
@@ -187,7 +207,7 @@ async function myServiceFunction(props: Props, pool: PoolClient): Promise<userOu
     const result = await pool.query(query, [props.username]);
 
     if (result.rows.length === 0) {
-        throw new AppError("Not found", 404);
+        throw new AppError("Không tìm thấy người dùng", 404);
     }
 
     return {
@@ -205,18 +225,15 @@ export default myServiceFunction;
 ```
 
 **Quy tắc:**
-- Không import Express trong service
-- Tham số cuối luôn là `pool: PoolClient`
-- Throw `AppError` thay vì return null/undefined khi có lỗi
-- Dùng TypeScript types từ `@model/...`
-- Dùng parameterized query (`$1`, `$2`, ...) để tránh SQL injection
-- **Output về user phải dùng `userOutputModel`** (không có `user_account`, `user_password`)
-- **Không dùng `as Type` để cast** – phải dùng `satisfies Type` với object được map tường minh để TypeScript kiểm tra đúng shape
-- SQL `RETURNING` / `SELECT` **chỉ liệt kê cột public**, không dùng `SELECT *` hay `RETURNING *`
+- Không import Express hoặc các đối tượng liên quan đến HTTP vào Service.
+- Tham số cuối luôn là `pool: PoolClient`.
+- Thay vì return `null`/`undefined` khi xảy ra lỗi nghiệp vụ, hãy throw `AppError` kèm HTTP status code thích hợp.
+- Sử dụng parameterized query (`$1`, `$2`, ...) để phòng chống SQL Injection.
+- **Cấm dùng `as Type` để ép kiểu dữ liệu trả về từ DB.** Phải map tường minh từng thuộc tính của object và sử dụng từ khóa `satisfies Type` của TypeScript để trình biên dịch kiểm tra tính hợp lệ của kiểu dữ liệu.
+- Mọi câu lệnh SQL `SELECT` hoặc `RETURNING` khi truy vấn thông tin người dùng **chỉ được liệt kê tường minh các cột public**, cấm dùng `SELECT *` hoặc `RETURNING *`.
 
 ### 4.3 Facade Class Pattern
-
-Mỗi domain có một `_ClassName.ts` tổng hợp các method:
+Để tránh việc controller phải import trực tiếp hàng chục file service nhỏ lẻ, mỗi domain sẽ có một file Facade class đặt tên theo dạng `_ClassName.ts` (ví dụ: `_User.ts`) tổng hợp và export tất cả các service.
 
 ```typescript
 // services/user/_User.ts
@@ -230,19 +247,19 @@ class User {
 export default User;
 ```
 
-Controller luôn gọi qua facade: `User.create(...)`, `User.findById(...)`, không import trực tiếp service function.
+Trong controller, hãy luôn gọi service thông qua Facade class: `User.create(...)`, `User.findById(...)`.
 
-### 4.4 Model (TypeScript Types)
-
-Types không phải class, chỉ là TypeScript `type` hoặc `interface`:
+### 4.4 Model & Sensitive Data Protection
+Tất cả các thực thể dữ liệu trong cơ sở dữ liệu đều có kiểu định nghĩa trong thư mục `model/`.
+Đối với các bảng nhạy cảm như `user`, chúng ta định nghĩa hai loại model:
 
 ```typescript
 // model/user/userModel.ts
 export type userModel = {
   user_id: number;
   user_name: string;
-  user_account: string | null;  // sensitive – KHÔNG expose ra ngoài
-  user_password: string | null; // sensitive – KHÔNG expose ra ngoài
+  user_account: string | null;  // Thông tin đăng nhập nhạy cảm
+  user_password: string | null; // Mật khẩu băm nhạy cảm
   user_description: string | null;
   user_role: string | null;
   create_at: Date;
@@ -250,41 +267,41 @@ export type userModel = {
   department_id: number | null;
 }
 
-// Type dùng cho output (public) – loại bỏ user_account và user_password
+// Kiểu dữ liệu public an toàn cho client - Loại bỏ account và password
 export type userOutputModel = Omit<userModel, 'user_password' | 'user_account'>;
 ```
 
-**Quy tắc output:**
-- Mọi service trả về thông tin user ra ngoài (controller, response) **bắt buộc** dùng `userOutputModel`
-- `userModel` (đầy đủ) chỉ được dùng nội bộ trong passport strategy khi cần xác thực mật khẩu (`bcrypt.compare`)
-- `Express.User` (req.user) cũng extend `userOutputModel` – không có account/password trong session
+**Quy tắc dữ liệu nhạy cảm:**
+- Mọi service trả về thông tin user ra ngoài (cho controller và response API) **bắt buộc** dùng `userOutputModel`.
+- Kiểu `userModel` (đầy đủ) chỉ được dùng nội bộ trong passport strategy khi cần xác thực mật khẩu (`bcrypt.compare`).
+- Đối tượng `Express.User` (lưu trong `req.user`) cũng kế thừa từ `userOutputModel` (không chứa account/password).
 
 ---
 
-## 5. Error Handling
+## 5. Xử lý lỗi (Error Handling)
 
 ### AppError
+Sử dụng `AppError` để ném ra các lỗi nghiệp vụ (operational errors).
 ```typescript
-throw new AppError("Không tìm thấy", 404);          // operational error
-throw new AppError("Lỗi server", 500, true);         // 3rd param: isOperational
+throw new AppError("Ứng viên không tồn tại", 404);
+throw new AppError("Lỗi hệ thống", 500, true); // tham số thứ 3: isOperational (mặc định là true)
 ```
 
-Không cần try/catch trong controller vì `express-async-errors` đã handle async errors tự động. Chỉ cần `next(error)` hoặc `throw`.
+Nhờ thư viện `express-async-errors` được import tại `index.ts`, các hàm async trong Express router sẽ tự động chuyển lỗi ném ra tới global handler mà không cần bọc khối code trong `try/catch` thủ công ở controller.
 
 ### Global Error Handler (`globalErrorHandler.ts`)
-4 loại lỗi được xử lý:
-1. `AppError` → trả về statusCode và message gốc
-2. `DatabaseError` (pg code 22xx/23xx) → 500 + generic message
-3. Mail errors (`EAUTH`, `ESOCKET`, ...) → 500 + "Không thể gửi mail"
-4. Unknown → 500 + generic message
+Xử lý tập trung 4 nhóm lỗi chính:
+1. `AppError`: Trả về đúng `statusCode` và `message` được định nghĩa.
+2. `DatabaseError` (lỗi từ PostgreSQL, pg code `22xx`, `23xx`, v.v.): Trả về mã lỗi 500 và thông điệp lỗi chung chung nhằm bảo mật cấu trúc DB.
+3. Lỗi gửi Mail (`EAUTH`, `ESOCKET`, ...): Trả về mã lỗi 500 kèm thông báo "Không thể gửi email".
+4. Các lỗi không xác định khác: Log chi tiết ra hệ thống và trả về mã lỗi 500 kèm message generic.
 
-### Response Format chuẩn
+### Chuẩn định dạng Response
 ```json
-// Thành công
-{ "result": true, "message": "...", "data": {} }
+// Thành công thông thường
+{ "result": true, "message": "Thành công", "data": {} }
 
-// Thành công (có phân trang)
-// QUAN TRỌNG: pagination phải nằm ngoài data
+// Thành công có phân trang (Pagination nằm ngoài trường data)
 { 
   "result": true, 
   "message": "Lấy danh sách thành công", 
@@ -292,145 +309,90 @@ Không cần try/catch trong controller vì `express-async-errors` đã handle a
   "pagination": { "current_page": 1, "total_pages": 10, "total_items": 100 } 
 }
 
-// Lỗi
-{ "result": false, "message": "...", "type": "AppError|DatabaseError|..." }
+// Thất bại do logic nghiệp vụ
+{ "result": false, "message": "Thông báo lỗi chi tiết", "type": "AppError" }
 
-// Validation lỗi  
-{ "result": false, "message": "Dữ liệu không hợp lệ", "details": ["field là bắt buộc"] }
+// Thất bại do validate Joi đầu vào
+{ "result": false, "message": "Dữ liệu không hợp lệ", "details": ["username là bắt buộc"] }
 ```
 
 ---
 
-## 6. Authentication Flow
+## 6. Luồng xác thực & Bảo mật (Authentication)
 
-### Login (Local)
+### Login (Local Strategy)
 ```
 POST /auth/login
 → passport.authenticate('login')
-→ Verify account + password
-→ Generate accessToken (JWT, 15m) + refreshToken (JWT, 30d)
-→ refreshToken → Redis (key: refreshToken:{user_id}:{jti})
-→ refreshToken → httpOnly cookie
-→ Response: { ...user, accessToken }
+→ Kiểm tra account + password
+→ Tạo accessToken (JWT, thời hạn 15m) + refreshToken (JWT, thời hạn 30d)
+→ Lưu refreshToken vào Redis (Key pattern: `refreshToken:{user_id}:{jti}`)
+→ Ghi refreshToken vào httpOnly Cookie để bảo mật
+→ Trả về JSON: { result: true, data: { ...userOutputModel, accessToken } }
 ```
 
-### Request Auth
+### JWT Authenticated Requests
 ```
 Header: Authorization: Bearer <accessToken>
-→ passport.authenticate('jwt')
-→ Kiểm tra blacklist Redis
-→ Verify JWT → set req.user
+→ passport.authenticate('jwt', { session: false })
+→ Kiểm tra blacklist Token trên Redis
+→ Xác thực chữ ký và thời hạn JWT
+→ Gắn thông tin user vào req.user (kiểu userOutputModel)
 ```
 
-### Rate Limiting
-- 100 requests/phút mặc định (configure qua env)
-- Login fail counter: Redis key `login_fail:{user_id}`, khóa 15 phút sau 5 lần sai
+### Rate Limiting & Login Brute Force Protection
+- Mặc định giới hạn tối đa 100 requests/phút trên mỗi IP.
+- Cơ chế khóa tài khoản đăng nhập sai: Lưu số lần đăng nhập sai vào Redis `login_fail:{user_id}`, tự động khóa đăng nhập trong 15 phút nếu nhập sai quá 5 lần liên tiếp.
 
 ---
 
-## 7. Database
+## 7. Cơ sở dữ liệu & Cache
 
 ### PostgreSQL Pool
 ```typescript
-// Luôn dùng withTransaction
 const result = await withTransaction(async (pool) => {
     return await pool.query("SELECT ...", [param1, param2]);
 });
 ```
-
-Pool config: max 20 connections, idleTimeout 30s, connectionTimeout 2s.
+Pool connection được cấu hình tại `middlewares/database.ts` (mặc định tối đa 20 connections, idleTimeout 30s, connectionTimeout 2s).
 
 ### Redis Cache Pattern
 ```typescript
 import { setCache, getCache, delCache } from "@middlewares/redisClient";
 
-// Đặt cache
-await setCache(`user:${id}`, data, 3600); // TTL tính bằng giây
+// Ghi dữ liệu vào cache kèm thời gian sống (TTL - giây)
+await setCache(`user:${id}`, data, 3600);
 
-// Lấy cache
+// Đọc dữ liệu từ cache
 const cached = await getCache<UserType>(`user:${id}`);
 if (cached) return cached;
 
-// Xóa cache khi update
+// Xóa dữ liệu cache khi có sự thay đổi (Update/Delete)
 await delCache(`user:${id}`);
 ```
 
 ---
 
-## 8. File Upload (Multer)
+## 8. Quy trình thêm endpoint mới (Ví dụ: GET /user/profile)
 
-Upload đi qua multer config tại `utilities/multer/`. Sau upload, `validateFileQuality` middleware kiểm tra định dạng và chất lượng tệp tin (ví dụ: kích thước tối đa của tài liệu ứng viên là 5MB).
+Để tạo một endpoint mới một cách chuẩn chỉ, agent cần tuân thủ 4 bước sau:
 
----
-
-## 9. Data Models Examples
-
-### User Model
-```typescript
-// Đầy đủ – chỉ dùng nội bộ (passport, bcrypt compare)
-export type userModel = {
-  user_id: number;
-  user_name: string;
-  user_account: string | null;
-  user_password: string | null;
-  user_description: string | null;
-  user_role: string | null;
-  create_at: Date;
-  update_at: Date;
-  department_id: number | null;
-}
-
-// Public output – dùng cho mọi service và response trả về client
-export type userOutputModel = Omit<userModel, 'user_password' | 'user_account'>;
-```
-
-### Candidate Model
-```typescript
-export type candidateModel = {
-  candidate_id: number;
-  candidate_code: string;
-  candidate_name: string;
-  candidate_email: string;
-  candidate_phone: string;
-  agency: string | null;
-  offer_date: Date;
-  onboard_date: Date;
-  feedback_date: Date;
-  current_salary: string;
-  expected_salary: string;
-  status: string;
-  note: string;
-  create_at: Date;
-  update_at: Date;
-  source: number;
-  recruiter: number;
-  job_id: number;
-  targeted_company: number | null;
-  reference: number | null;
-  file_id: number | null;
-}
-```
-
----
-
-## 10. Quy tắc khi viết code mới
-
-### Tạo endpoint mới (ví dụ: GET /user/someFeature)
-
-1. **Tạo service function** tại `services/user/someFeature.ts`:
+1. **Tạo service function** tại `services/user/profile.ts`:
    ```typescript
+   import { PoolClient } from "pg";
+   import { AppError } from "@middlewares/AppError";
    import type { userOutputModel } from "@model/user/userModel";
 
-   async function someFeature(param: string, pool: PoolClient): Promise<userOutputModel> {
-       // Chỉ SELECT cột public, không dùng SELECT *
+   async function profile(userId: number, pool: PoolClient): Promise<userOutputModel> {
        const result = await pool.query(
            `SELECT user_id, user_name, user_description, user_role, department_id, create_at, update_at
             FROM "user" WHERE user_id = $1`,
-           [param]
+           [userId]
        );
-       if (result.rows.length === 0) throw new AppError("Not found", 404);
+       if (result.rows.length === 0) {
+           throw new AppError("Người dùng không tồn tại", 404);
+       }
 
-       // Dùng satisfies thay vì as để TypeScript kiểm tra shape
        return {
            user_id: result.rows[0].user_id,
            user_name: result.rows[0].user_name,
@@ -441,59 +403,90 @@ export type candidateModel = {
            update_at: result.rows[0].update_at
        } satisfies userOutputModel;
    }
-   export default someFeature;
+   export default profile;
    ```
 
-2. **Thêm vào facade** `services/user/_User.ts`:
+2. **Thêm vào Facade class** tại `services/user/_User.ts`:
    ```typescript
-   import someFeature from "@services/user/someFeature";
-   // trong class User:
-   static someFeature = someFeature;
+   import profile from "@services/user/profile";
+   
+   class User {
+       // ... methods khác
+       static profile = profile;
+   }
+   export default User;
    ```
 
-3. **Tạo controller** `controller/user/someFeatureController.ts`:
+3. **Tạo router controller** tại `controller/user/profileController.ts`:
    ```typescript
+   import express from "express";
+   import { withTransaction } from "@middlewares/withTransaction";
+   import User from "@services/user/_User";
+   import passport from "@middlewares/passport";
+
    const router = express.Router();
-   router.get("", joiValidate(schema, 'query'), async (req, res) => {
-       const result = await withTransaction(pool => User.someFeature(req.query.param, pool));
-       res.status(200).json({ result: true, message: "...", data: result });
-   });
+
+   router.get("", 
+       passport.authenticate('jwt', { session: false }), 
+       async (req, res) => {
+           const userId = req.user!.user_id;
+           const result = await withTransaction(pool => User.profile(userId, pool));
+           res.status(200).json({ result: true, message: "Lấy profile thành công", data: result });
+       }
+   );
    export default router;
    ```
 
-4. **Mount trong router** `controller/user/_UserController.ts`:
+4. **Mount router vào Controller chính** `controller/user/_UserController.ts`:
    ```typescript
-   import someFeatureController from "@controller/user/someFeatureController";
-   UserController.use("/someFeature", someFeatureController);
+   import profileController from "@controller/user/profileController";
+   
+   UserController.use("/profile", profileController);
    ```
 
-### Đặt tên file
-- Controller: `camelCase` + `Controller.ts` (vd: `advancedSearchUserController.ts`)
-- Service: `camelCase` chức năng (vd: `advancedSearch.ts`, `findById.ts`)
-- Facade: `_ClassName.ts` (vd: `_User.ts`, `_Candidate.ts`)
-- Model types: `camelCase` + `Model.ts` (vd: `userModel.ts`)
+### Quy tắc đặt tên File & Thư mục:
+- Controllers: Dùng `camelCase` + suffix `Controller.ts` (ví dụ: `createCandidateController.ts`).
+- Services: Dùng `camelCase` mô tả đúng chức năng (ví dụ: `create.ts`, `findById.ts`).
+- Facade: Dùng `_ClassName.ts` (ví dụ: `_User.ts`, `_Candidate.ts`).
+- Model Types: Dùng `camelCase` + suffix `Model.ts` (ví dụ: `candidateModel.ts`).
 
 ---
 
-## 11. Kiểm tra khi có lỗi
+## 9. Khởi tạo Cơ sở dữ liệu
 
-1. **401/403**: Kiểm tra JWT token còn hạn, không bị blacklist
-2. **400 validation**: Kiểm tra Joi schema khớp với request
-3. **500 DB error**: Kiểm tra pg Pool connection, query syntax
-4. **Redis error**: Kiểm tra REDIS_HOST/PORT/PASSWORD trong .env
-5. **File upload lỗi**: Kiểm tra multer fieldname khớp với `validateFileQuality`
+Khi có bất kỳ thay đổi nào liên quan tới file `.sql` trong thư mục `model/`:
+1. Chạy lệnh gom schema và giải quyết khóa ngoại:
+   ```bash
+   npm run init-db
+   ```
+2. Chạy cập nhật database local:
+   ```bash
+   npm run run-init-db
+   ```
 
 ---
 
-## 12. Không làm những điều này
+## 10. Viết Test & Đảm bảo chất lượng code
 
-- ❌ Không viết SQL trực tiếp trong controller
-- ❌ Không import Express trong service
-- ❌ Không dùng đường dẫn tương đối (`../../`) trong import
-- ❌ Không query DB mà không dùng `withTransaction()`
-- ❌ Không return `null` trong service khi có lỗi → dùng `throw new AppError()`
-- ❌ Không bỏ qua Joi validation cho input từ user
-- ❌ Không hardcode credential hay secret trong code
-- ❌ Không dùng `as SomeType` để cast kết quả DB – phải dùng `satisfies` với object map tường minh
-- ❌ Không trả về `userModel` (đầy đủ) từ service công khai – luôn dùng `userOutputModel`
-- ❌ Không dùng `SELECT *` hay `RETURNING *` trong query trả về user – liệt kê rõ từng cột public
+AI Agent **bắt buộc** phải đọc tài liệu hướng dẫn viết test tại [.agent/testGuide.md](file:///c:/WorkFolder/recruitment_system/backend/.agent/testGuide.md) trước khi bắt đầu tạo test.
+
+**Tóm tắt nguyên tắc viết test:**
+- Một file source logic/service → một file test tương ứng tại cùng cấu trúc thư mục trong `test/`.
+- Sử dụng DB thật để chạy test nhưng luôn bọc trong transaction `BEGIN` & `ROLLBACK` ở `beforeEach` và `afterEach`.
+- Stub các tài nguyên ngoài (Redis, File System, Mail) bằng Sinon.
+- Chạy kiểm thử cụ thể: `npm run test:file 'test/services/user/create.test.ts'`.
+
+---
+
+## 11. Tuyệt đối KHÔNG làm những điều sau (Cấm)
+
+- ❌ Không viết SQL trực tiếp ở tầng Controller.
+- ❌ Không import các module của Express (`Request`, `Response`) vào tầng Service.
+- ❌ Không dùng đường dẫn tương đối để import module → Sử dụng alias `@/`.
+- ❌ Không thực hiện query DB mà không dùng helper `withTransaction()`.
+- ❌ Không return `null` / `undefined` trong Service khi có lỗi nghiệp vụ → Luôn dùng `throw new AppError()`.
+- ❌ Không bỏ qua việc validate Joi cho dữ liệu nhận từ người dùng ở Controller.
+- ❌ Không hardcode credential, token hay config nhạy cảm vào code → Sử dụng `process.env`.
+- ❌ Không ép kiểu bằng `as Type` cho kết quả truy vấn từ DB → Dùng ánh xạ tường minh và `satisfies`.
+- ❌ Không trả về kiểu `userModel` (chứa password/account) ra client → Luôn dùng `userOutputModel`.
+- ❌ Không dùng `SELECT *` hoặc `RETURNING *` khi truy cập bảng `user` → Liệt kê chi tiết cột public.
