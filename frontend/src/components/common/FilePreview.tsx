@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, FileText, FileSpreadsheet, File, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, File, Image as ImageIcon, Loader2, Maximize2, Minimize2 } from 'lucide-react';
 import axiosInstance from '../../config/axiosInstance';
 import Modal from '../ui/Modal';
 import Button from './Button';
@@ -100,6 +100,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
   const [textContent, setTextContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const fileName = file?.name || file?.file_name || file?.file_path?.split('/').pop() || 'File';
   const fileUrl = file?.url || file?.file_url;
@@ -215,8 +216,8 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
 
     if (isImage) {
       return (
-        <div className="flex items-center justify-center w-full h-full max-h-[60vh] bg-slate-100/50 p-4 rounded-lg">
-          <img src={blobUrl} alt={fileName} className="max-w-full max-h-[50vh] object-contain rounded shadow-md" />
+        <div className={`flex items-center justify-center w-full h-full ${isFullScreen ? 'max-h-[calc(100vh-120px)]' : 'max-h-[60vh]'} bg-slate-100/50 p-4 rounded-lg`}>
+          <img src={blobUrl} alt={fileName} className={`max-w-full ${isFullScreen ? 'max-h-[calc(100vh-160px)]' : 'max-h-[50vh]'} object-contain rounded shadow-md`} />
         </div>
       );
     }
@@ -225,7 +226,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
       return (
         <iframe
           src={`${blobUrl}#toolbar=0&navpanes=0`}
-          className="w-full h-[60vh] border-0 rounded-lg shadow-sm"
+          className={`w-full ${isFullScreen ? 'h-[calc(100vh-100px)]' : 'h-[60vh]'} border-0 rounded-lg shadow-sm`}
           title={fileName}
         />
       );
@@ -233,7 +234,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
 
     if (isText && textContent !== null) {
       return (
-        <div className="w-full h-[50vh] overflow-auto p-4 bg-white border border-slate-200 rounded-lg">
+        <div className={`w-full ${isFullScreen ? 'h-[calc(100vh-100px)]' : 'h-[50vh]'} overflow-auto p-4 bg-white border border-slate-200 rounded-lg`}>
           <pre className="font-mono text-xs leading-relaxed text-slate-700 whitespace-pre-wrap break-all margin-0">
             {textContent}
           </pre>
@@ -259,7 +260,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
 
   const modalTitle = (
     <div className="flex items-center gap-3">
-      <span className="font-semibold text-slate-800 truncate max-w-[400px]" title={fileName}>
+      <span className="font-semibold text-slate-800 truncate max-w-[300px] sm:max-w-[400px]" title={fileName}>
         {fileName}
       </span>
       <button
@@ -270,6 +271,14 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
       >
         <Download className="h-5 w-5" />
       </button>
+      <button
+        type="button"
+        onClick={() => setIsFullScreen(!isFullScreen)}
+        className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+        title={isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
+      >
+        {isFullScreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+      </button>
     </div>
   );
 
@@ -279,6 +288,7 @@ export function FilePreviewModal({ file, onClose }: FilePreviewModalProps) {
       onClose={onClose}
       title={modalTitle}
       maxWidthClass="max-w-4xl"
+      fullScreen={isFullScreen}
     >
       <div className="space-y-4">
         {renderPreview()}

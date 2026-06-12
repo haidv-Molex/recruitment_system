@@ -8,6 +8,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidthClass?: string; // e.g. 'max-w-md', 'max-w-lg', 'max-w-2xl'
+  fullScreen?: boolean;
 }
 
 export default function Modal({
@@ -17,6 +18,7 @@ export default function Modal({
   children,
   footer,
   maxWidthClass = 'max-w-lg',
+  fullScreen = false,
 }: ModalProps) {
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -42,7 +44,11 @@ export default function Modal({
 
       {/* Modal Dialog */}
       <div
-        className={`relative w-full ${maxWidthClass} transform overflow-hidden rounded-xl bg-white shadow-2xl transition-all flex flex-col max-h-[90vh]`}
+        className={`relative w-full transform overflow-hidden bg-white shadow-2xl transition-all flex flex-col ${
+          fullScreen
+            ? 'h-screen max-h-screen w-screen max-w-none rounded-none'
+            : `${maxWidthClass} rounded-xl max-h-[90vh]`
+        }`}
         role="dialog"
         aria-modal="true"
       >
