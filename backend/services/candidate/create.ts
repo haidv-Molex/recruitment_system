@@ -23,6 +23,7 @@ export interface CreateCandidateInput {
   targeted_company?: number | null;
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
+  candidate_levels?: number[];
 }
 
 export async function create(
@@ -95,7 +96,20 @@ export async function create(
       throw new AppError("Lỗi khi thêm thông tin ứng viên", 500);
     }
 
-    return await populateCandidateRelations(result.rows[0], pool);
+    const candidateRow = result.rows[0];
+    const candidateId = candidateRow.candidate_id;
+
+    if (data.candidate_levels && data.candidate_levels.length > 0) {
+      const levelInsertQuery = `
+        INSERT INTO candidate_level (candidate_id, level_id)
+        VALUES ($1, $2)
+      `;
+      for (const levelId of data.candidate_levels) {
+        await pool.query(levelInsertQuery, [candidateId, levelId]);
+      }
+    }
+
+    return await populateCandidateRelations(candidateRow, pool);
   } catch (error) {
     // Rollback file on disk if db insertion fails
     if (fileUploadResult) {

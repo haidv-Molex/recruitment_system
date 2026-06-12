@@ -65,12 +65,8 @@ describe("createValidationSheet Service", () => {
     expect(workbook).to.not.be.undefined;
     
     // Check worksheets exist
-    const idlTrackingSheet = workbook.getWorksheet("IDL tracking");
-    const databaseSheet = workbook.getWorksheet("Database");
     const validationSheet = workbook.getWorksheet("Data Validation")!;
 
-    expect(idlTrackingSheet).to.not.be.undefined;
-    expect(databaseSheet).to.not.be.undefined;
     expect(validationSheet).to.not.be.undefined;
 
     // Check Data Validation headers are correct

@@ -23,6 +23,7 @@ export interface UpdateCandidateInput {
   targeted_company?: number | null;
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
+  candidate_levels?: number[];
 }
 
 export async function update(
@@ -49,6 +50,19 @@ export async function update(
   }
 
   try {
+    if (data.candidate_levels !== undefined) {
+      await pool.query("DELETE FROM candidate_level WHERE candidate_id = $1", [id]);
+      if (data.candidate_levels.length > 0) {
+        const levelInsertQuery = `
+          INSERT INTO candidate_level (candidate_id, level_id)
+          VALUES ($1, $2)
+        `;
+        for (const levelId of data.candidate_levels) {
+          await pool.query(levelInsertQuery, [id, levelId]);
+        }
+      }
+    }
+
     const sets: string[] = [];
     const values: any[] = [];
     let placeholderIndex = 1;
@@ -81,7 +95,7 @@ export async function update(
     if (fileId !== undefined) addParam(fileId, "file_id");
 
     if (sets.length === 0) {
-      // No updates, just fetch candidate
+      // No updates to candidate columns, just fetch candidate and populate candidate levels
       const result = await pool.query("SELECT * FROM candidate WHERE candidate_id = $1", [id]);
       return await populateCandidateRelations(result.rows[0], pool);
     }

@@ -97,7 +97,6 @@ const FIELD_ORDER: { key: string; header: string; width: number; isDate?: boolea
 const DB_FROM_JD: Record<string, string> = {
     department: "dept",
     job_title: "job_title",
-    ee_level: "ee_level",
     project: "project",
     hiring_manager: "hiring_manager",
     recruiter: "recruiter",

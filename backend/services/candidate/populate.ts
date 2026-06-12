@@ -4,6 +4,7 @@ export async function populateCandidateRelations(candidateRow: any, pool: PoolCl
   if (!candidateRow) return null;
 
   const {
+    candidate_id,
     platform_id,
     recruiter,
     job_id,
@@ -18,7 +19,8 @@ export async function populateCandidateRelations(candidateRow: any, pool: PoolCl
     job_id ? pool.query("SELECT job_id, job_code, project, candidate_required, note, file_id, create_at, update_at FROM job WHERE job_id = $1", [job_id]) : Promise.resolve(null),
     targeted_company ? pool.query("SELECT company_id, company_name, company_description FROM company WHERE company_id = $1", [targeted_company]) : Promise.resolve(null),
     reference ? pool.query('SELECT user_id, user_name, user_description, user_role, department_id, create_at, update_at FROM "user" WHERE user_id = $1', [reference]) : Promise.resolve(null),
-    file_id ? pool.query("SELECT file_id, file_path FROM file WHERE file_id = $1", [file_id]) : Promise.resolve(null)
+    file_id ? pool.query("SELECT file_id, file_path FROM file WHERE file_id = $1", [file_id]) : Promise.resolve(null),
+    candidate_id ? pool.query("SELECT l.level_id, l.level_code, l.level_name, l.level_description, l.create_at, l.update_at FROM candidate_level cl JOIN level l ON cl.level_id = l.level_id WHERE cl.candidate_id = $1", [candidate_id]) : Promise.resolve(null)
   ];
 
   const [
@@ -27,7 +29,8 @@ export async function populateCandidateRelations(candidateRow: any, pool: PoolCl
     jobRes,
     companyRes,
     referenceRes,
-    fileRes
+    fileRes,
+    candidateLevelsRes
   ] = await Promise.all(queries);
 
   const fileData = fileRes && fileRes.rows.length > 0 ? {
@@ -54,7 +57,8 @@ export async function populateCandidateRelations(candidateRow: any, pool: PoolCl
     job: jobRes && jobRes.rows.length > 0 ? jobRes.rows[0] : null,
     targeted_company: companyRes && companyRes.rows.length > 0 ? companyRes.rows[0] : null,
     reference: referenceRes && referenceRes.rows.length > 0 ? referenceRes.rows[0] : null,
-    file: fileData
+    file: fileData,
+    candidate_levels: candidateLevelsRes && candidateLevelsRes.rows.length > 0 ? candidateLevelsRes.rows : []
   };
 }
 

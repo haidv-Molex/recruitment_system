@@ -176,4 +176,33 @@ describe("candidate/createWithAll service", () => {
     expect(result.reference).to.be.null;
     expect(result.job).to.be.null;
   });
+
+  // ─── Levels and Levels Name ────────────────────────────────────────────────
+
+  it("should successfully resolve candidate_levels and candidate_levels_name", async () => {
+    // Seed one level
+    const levelRes = await client.query(
+      `INSERT INTO level (level_name, level_code) VALUES ($1, $2) RETURNING level_id`,
+      ["Middle", "MID"]
+    );
+    const seededLevelId = levelRes.rows[0].level_id;
+
+    const result = await createWithAll(
+      {
+        candidate_name: "Nguyễn Văn Level",
+        status: "CV Sent",
+        candidate_levels: [seededLevelId],
+        candidate_levels_name: ["Fresher", "Middle"], // Middle exists, Fresher is new
+      },
+      client
+    );
+
+    expect(result.candidate_levels).to.be.an("array").with.lengthOf(3);
+    const levelIds = result.candidate_levels.map((cl: any) => cl.level_id);
+    const levelNames = result.candidate_levels.map((cl: any) => cl.level_name);
+
+    expect(levelIds).to.include(seededLevelId);
+    expect(levelNames).to.include("middle");
+    expect(levelNames).to.include("fresher");
+  });
 });

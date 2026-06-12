@@ -15,6 +15,7 @@ import express from "express";
 import multer from "multer";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
+import { numberArray, stringArray } from "@utilities/joiTypes";
 import Candidate from "@services/candidate/_Candidate";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -99,6 +100,7 @@ const bodySchema = Joi.object({
     "number.base": "Reference ID phải là số nguyên",
     "number.integer": "Reference ID phải là số nguyên",
   }),
+  candidate_levels: numberArray().optional(),
 
   // --- FK bằng tên – tự động tạo bản ghi mới ---
   recruiter_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
@@ -113,6 +115,7 @@ const bodySchema = Joi.object({
   targeted_company_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Tên công ty đích không được vượt quá 255 ký tự",
   }),
+  candidate_levels_name: stringArray().optional(),
 });
 
 createCandidateWithAllController.post(
@@ -151,12 +154,14 @@ createCandidateWithAllController.post(
           platform_id: body.platform_id,
           targeted_company: body.targeted_company,
           reference: body.reference,
+          candidate_levels: body.candidate_levels ?? [],
 
           // FK bằng tên – tự động tạo
           recruiter_name: body.recruiter_name,
           platform_name: body.platform_name,
           targeted_company_name: body.targeted_company_name,
           reference_name: body.reference_name,
+          candidate_levels_name: body.candidate_levels_name ?? [],
         },
         pool
       );

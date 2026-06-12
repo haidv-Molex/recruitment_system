@@ -57,6 +57,19 @@ describe("Candidate create service", () => {
     );
     const referenceId = referenceRes.rows[0].user_id;
 
+    // 5.5 Seed levels
+    const levelRes1 = await client.query(
+      `INSERT INTO level (level_name, level_code) VALUES ($1, $2) RETURNING level_id`,
+      ["Senior", "SEN"]
+    );
+    const levelId1 = levelRes1.rows[0].level_id;
+
+    const levelRes2 = await client.query(
+      `INSERT INTO level (level_name, level_code) VALUES ($1, $2) RETURNING level_id`,
+      ["Engineer", "ENG"]
+    );
+    const levelId2 = levelRes2.rows[0].level_id;
+
     // 6. Call create service with all fields populated
     const offerDate = new Date("2026-06-01T00:00:00.000Z");
     const onboardDate = new Date("2026-06-10T00:00:00.000Z");
@@ -81,7 +94,8 @@ describe("Candidate create service", () => {
       recruiter: recruiterId,
       job_id: jobId,
       targeted_company: companyId,
-      reference: referenceId
+      reference: referenceId,
+      candidate_levels: [levelId1, levelId2]
     };
 
     const result = await create(candidateData, client);
@@ -128,6 +142,11 @@ describe("Candidate create service", () => {
 
     expect(result.reference).to.not.be.null;
     expect(result.reference.user_id).to.equal(referenceId);
+
+    expect(result.candidate_levels).to.be.an("array").with.lengthOf(2);
+    const levelIds = result.candidate_levels.map((cl: any) => cl.level_id);
+    expect(levelIds).to.include(levelId1);
+    expect(levelIds).to.include(levelId2);
   });
 
   it("should successfully create candidate with onboard_date as null", async () => {

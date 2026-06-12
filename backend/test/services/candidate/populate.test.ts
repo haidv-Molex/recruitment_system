@@ -87,4 +87,35 @@ describe("Candidate populate service", () => {
     expect(result.targeted_company.company_name).to.equal("Google");
     expect(result.targeted_company.company_description).to.equal("Search engine company");
   });
+
+  it("should successfully populate candidate levels relation", async () => {
+    // 1. Seed level
+    const levelRes = await client.query(
+      `INSERT INTO level (level_name, level_code) VALUES ($1, $2) RETURNING level_id`,
+      ["Lead", "LD"]
+    );
+    const levelId = levelRes.rows[0].level_id;
+
+    // 2. Seed a candidate
+    const candidateRes = await client.query(
+      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING *`,
+      ["Candidate Level Pop", "Applied"]
+    );
+    const candidateRow = candidateRes.rows[0];
+
+    // 3. Link candidate to level
+    await client.query(
+      `INSERT INTO candidate_level (candidate_id, level_id) VALUES ($1, $2)`,
+      [candidateRow.candidate_id, levelId]
+    );
+
+    // 4. Call populateCandidateRelations
+    const result = await populateCandidateRelations(candidateRow, client);
+
+    expect(result).to.not.be.null;
+    expect(result.candidate_name).to.equal("Candidate Level Pop");
+    expect(result.candidate_levels).to.be.an("array").with.lengthOf(1);
+    expect(result.candidate_levels[0].level_id).to.equal(levelId);
+    expect(result.candidate_levels[0].level_name).to.equal("Lead");
+  });
 });

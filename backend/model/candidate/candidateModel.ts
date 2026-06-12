@@ -1,4 +1,6 @@
 
+import type { levelModel } from "@model/level/levelModel";
+
 export type HeadhuntAgency =
   | 'AsiaHr'
   | 'Navigos'
@@ -49,4 +51,5 @@ export type candidateModel = {
   targeted_company: number | null;
   reference: number | null;
   file_id: number | null;
+  candidate_levels?: levelModel[];
 }
