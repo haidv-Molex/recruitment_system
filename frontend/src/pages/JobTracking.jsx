@@ -5,9 +5,10 @@ import { JobForm } from '../components/JobForm';
 import { ToastContainer } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import { calculatePipelineForJob, masterData } from '../services/mockData';
-import { createJobApi, createJobExtendedApi, searchJobsApi, updateJobApi, deleteJobApi } from '../services/jobApi';
+import { createJobApi, createJobExtendedApi, searchJobsApi, updateJobApi, deleteJobApi, downloadIdlTrackingSheetApi, downloadFullWorkbookApi } from '../services/jobApi';
 import { FileBadge, FilePreviewModal } from '../components/FilePreview';
 import { JobExcelImport } from '../components/JobExcelImport';
+import { Download } from 'lucide-react';
 
 const statusClass = (status) => `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
@@ -204,6 +205,18 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     setShowExcelImport(false);
     loadJobsFromApi();
   };
+  const handleDownloadTracking = async () => {
+    const result = await downloadIdlTrackingSheetApi();
+    if (!result.success) {
+      toast.error(result.message || 'Download failed.');
+    }
+  };
+  const handleDownloadFullWorkbook = async () => {
+    const result = await downloadFullWorkbookApi();
+    if (!result.success) {
+      toast.error(result.message || 'Download failed.');
+    }
+  };
 
   const columns = [
     {
@@ -296,6 +309,12 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
           </button>
           <button type="button" className="excel-button primary" onClick={() => { setEditingJob(null); setShowJobForm(true); }}>
             <Plus size={16} /> Add Job
+          </button>
+          <button type="button" className="excel-button secondary" onClick={handleDownloadTracking}>
+            <Download size={16} /> Download Sheet
+          </button>
+          <button type="button" className="excel-button secondary" onClick={handleDownloadFullWorkbook}>
+            <Download size={16} /> Full Workbook
           </button>
         </div>
       </section>

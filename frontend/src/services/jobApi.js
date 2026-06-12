@@ -383,3 +383,57 @@ export const createJobExtendedApi = async (formData) => {
     return { success: false, message: err.message || 'An unexpected error occurred.' };
   }
 };
+
+export const downloadIdlTrackingSheetApi = async () => {
+  try {
+    const response = await apiClient.get('/file/idl-tracking-sheet', {
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'idl-tracking-sheet.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    return { success: true };
+  } catch (err) {
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
+    }
+    return { success: false, message: err.message || 'Download failed.' };
+  }
+};
+
+export const downloadFullWorkbookApi = async () => {
+  try {
+    const response = await apiClient.get('/file/full-workbook', {
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'full-workbook.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    return { success: true };
+  } catch (err) {
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.' };
+    }
+    return { success: false, message: err.message || 'Download failed.' };
+  }
+};

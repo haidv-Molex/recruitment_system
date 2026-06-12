@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Edit2, FileUp, Plus, Trash2 } from 'lucide-react';
+import { Download, Edit2, FileUp, Plus, Trash2 } from 'lucide-react';
 import { CandidateForm } from '../components/CandidateForm';
 import { BulkCVUpload } from '../components/BulkCVUpload';
 import { ExcelTable, formatDate } from '../components/ExcelTable';
 import { masterData } from '../services/mockData';
 import { ToastContainer } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
-import { createCandidateApi, createCandidateExtendedApi, searchCandidatesApi, deleteCandidateApi, updateCandidateApi } from '../services/candidateApi';
+import { createCandidateApi, createCandidateExtendedApi, searchCandidatesApi, deleteCandidateApi, updateCandidateApi, downloadValidationSheetApi, downloadDatabaseSheetApi } from '../services/candidateApi';
 import { FileBadge, FilePreviewModal } from '../components/FilePreview';
 import { CandidateExcelImport } from '../components/CandidateExcelImport';
+import { downloadFullWorkbookApi } from '../services/jobApi';
 
 const statusClass = (status) => `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
@@ -173,6 +174,27 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
     loadCandidatesFromApi();
   };
 
+  const handleDownloadTemplate = async () => {
+    toast.info('Downloading template...');
+    const result = await downloadValidationSheetApi();
+    if (!result.success) {
+      toast.error(result.message || 'Download failed.');
+    }
+  };
+  const handleDownloadDatabase = async () => {
+    toast.info('Downloading database sheet...');
+    const result = await downloadDatabaseSheetApi();
+    if (!result.success) {
+      toast.error(result.message || 'Download failed.');
+    }
+  };
+  const handleDownloadFullWorkbook = async () => {
+    const result = await downloadFullWorkbookApi();
+    if (!result.success) {
+      toast.error(result.message || 'Download failed.');
+    }
+  };
+
   const columns = [
     {
       key: 'actions',
@@ -233,6 +255,15 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
           <p>Main candidate-level data source. Linked to Jobs via Job Code.</p>
         </div>
         <div className="hero-actions">
+          <button type="button" className="excel-button secondary" onClick={handleDownloadTemplate}>
+            <Download size={16} /> Template
+          </button>
+          <button type="button" className="excel-button secondary" onClick={handleDownloadDatabase}>
+            <Download size={16} /> Database
+          </button>
+          <button type="button" className="excel-button secondary" onClick={handleDownloadFullWorkbook}>
+            <Download size={16} /> Full Workbook
+          </button>
           <button type="button" className="excel-button secondary" onClick={() => setShowBulkUpload(true)}>
             <FileUp size={16} /> Bulk Upload
           </button>
