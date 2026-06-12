@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, Download, FileText, FileSpreadsheet, File, Image, Loader } from 'lucide-react';
-import apiClient from '../services/api';
+import axiosInstance from '../config/axiosInstance';
 
 // Get file extension from filename
 const getExtension = (filename) => {
@@ -153,8 +153,8 @@ export const FilePreviewModal = ({ file, onClose }) => {
       setError('');
 
       try {
-        // Download file as blob through apiClient (includes auth token)
-        const response = await apiClient.get(file.url.replace(apiClient.defaults.baseURL, ''), {
+        // Download file as blob through axiosInstance (includes auth token)
+        const response = await axiosInstance.get(file.url.replace(axiosInstance.defaults.baseURL || '', ''), {
           responseType: 'blob',
         });
 

@@ -23,18 +23,16 @@ export const CompanyPage = () => {
   const loadCompanies = useCallback(async (page, search) => {
     setLoading(true);
 
-    const result = await searchCompaniesApi({
-      page,
-      limit: ITEMS_PER_PAGE,
-      search,
-    });
-
-    // If API succeeded, update companies and pagination
-    if (result.success) {
-      setCompanies(result.companies);
-      setPagination(result.pagination);
-    } else if (result.message) {
-      toast.warning(result.message);
+    try {
+      const result = await searchCompaniesApi({
+        page,
+        limit: ITEMS_PER_PAGE,
+        search,
+      });
+      setCompanies(result.data || []);
+      setPagination(result.pagination || null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load companies.');
     }
 
     setLoading(false);
@@ -64,7 +62,7 @@ export const CompanyPage = () => {
 
   const handlePageChange = (page) => {
     // If page is within valid range, change to that page
-    if (page >= 1 && pagination && page <= pagination.totalPages) {
+    if (page >= 1 && pagination && page <= pagination.total_pages) {
       setCurrentPage(page);
     }
   };
@@ -78,7 +76,7 @@ export const CompanyPage = () => {
 
   const openEditForm = (company) => {
     setEditingCompany(company);
-    setFormData({ name: company.name, description: company.description });
+    setFormData({ name: company.company_name, description: company.company_description || '' });
     setFormError('');
     setShowForm(true);
   };
@@ -109,33 +107,29 @@ export const CompanyPage = () => {
 
     // If editing, call update API; otherwise call create API
     if (editingCompany) {
-      const result = await updateCompanyApi(
-        editingCompany.id,
-        formData.name.trim(),
-        formData.description.trim()
-      );
-
-      // If update succeeded, reload list and show success toast
-      if (result.success) {
-        toast.success(result.message || 'Company updated successfully.');
+      try {
+        await updateCompanyApi(
+          editingCompany.company_id,
+          formData.name.trim(),
+          formData.description.trim()
+        );
+        toast.success('Company updated successfully.');
         closeForm();
         loadCompanies(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
     } else {
-      const result = await createCompanyApi(
-        formData.name.trim(),
-        formData.description.trim()
-      );
-
-      // If creation succeeded, reload list and show success toast
-      if (result.success) {
-        toast.success(result.message || 'Company created successfully.');
+      try {
+        await createCompanyApi(
+          formData.name.trim(),
+          formData.description.trim()
+        );
+        toast.success('Company created successfully.');
         closeForm();
         loadCompanies(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
     }
 
@@ -144,23 +138,21 @@ export const CompanyPage = () => {
 
   const handleDelete = async (company) => {
     // If user cancels the confirmation dialog, abort deletion
-    if (!confirm(`Are you sure you want to delete "${company.name}"?`)) {
+    if (!confirm(`Are you sure you want to delete "${company.company_name}"?`)) {
       return;
     }
 
-    const result = await deleteCompanyApi(company.id);
-
-    // If deletion succeeded, reload list and show success toast
-    if (result.success) {
-      toast.success(result.message || 'Company deleted.');
+    try {
+      await deleteCompanyApi(company.company_id);
+      toast.success('Company deleted.');
       loadCompanies(currentPage, searchQuery);
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
 
-  const totalPages = pagination?.totalPages || 1;
-  const totalItems = pagination?.totalItems || companies.length;
+  const totalPages = pagination?.total_pages || 1;
+  const totalItems = pagination?.total_items || companies.length;
 
   const pageNumbers = [];
   // Loop to generate page number buttons based on total pages
@@ -251,7 +243,7 @@ export const CompanyPage = () => {
       <p style={s.filterInfo}>
         Total: {totalItems} companies
         {searchQuery && ` • Search: "${searchQuery}"`}
-        {pagination && ` • Page ${pagination.currentPage} of ${pagination.totalPages}`}
+        {pagination && ` • Page ${pagination.current_page} of ${pagination.total_pages}`}
       </p>
 
       {/* Table */}
@@ -281,12 +273,12 @@ export const CompanyPage = () => {
           ) : (
             // Loop through companies to render each row
             companies.map((c) => (
-              <tr key={c.id}>
+              <tr key={c.company_id}>
                 <td style={s.td}>
-                  <span style={s.idBadge}>{c.id}</span>
+                  <span style={s.idBadge}>{c.company_id}</span>
                 </td>
-                <td style={s.td}><strong>{c.name}</strong></td>
-                <td style={{ ...s.td, color: '#64748b' }}>{c.description || '—'}</td>
+                <td style={s.td}><strong>{c.company_name}</strong></td>
+                <td style={{ ...s.td, color: '#64748b' }}>{c.company_description || '—'}</td>
                 <td style={{ ...s.td, textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                     <button
@@ -314,10 +306,10 @@ export const CompanyPage = () => {
       </table>
 
       {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.total_pages > 1 && (
         <div style={s.paginationRow}>
           <span style={s.paginationInfo}>
-            Page {pagination.currentPage} of {pagination.totalPages} • {totalItems} companies
+            Page {pagination.current_page} of {pagination.total_pages} • {totalItems} companies
           </span>
 
           <div style={s.paginationButtons}>

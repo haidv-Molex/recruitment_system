@@ -22,13 +22,12 @@ export const LevelPage = () => {
 
     const loadLevels = useCallback(async (page, search) => {
         setLoading(true);
-        const result = await searchLevelsApi({ page, limit: ITEMS_PER_PAGE, search });
-
-        if (result.success) {
-            setLevels(result.levels);
+        try {
+            const result = await searchLevelsApi({ page, limit: ITEMS_PER_PAGE, search });
+            setLevels(result.data || []);
             if (result.pagination) setPagination(result.pagination);
-        } else if (result.message) {
-            toast.warning(result.message);
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.message || 'Failed to load levels.');
         }
         setLoading(false);
     }, []);
@@ -53,7 +52,7 @@ export const LevelPage = () => {
     };
 
     const handlePageChange = (page) => {
-        if (page >= 1 && pagination && page <= pagination.totalPages) {
+        if (page >= 1 && pagination && page <= pagination.total_pages) {
             setCurrentPage(page);
             loadLevels(page, searchQuery);
         }
@@ -68,7 +67,7 @@ export const LevelPage = () => {
 
     const openEditForm = (lvl) => {
         setEditingLevel(lvl);
-        setFormData({ code: lvl.code, name: lvl.name, description: lvl.description });
+        setFormData({ code: lvl.level_code || '', name: lvl.level_name, description: lvl.level_description || '' });
         setFormError('');
         setShowForm(true);
     };
@@ -104,22 +103,22 @@ export const LevelPage = () => {
         setSaving(true);
 
         if (editingLevel) {
-            const result = await updateLevelApi(editingLevel.id, formData.code.trim(), formData.name.trim(), formData.description.trim());
-            if (result.success) {
-                toast.success(result.message || 'Level updated successfully.');
+            try {
+                await updateLevelApi(editingLevel.level_id, formData.code.trim(), formData.name.trim(), formData.description.trim());
+                toast.success('Level updated successfully.');
                 closeForm();
                 loadLevels(currentPage, searchQuery);
-            } else {
-                toast.error(result.message);
+            } catch (err) {
+                toast.error(err.response?.data?.message || err.message || 'Update failed.');
             }
         } else {
-            const result = await createLevelApi(formData.code.trim(), formData.name.trim(), formData.description.trim());
-            if (result.success) {
-                toast.success(result.message || 'Level created successfully.');
+            try {
+                await createLevelApi(formData.code.trim(), formData.name.trim(), formData.description.trim());
+                toast.success('Level created successfully.');
                 closeForm();
                 loadLevels(currentPage, searchQuery);
-            } else {
-                toast.error(result.message);
+            } catch (err) {
+                toast.error(err.response?.data?.message || err.message || 'Create failed.');
             }
         }
 
@@ -127,19 +126,19 @@ export const LevelPage = () => {
     };
 
     const handleDelete = async (lvl) => {
-        if (!confirm(`Are you sure you want to delete "${lvl.code} — ${lvl.name}"?`)) return;
+        if (!confirm(`Are you sure you want to delete "${lvl.level_code} — ${lvl.level_name}"?`)) return;
 
-        const result = await deleteLevelApi(lvl.id);
-        if (result.success) {
-            toast.success(result.message || 'Level deleted.');
+        try {
+            await deleteLevelApi(lvl.level_id);
+            toast.success('Level deleted.');
             loadLevels(currentPage, searchQuery);
-        } else {
-            toast.error(result.message);
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.message || 'Delete failed.');
         }
     };
 
-    const totalPages = pagination?.totalPages || 1;
-    const totalItems = pagination?.totalItems || levels.length;
+    const totalPages = pagination?.total_pages || 1;
+    const totalItems = pagination?.total_items || levels.length;
     const pageNumbers = [];
     for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
 
@@ -213,7 +212,7 @@ export const LevelPage = () => {
             <p style={s.filterInfo}>
                 Total: {totalItems} levels
                 {searchQuery && ` • Search: "${searchQuery}"`}
-                {pagination && ` • Page ${pagination.currentPage} of ${pagination.totalPages}`}
+                {pagination && ` • Page ${pagination.current_page} of ${pagination.total_pages}`}
             </p>
 
             <table style={s.table}>
@@ -237,11 +236,11 @@ export const LevelPage = () => {
                         </tr>
                     ) : (
                         levels.map((lvl) => (
-                            <tr key={lvl.id}>
-                                <td style={s.td}><span style={s.idBadge}>{lvl.id}</span></td>
-                                <td style={s.td}><span style={s.codeBadge}>{lvl.code}</span></td>
-                                <td style={s.td}><strong>{lvl.name}</strong></td>
-                                <td style={{ ...s.td, color: '#64748b' }}>{lvl.description || '—'}</td>
+                            <tr key={lvl.level_id}>
+                                <td style={s.td}><span style={s.idBadge}>{lvl.level_id}</span></td>
+                                <td style={s.td}><span style={s.codeBadge}>{lvl.level_code}</span></td>
+                                <td style={s.td}><strong>{lvl.level_name}</strong></td>
+                                <td style={{ ...s.td, color: '#64748b' }}>{lvl.level_description || '—'}</td>
                                 <td style={{ ...s.td, textAlign: 'center' }}>
                                     <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                                         <button type="button" style={{ ...s.actionBtn, color: '#3b82f6' }} onClick={() => openEditForm(lvl)} title="Edit"><Edit2 size={16} /></button>
@@ -254,9 +253,9 @@ export const LevelPage = () => {
                 </tbody>
             </table>
 
-            {pagination && pagination.totalPages > 1 && (
+            {pagination && pagination.total_pages > 1 && (
                 <div style={s.paginationRow}>
-                    <span style={s.paginationInfo}>Page {pagination.currentPage} of {pagination.totalPages} • {totalItems} levels</span>
+                    <span style={s.paginationInfo}>Page {pagination.current_page} of {pagination.total_pages} • {totalItems} levels</span>
                     <div style={s.paginationButtons}>
                         <button type="button" style={s.navBtn(currentPage <= 1)} onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}><ChevronLeft size={16} /></button>
                         {pageNumbers.map((num) => (

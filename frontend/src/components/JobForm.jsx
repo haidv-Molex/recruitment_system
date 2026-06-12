@@ -42,32 +42,32 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
   useEffect(() => {
   if (job) {
     setFormData({
-      jobCode: job.code || job.jobCode || '',
+      jobCode: job.job_code || '',
       project: job.project || '',
-      candidateRequired: job.candidateRequired || job.hcRequested || 1,
+      candidateRequired: job.candidate_required || 1,
       note: job.note || '',
-      requestDate: job.requestDate ? job.requestDate.slice(0, 10) : '',
+      requestDate: job.request_date ? String(job.request_date).slice(0, 10) : '',
       file: null,
       departments: Array.isArray(job.departments)
-        ? job.departments.map((d) => (typeof d === 'object' ? d.id : d))
+        ? job.departments.map((d) => (typeof d === 'object' ? d.department_id : d))
         : [],
       segments: Array.isArray(job.segments)
-        ? job.segments.map((s) => (typeof s === 'object' ? s.id : s))
+        ? job.segments.map((s) => (typeof s === 'object' ? s.segment_id : s))
         : [],
       sites: Array.isArray(job.sitesData || job.sites)
-        ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])).map((s) => (typeof s === 'object' ? s.id : s))
+        ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])).map((s) => (typeof s === 'object' ? s.site_id : s))
         : [],
       titles: Array.isArray(job.titles)
-        ? job.titles.map((t) => (typeof t === 'object' ? t.id : t))
+        ? job.titles.map((t) => (typeof t === 'object' ? t.level_id : t))
         : [],
-      employeeLevels: Array.isArray(job.employeeLevels)
-        ? job.employeeLevels.map((el) => (typeof el === 'object' ? el.id : el))
+      employeeLevels: Array.isArray(job.employee_levels)
+        ? job.employee_levels.map((el) => (typeof el === 'object' ? el.level_id : el))
         : [],
       partners: Array.isArray(job.partners)
-        ? job.partners.map((p) => (typeof p === 'object' ? p.id : p))
+        ? job.partners.map((p) => (typeof p === 'object' ? p.user_id : p))
         : [],
       managers: Array.isArray(job.managers)
-        ? job.managers.map((m) => (typeof m === 'object' ? m.id : m))
+        ? job.managers.map((m) => (typeof m === 'object' ? m.user_id : m))
         : [],
     });
   } else {
@@ -82,21 +82,25 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
   const loadOptions = async () => {
     setLoadingOptions(true);
 
-    const [deptsRes, segsRes, sitesRes, levelsRes, usersRes] = await Promise.all([
-      searchDepartmentsApi({ page: 1, limit: 100 }),
-      searchSegmentsApi({ page: 1, limit: 100 }),
-      searchSitesApi({ page: 1, limit: 100 }),
-      searchLevelsApi({ page: 1, limit: 100 }),
-      fetchUsersApi(),
-    ]);
+    try {
+      const [deptsRes, segsRes, sitesRes, levelsRes, usersRes] = await Promise.all([
+        searchDepartmentsApi({ page: 1, limit: 100 }),
+        searchSegmentsApi({ page: 1, limit: 100 }),
+        searchSitesApi({ page: 1, limit: 100 }),
+        searchLevelsApi({ page: 1, limit: 100 }),
+        fetchUsersApi({ page: 1, limit: 100 }),
+      ]);
 
-    setOptions({
-      departments: deptsRes.success ? deptsRes.departments : [],
-      segments: segsRes.success ? segsRes.segments : [],
-      sites: sitesRes.success ? sitesRes.sites : [],
-      levels: levelsRes.success ? levelsRes.levels : [],
-      users: usersRes.success ? usersRes.users : [],
-    });
+      setOptions({
+        departments: deptsRes.data || [],
+        segments: segsRes.data || [],
+        sites: sitesRes.data || [],
+        levels: levelsRes.data || [],
+        users: usersRes.data || [],
+      });
+    } catch (err) {
+      console.error('Failed to load form options', err);
+    }
 
     setLoadingOptions(false);
   };
@@ -151,7 +155,7 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
   };
 
   // Render checkbox group for multi-select
-  const renderCheckboxGroup = (label, field, items, displayFn) => (
+  const renderCheckboxGroup = (label, field, items, displayFn, keyProp) => (
     <div className="form-field-group">
       <label className="form-field-label">{label}</label>
       <div style={styles.checkboxGroup}>
@@ -159,11 +163,11 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
           <span style={styles.hint}>No options available</span>
         ) : (
           items.map((item) => (
-            <label key={item.id} style={styles.checkboxLabel}>
+            <label key={item[keyProp]} style={styles.checkboxLabel}>
               <input
                 type="checkbox"
-                checked={formData[field].includes(item.id)}
-                onChange={() => toggleSelection(field, item.id)}
+                checked={formData[field].includes(item[keyProp])}
+                onChange={() => toggleSelection(field, item[keyProp])}
                 disabled={saving}
               />
               <span>{displayFn(item)}</span>
@@ -271,25 +275,25 @@ export const JobForm = ({ job, onSubmit, onClose, saving }) => {
 
           {/* ═══ Linking Sections ═══ */}
           <p style={styles.sectionTitle}>🏬 Departments</p>
-          {renderCheckboxGroup('', 'departments', options.departments, (d) => `${d.code} — ${d.name}`)}
+          {renderCheckboxGroup('', 'departments', options.departments, (d) => `${d.department_code} — ${d.department_name}`, 'department_id')}
 
           <p style={styles.sectionTitle}>📦 Segments</p>
-          {renderCheckboxGroup('', 'segments', options.segments, (s) => `${s.code} — ${s.name}`)}
+          {renderCheckboxGroup('', 'segments', options.segments, (s) => `${s.segment_code} — ${s.segment_name}`, 'segment_id')}
 
           <p style={styles.sectionTitle}>📍 Sites</p>
-          {renderCheckboxGroup('', 'sites', options.sites, (s) => `${s.code} — ${s.name}`)}
+          {renderCheckboxGroup('', 'sites', options.sites, (s) => `${s.site_code} — ${s.site_name}`, 'site_id')}
 
           <p style={styles.sectionTitle}>🏅 Titles (Job Level)</p>
-          {renderCheckboxGroup('', 'titles', options.levels, (l) => `${l.code} — ${l.name}`)}
+          {renderCheckboxGroup('', 'titles', options.levels, (l) => `${l.level_code} — ${l.level_name}`, 'level_id')}
 
           <p style={styles.sectionTitle}>🏅 Employee Levels</p>
-          {renderCheckboxGroup('', 'employeeLevels', options.levels, (l) => `${l.code} — ${l.name}`)}
+          {renderCheckboxGroup('', 'employeeLevels', options.levels, (l) => `${l.level_code} — ${l.level_name}`, 'level_id')}
 
           <p style={styles.sectionTitle}>👤 HRBP (Partners)</p>
-          {renderCheckboxGroup('', 'partners', options.users, (u) => `${u.displayName} (${u.role})`)}
+          {renderCheckboxGroup('', 'partners', options.users, (u) => `${u.user_name} (${u.user_role})`, 'user_id')}
 
           <p style={styles.sectionTitle}>👔 Hiring Managers</p>
-          {renderCheckboxGroup('', 'managers', options.users, (u) => `${u.displayName} (${u.role})`)}
+          {renderCheckboxGroup('', 'managers', options.users, (u) => `${u.user_name} (${u.user_role})`, 'user_id')}
 
           <div className="modal-actions">
             <button type="button" className="excel-button secondary" onClick={onClose}>Cancel</button>

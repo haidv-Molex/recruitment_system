@@ -23,20 +23,18 @@ export const DepartmentPage = () => {
   const loadDepartments = useCallback(async (page, search) => {
     setLoading(true);
 
-    const result = await searchDepartmentsApi({
-      page,
-      limit: ITEMS_PER_PAGE,
-      search,
-    });
-
-    // If API succeeded, update departments and pagination
-    if (result.success) {
-      setDepartments(result.departments);
+    try {
+      const result = await searchDepartmentsApi({
+        page,
+        limit: ITEMS_PER_PAGE,
+        search,
+      });
+      setDepartments(result.data || []);
       if (result.pagination) {
         setPagination(result.pagination);
       }
-    } else if (result.message) {
-      toast.warning(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load departments.');
     }
 
     setLoading(false);
@@ -64,7 +62,7 @@ export const DepartmentPage = () => {
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && pagination && page <= pagination.totalPages) {
+    if (page >= 1 && pagination && page <= pagination.total_pages) {
       setCurrentPage(page);
       loadDepartments(page, searchQuery);
     }
@@ -79,7 +77,7 @@ export const DepartmentPage = () => {
 
   const openEditForm = (dept) => {
     setEditingDept(dept);
-    setFormData({ code: dept.code, name: dept.name, description: dept.description });
+    setFormData({ code: dept.department_code || '', name: dept.department_name, description: dept.department_description || '' });
     setFormError('');
     setShowForm(true);
   };
@@ -113,33 +111,31 @@ export const DepartmentPage = () => {
     setSaving(true);
 
     if (editingDept) {
-      const result = await updateDepartmentApi(
-        editingDept.id,
-        formData.code.trim(),
-        formData.name.trim(),
-        formData.description.trim()
-      );
-
-      if (result.success) {
-        toast.success(result.message || 'Department updated successfully.');
+      try {
+        await updateDepartmentApi(
+          editingDept.department_id,
+          formData.code.trim(),
+          formData.name.trim(),
+          formData.description.trim()
+        );
+        toast.success('Department updated successfully.');
         closeForm();
         loadDepartments(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
     } else {
-      const result = await createDepartmentApi(
-        formData.code.trim(),
-        formData.name.trim(),
-        formData.description.trim()
-      );
-
-      if (result.success) {
-        toast.success(result.message || 'Department created successfully.');
+      try {
+        await createDepartmentApi(
+          formData.code.trim(),
+          formData.name.trim(),
+          formData.description.trim()
+        );
+        toast.success('Department created successfully.');
         closeForm();
         loadDepartments(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
     }
 
@@ -147,22 +143,21 @@ export const DepartmentPage = () => {
   };
 
   const handleDelete = async (dept) => {
-    if (!confirm(`Are you sure you want to delete "${dept.code} — ${dept.name}"?`)) {
+    if (!confirm(`Are you sure you want to delete "${dept.department_code} — ${dept.department_name}"?`)) {
       return;
     }
 
-    const result = await deleteDepartmentApi(dept.id);
-
-    if (result.success) {
-      toast.success(result.message || 'Department deleted.');
+    try {
+      await deleteDepartmentApi(dept.department_id);
+      toast.success('Department deleted.');
       loadDepartments(currentPage, searchQuery);
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
 
-  const totalPages = pagination?.totalPages || 1;
-  const totalItems = pagination?.totalItems || departments.length;
+  const totalPages = pagination?.total_pages || 1;
+  const totalItems = pagination?.total_items || departments.length;
 
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
@@ -248,7 +243,7 @@ export const DepartmentPage = () => {
       <p style={s.filterInfo}>
         Total: {totalItems} departments
         {searchQuery && ` • Search: "${searchQuery}"`}
-        {pagination && ` • Page ${pagination.currentPage} of ${pagination.totalPages}`}
+        {pagination && ` • Page ${pagination.current_page} of ${pagination.total_pages}`}
       </p>
 
       <table style={s.table}>
@@ -272,11 +267,11 @@ export const DepartmentPage = () => {
             </tr>
           ) : (
             departments.map((dept) => (
-              <tr key={dept.id}>
-                <td style={s.td}><span style={s.idBadge}>{dept.id}</span></td>
-                <td style={s.td}><span style={s.codeBadge}>{dept.code}</span></td>
-                <td style={s.td}><strong>{dept.name}</strong></td>
-                <td style={{ ...s.td, color: '#64748b' }}>{dept.description || '—'}</td>
+              <tr key={dept.department_id}>
+                <td style={s.td}><span style={s.idBadge}>{dept.department_id}</span></td>
+                <td style={s.td}><span style={s.codeBadge}>{dept.department_code}</span></td>
+                <td style={s.td}><strong>{dept.department_name}</strong></td>
+                <td style={{ ...s.td, color: '#64748b' }}>{dept.department_description || '—'}</td>
                 <td style={{ ...s.td, textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                     <button type="button" style={{ ...s.actionBtn, color: '#3b82f6' }} onClick={() => openEditForm(dept)} title="Edit"><Edit2 size={16} /></button>
@@ -289,9 +284,9 @@ export const DepartmentPage = () => {
         </tbody>
       </table>
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.total_pages > 1 && (
         <div style={s.paginationRow}>
-          <span style={s.paginationInfo}>Page {pagination.currentPage} of {pagination.totalPages} • {totalItems} departments</span>
+          <span style={s.paginationInfo}>Page {pagination.current_page} of {pagination.total_pages} • {totalItems} departments</span>
           <div style={s.paginationButtons}>
             <button type="button" style={s.navBtn(currentPage <= 1)} onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}><ChevronLeft size={16} /></button>
             {pageNumbers.map((num) => (

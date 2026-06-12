@@ -15,14 +15,14 @@ const statusClass = (status) => `status-pill status-${String(status || '').toLow
 
 // Map API candidate to table row format
 const mapCandidateToRow = (c) => ({
-  id: c.id,
-  candidateCode: c.code,
-  inputDate: c.createdAt ? c.createdAt.slice(0, 10) : '',
-  name: c.name,
-  email: c.email,
-  phone: c.phone,
-  recruiter: c.recruiter?.name || '',
-  jobCode: c.job?.code || '',
+  id: c.candidate_id,
+  candidateCode: c.candidate_code || '',
+  inputDate: c.create_at ? String(c.create_at).slice(0, 10) : '',
+  name: c.candidate_name,
+  email: c.candidate_email || '',
+  phone: c.candidate_phone || '',
+  recruiter: c.recruiter?.user_name || '',
+  jobCode: c.job?.job_code || '',
   jobTitle: '',
   department: '',
   eeLevel: '',
@@ -30,19 +30,19 @@ const mapCandidateToRow = (c) => ({
   hiringManager: '',
   dlIdl: 'IDL',
   status: c.status,
-  onboardingDate: c.onboardDate ? c.onboardDate.slice(0, 10) : '',
-  offerSentDate: c.offerDate ? c.offerDate.slice(0, 10) : '',
-  source: c.platform?.name || '',
+  onboardingDate: c.onboard_date ? String(c.onboard_date).slice(0, 10) : '',
+  offerSentDate: c.offer_date ? String(c.offer_date).slice(0, 10) : '',
+  source: c.platform?.platform_name || '',
   employeeId: '',
-  referrerName: c.reference?.name || '',
+  referrerName: c.reference?.user_name || '',
   referrerDepartment: '',
-  note: c.note,
-  currentSalary: c.currentSalary,
-  expectedSalary: c.expectedSalary,
-  candidateResultFeedbackDate: c.feedbackDate ? c.feedbackDate.slice(0, 10) : '',
-  headhuntAgency: c.agency,
-  targetedCompany: !!c.targetedCompany,
-  targetedCompanyName: c.targetedCompany?.name || '',
+  note: c.note || '',
+  currentSalary: c.current_salary || '',
+  expectedSalary: c.expected_salary || '',
+  candidateResultFeedbackDate: c.feedback_date ? String(c.feedback_date).slice(0, 10) : '',
+  headhuntAgency: c.agency || '',
+  targetedCompany: !!c.targeted_company,
+  targetedCompanyName: c.targeted_company?.company_name || '',
   file: c.file || null,
   // Keep API data for editing
   _apiData: c,
@@ -64,12 +64,12 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   // Load candidates from API on mount
   const loadCandidatesFromApi = useCallback(async () => {
     setLoading(true);
-    const result = await searchCandidatesApi({ page: 1, limit: 100 });
-
-    if (result.success && result.candidates.length > 0) {
-      setCandidates(result.candidates.map(mapCandidateToRow));
+    try {
+      const result = await searchCandidatesApi({ page: 1, limit: 100 });
+      setCandidates((result.data || []).map(mapCandidateToRow));
+    } catch (err) {
+      toast.error('Failed to load candidates.');
     }
-
     setLoading(false);
   }, [setCandidates]);
 
@@ -81,48 +81,38 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   const handleSaveCandidate = async (formData) => {
     setSaving(true);
 
-    // If editing, call update API
-    if (editingCandidate) {
-      const result = await updateCandidateApi(editingCandidate.id, formData);
-
-      if (result.success) {
-        toast.success(result.message || 'Candidate updated successfully.');
+    try {
+      // If editing, call update API
+      if (editingCandidate) {
+        await updateCandidateApi(editingCandidate.id, formData);
+        toast.success('Candidate updated successfully.');
         setShowForm(false);
         setEditingCandidate(null);
         await loadCandidatesFromApi();
       } else {
-        toast.error(result.message);
+        // Call API to create new candidate
+        await createCandidateApi(formData);
+        toast.success('Candidate created successfully.');
+        setShowForm(false);
+        await loadCandidatesFromApi();
       }
-
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Save candidate failed.');
+    } finally {
       setSaving(false);
-      return;
     }
-
-    // Call API to create new candidate
-    const result = await createCandidateApi(formData);
-
-    if (result.success) {
-      toast.success(result.message || 'Candidate created successfully.');
-      setShowForm(false);
-      await loadCandidatesFromApi();
-    } else {
-      toast.error(result.message);
-    }
-
-    setSaving(false);
   };
 
   // Delete candidate
   const handleDeleteCandidate = async (candidate) => {
     if (!confirm(`Delete candidate ${candidate.name}?`)) return;
 
-    const result = await deleteCandidateApi(candidate.id);
-
-    if (result.success) {
-      toast.success(result.message || 'Candidate deleted.');
+    try {
+      await deleteCandidateApi(candidate.id);
+      toast.success('Candidate deleted.');
       await loadCandidatesFromApi();
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete candidate failed.');
     }
   };
 

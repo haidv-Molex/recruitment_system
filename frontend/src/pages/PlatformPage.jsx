@@ -22,13 +22,12 @@ export const PlatformPage = () => {
 
   const loadPlatforms = useCallback(async (page, search) => {
     setLoading(true);
-    const result = await searchPlatformsApi({ page, limit: ITEMS_PER_PAGE, search });
-
-    if (result.success) {
-      setPlatforms(result.platforms);
+    try {
+      const result = await searchPlatformsApi({ page, limit: ITEMS_PER_PAGE, search });
+      setPlatforms(result.data || []);
       if (result.pagination) setPagination(result.pagination);
-    } else if (result.message) {
-      toast.warning(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load platforms.');
     }
     setLoading(false);
   }, []);
@@ -53,7 +52,7 @@ export const PlatformPage = () => {
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && pagination && page <= pagination.totalPages) {
+    if (page >= 1 && pagination && page <= pagination.total_pages) {
       setCurrentPage(page);
       loadPlatforms(page, searchQuery);
     }
@@ -68,7 +67,7 @@ export const PlatformPage = () => {
 
   const openEditForm = (platform) => {
     setEditingPlatform(platform);
-    setFormData({ name: platform.name, description: platform.description });
+    setFormData({ name: platform.platform_name, description: platform.platform_description || '' });
     setFormError('');
     setShowForm(true);
   };
@@ -97,22 +96,22 @@ export const PlatformPage = () => {
     setSaving(true);
 
     if (editingPlatform) {
-      const result = await updatePlatformApi(editingPlatform.id, formData.name.trim(), formData.description.trim());
-      if (result.success) {
-        toast.success(result.message || 'Platform updated successfully.');
+      try {
+        await updatePlatformApi(editingPlatform.platform_id, formData.name.trim(), formData.description.trim());
+        toast.success('Platform updated successfully.');
         closeForm();
         loadPlatforms(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
     } else {
-      const result = await createPlatformApi(formData.name.trim(), formData.description.trim());
-      if (result.success) {
-        toast.success(result.message || 'Platform created successfully.');
+      try {
+        await createPlatformApi(formData.name.trim(), formData.description.trim());
+        toast.success('Platform created successfully.');
         closeForm();
         loadPlatforms(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
     }
 
@@ -120,19 +119,19 @@ export const PlatformPage = () => {
   };
 
   const handleDelete = async (platform) => {
-    if (!confirm(`Are you sure you want to delete "${platform.name}"?`)) return;
+    if (!confirm(`Are you sure you want to delete "${platform.platform_name}"?`)) return;
 
-    const result = await deletePlatformApi(platform.id);
-    if (result.success) {
-      toast.success(result.message || 'Platform deleted.');
+    try {
+      await deletePlatformApi(platform.platform_id);
+      toast.success('Platform deleted.');
       loadPlatforms(currentPage, searchQuery);
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
 
-  const totalPages = pagination?.totalPages || 1;
-  const totalItems = pagination?.totalItems || platforms.length;
+  const totalPages = pagination?.total_pages || 1;
+  const totalItems = pagination?.total_items || platforms.length;
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
 
@@ -202,7 +201,7 @@ export const PlatformPage = () => {
       <p style={s.filterInfo}>
         Total: {totalItems} platforms
         {searchQuery && ` • Search: "${searchQuery}"`}
-        {pagination && ` • Page ${pagination.currentPage} of ${pagination.totalPages}`}
+        {pagination && ` • Page ${pagination.current_page} of ${pagination.total_pages}`}
       </p>
 
       <table style={s.table}>
@@ -225,10 +224,10 @@ export const PlatformPage = () => {
             </tr>
           ) : (
             platforms.map((p) => (
-              <tr key={p.id}>
-                <td style={s.td}><span style={s.idBadge}>{p.id}</span></td>
-                <td style={s.td}><strong>{p.name}</strong></td>
-                <td style={{ ...s.td, color: '#64748b' }}>{p.description || '—'}</td>
+              <tr key={p.platform_id}>
+                <td style={s.td}><span style={s.idBadge}>{p.platform_id}</span></td>
+                <td style={s.td}><strong>{p.platform_name}</strong></td>
+                <td style={{ ...s.td, color: '#64748b' }}>{p.platform_description || '—'}</td>
                 <td style={{ ...s.td, textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                     <button type="button" style={{ ...s.actionBtn, color: '#3b82f6' }} onClick={() => openEditForm(p)} title="Edit"><Edit2 size={16} /></button>
@@ -241,9 +240,9 @@ export const PlatformPage = () => {
         </tbody>
       </table>
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.total_pages > 1 && (
         <div style={s.paginationRow}>
-          <span style={s.paginationInfo}>Page {pagination.currentPage} of {pagination.totalPages} • {totalItems} platforms</span>
+          <span style={s.paginationInfo}>Page {pagination.current_page} of {pagination.total_pages} • {totalItems} platforms</span>
           <div style={s.paginationButtons}>
             <button type="button" style={s.navBtn(currentPage <= 1)} onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}><ChevronLeft size={16} /></button>
             {pageNumbers.map((num) => (

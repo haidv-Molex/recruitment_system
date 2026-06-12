@@ -1,4 +1,13 @@
-export const masterData = {
+export interface MasterData {
+  status: string[];
+  source: string[];
+  eeLevel: string[];
+  headhuntAgency: string[];
+  department: string[];
+  dlIdl: string[];
+}
+
+export const masterData: MasterData = {
   status: [
     'CV Sent',
     'Interview',
@@ -42,7 +51,30 @@ export const pipelineStatuses = {
   offerRejected: ['Offer Rejected'],
 };
 
-export const mockJobs = [
+export interface MockJob {
+  id: string;
+  jobCode: string;
+  project: string;
+  department: string;
+  hcRequested: number;
+  jobTitle: string;
+  eeLevel: string;
+  sites: string;
+  projectSegment: string;
+  hiringManager: string;
+  hrbp: string;
+  recruiter: string;
+  myhrRequestDate: string;
+  expectedOnboardDate: string;
+  status: string;
+  source: string;
+  candidateName: string;
+  onboardDate: string;
+  offerDate: string;
+  note: string;
+}
+
+export const mockJobs: MockJob[] = [
   {
     id: 'job-001',
     jobCode: 'IDL-HR-001',
@@ -133,7 +165,37 @@ export const mockJobs = [
   },
 ];
 
-export const mockCandidates = [
+export interface MockCandidate {
+  id: string;
+  inputDate: string;
+  department: string;
+  name: string;
+  email: string;
+  phone: string;
+  recruiter: string;
+  jobCode: string;
+  jobTitle: string;
+  eeLevel: string;
+  project: string;
+  hiringManager: string;
+  dlIdl: string;
+  status: string;
+  onboardingDate: string;
+  offerSentDate: string;
+  source: string;
+  employeeId: string;
+  referrerName: string;
+  referrerDepartment: string;
+  note: string;
+  currentSalary: number | string;
+  expectedSalary: number | string;
+  candidateResultFeedbackDate: string;
+  headhuntAgency: string;
+  targetedCompany: boolean;
+  targetedCompanyName: string;
+}
+
+export const mockCandidates: MockCandidate[] = [
   {
     id: 'cand-001',
     inputDate: '2026-05-15',
@@ -310,9 +372,9 @@ export const mockCandidates = [
   },
 ];
 
-const includesStatus = (status, validStatuses) => validStatuses.includes(status);
+const includesStatus = (status: string, validStatuses: string[]) => validStatuses.includes(status);
 
-export const calculatePipelineForJob = (jobCode, candidates) => {
+export const calculatePipelineForJob = (jobCode: string, candidates: MockCandidate[]) => {
   const jobCandidates = candidates.filter((candidate) => candidate.jobCode === jobCode);
 
   return {
@@ -325,7 +387,7 @@ export const calculatePipelineForJob = (jobCode, candidates) => {
   };
 };
 
-export const hasDuplicateCandidate = (candidate, candidates, excludeId) => {
+export const hasDuplicateCandidate = (candidate: Partial<MockCandidate>, candidates: MockCandidate[], excludeId?: string) => {
   const name = candidate.name?.trim().toLowerCase();
   const phone = candidate.phone?.trim();
   const email = candidate.email?.trim().toLowerCase();

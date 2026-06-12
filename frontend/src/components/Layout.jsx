@@ -97,7 +97,7 @@ export const Layout = ({ children }) => {
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
               >
                 <User size={14} />
-                {user.displayName}
+                {user.user_name}
               </Link>
               <button
                 type="button"

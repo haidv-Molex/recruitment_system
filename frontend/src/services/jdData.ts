@@ -2,10 +2,21 @@ const STORAGE_KEY = 'recruitment_jd_library';
 
 export const sitesList = ['MXV', 'D', 'S', 'SK'];
 
-const loadJDs = () => {
+export interface JDEntry {
+  id: string | number;
+  fileName: string;
+  fileSize: number;
+  site: string;
+  jobCode?: string;
+  jobTitle?: string;
+  note?: string;
+  fileData?: string;
+  [key: string]: any;
+}
+
+const loadJDs = (): JDEntry[] => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    // If saved data exists in localStorage, parse and return it
     if (saved) return JSON.parse(saved);
   } catch {
     // ignore
@@ -13,7 +24,7 @@ const loadJDs = () => {
   return [];
 };
 
-const saveJDs = (list) => {
+const saveJDs = (list: JDEntry[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 };
 
@@ -23,24 +34,20 @@ export const getAllJDs = () => {
   return jdList.map(({ fileData, ...rest }) => rest);
 };
 
-export const getJDFile = (id) => {
-  // Find the JD entry by id to retrieve its file data
+export const getJDFile = (id: string | number): JDEntry | null => {
   const jd = jdList.find((item) => item.id === id);
-  // If JD not found, return null
   if (!jd) return null;
   return jd;
 };
 
-export const addJD = (jdEntry) => {
+export const addJD = (jdEntry: JDEntry) => {
   jdList = [...jdList, jdEntry];
   saveJDs(jdList);
   return { success: true };
 };
 
-export const deleteJD = (id) => {
-  // Check if JD with given id exists before deleting
+export const deleteJD = (id: string | number) => {
   const exists = jdList.some((item) => item.id === id);
-  // If JD not found, return error
   if (!exists) {
     return { success: false, message: 'JD not found.' };
   }
@@ -49,10 +56,8 @@ export const deleteJD = (id) => {
   return { success: true };
 };
 
-export const updateJD = (id, updates) => {
-  // Find the index of JD to update
+export const updateJD = (id: string | number, updates: Partial<JDEntry>) => {
   const index = jdList.findIndex((item) => item.id === id);
-  // If JD not found, return error
   if (index === -1) {
     return { success: false, message: 'JD not found.' };
   }
@@ -61,19 +66,17 @@ export const updateJD = (id, updates) => {
   return { success: true };
 };
 
-export const fileToBase64 = (file) => {
+export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => resolve(reader.result as string);
     reader.onerror = () => reject(new Error('Failed to read file.'));
     reader.readAsDataURL(file);
   });
 };
 
-export const formatFileSize = (bytes) => {
-  // If file size is less than 1KB, show in bytes
+export const formatFileSize = (bytes: number) => {
   if (bytes < 1024) return `${bytes} B`;
-  // If file size is less than 1MB, show in KB
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };

@@ -22,13 +22,12 @@ export const SitePage = () => {
 
   const loadSites = useCallback(async (page, search) => {
     setLoading(true);
-    const result = await searchSitesApi({ page, limit: ITEMS_PER_PAGE, search });
-
-    if (result.success) {
-      setSites(result.sites);
+    try {
+      const result = await searchSitesApi({ page, limit: ITEMS_PER_PAGE, search });
+      setSites(result.data || []);
       if (result.pagination) setPagination(result.pagination);
-    } else if (result.message) {
-      toast.warning(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load sites.');
     }
     setLoading(false);
   }, []);
@@ -53,7 +52,7 @@ export const SitePage = () => {
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && pagination && page <= pagination.totalPages) {
+    if (page >= 1 && pagination && page <= pagination.total_pages) {
       setCurrentPage(page);
       loadSites(page, searchQuery);
     }
@@ -68,7 +67,7 @@ export const SitePage = () => {
 
   const openEditForm = (site) => {
     setEditingSite(site);
-    setFormData({ code: site.code, name: site.name, description: site.description });
+    setFormData({ code: site.site_code || '', name: site.site_name, description: site.site_description || '' });
     setFormError('');
     setShowForm(true);
   };
@@ -102,22 +101,22 @@ export const SitePage = () => {
     setSaving(true);
 
     if (editingSite) {
-      const result = await updateSiteApi(editingSite.id, formData.code.trim(), formData.name.trim(), formData.description.trim());
-      if (result.success) {
-        toast.success(result.message || 'Site updated successfully.');
+      try {
+        await updateSiteApi(editingSite.site_id, formData.code.trim(), formData.name.trim(), formData.description.trim());
+        toast.success('Site updated successfully.');
         closeForm();
         loadSites(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
     } else {
-      const result = await createSiteApi(formData.code.trim(), formData.name.trim(), formData.description.trim());
-      if (result.success) {
-        toast.success(result.message || 'Site created successfully.');
+      try {
+        await createSiteApi(formData.code.trim(), formData.name.trim(), formData.description.trim());
+        toast.success('Site created successfully.');
         closeForm();
         loadSites(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
     }
 
@@ -125,19 +124,19 @@ export const SitePage = () => {
   };
 
   const handleDelete = async (site) => {
-    if (!confirm(`Are you sure you want to delete "${site.code} — ${site.name}"?`)) return;
+    if (!confirm(`Are you sure you want to delete "${site.site_code} — ${site.site_name}"?`)) return;
 
-    const result = await deleteSiteApi(site.id);
-    if (result.success) {
-      toast.success(result.message || 'Site deleted.');
+    try {
+      await deleteSiteApi(site.site_id);
+      toast.success('Site deleted.');
       loadSites(currentPage, searchQuery);
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
 
-  const totalPages = pagination?.totalPages || 1;
-  const totalItems = pagination?.totalItems || sites.length;
+  const totalPages = pagination?.total_pages || 1;
+  const totalItems = pagination?.total_items || sites.length;
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
 
@@ -211,7 +210,7 @@ export const SitePage = () => {
       <p style={s.filterInfo}>
         Total: {totalItems} sites
         {searchQuery && ` • Search: "${searchQuery}"`}
-        {pagination && ` • Page ${pagination.currentPage} of ${pagination.totalPages}`}
+        {pagination && ` • Page ${pagination.current_page} of ${pagination.total_pages}`}
       </p>
 
       <table style={s.table}>
@@ -235,11 +234,11 @@ export const SitePage = () => {
             </tr>
           ) : (
             sites.map((site) => (
-              <tr key={site.id}>
-                <td style={s.td}><span style={s.idBadge}>{site.id}</span></td>
-                <td style={s.td}><span style={s.codeBadge}>{site.code}</span></td>
-                <td style={s.td}><strong>{site.name}</strong></td>
-                <td style={{ ...s.td, color: '#64748b' }}>{site.description || '—'}</td>
+              <tr key={site.site_id}>
+                <td style={s.td}><span style={s.idBadge}>{site.site_id}</span></td>
+                <td style={s.td}><span style={s.codeBadge}>{site.site_code}</span></td>
+                <td style={s.td}><strong>{site.site_name}</strong></td>
+                <td style={{ ...s.td, color: '#64748b' }}>{site.site_description || '—'}</td>
                 <td style={{ ...s.td, textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                     <button type="button" style={{ ...s.actionBtn, color: '#3b82f6' }} onClick={() => openEditForm(site)} title="Edit"><Edit2 size={16} /></button>
@@ -252,9 +251,9 @@ export const SitePage = () => {
         </tbody>
       </table>
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.total_pages > 1 && (
         <div style={s.paginationRow}>
-          <span style={s.paginationInfo}>Page {pagination.currentPage} of {pagination.totalPages} • {totalItems} sites</span>
+          <span style={s.paginationInfo}>Page {pagination.current_page} of {pagination.total_pages} • {totalItems} sites</span>
           <div style={s.paginationButtons}>
             <button type="button" style={s.navBtn(currentPage <= 1)} onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}><ChevronLeft size={16} /></button>
             {pageNumbers.map((num) => (

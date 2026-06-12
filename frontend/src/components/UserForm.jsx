@@ -18,10 +18,10 @@ export const UserForm = ({ user, onSubmit, onClose, saving }) => {
     // If editing an existing user, populate form with their data
     if (user) {
       setFormData({
-        username: user.displayName || '',
-        account: user.account || user.username || '',
+        username: user.user_name || '',
+        account: user.user_account || user.user_name || '',
         password: '',
-        description: user.description || '',
+        description: user.user_description || '',
       });
     } else {
       setFormData(emptyUser);

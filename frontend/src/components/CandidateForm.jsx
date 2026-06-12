@@ -51,24 +51,24 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
     // If editing, populate form with candidate data; otherwise reset
     if (candidate) {
       setFormData({
-        candidateCode: candidate.code || candidate.candidateCode || '',
-        candidateName: candidate.name || candidate.candidateName || '',
-        candidateEmail: candidate.email || candidate.candidateEmail || '',
-        candidatePhone: candidate.phone || candidate.candidatePhone || '',
+        candidateCode: candidate.candidate_code || '',
+        candidateName: candidate.candidate_name || '',
+        candidateEmail: candidate.candidate_email || '',
+        candidatePhone: candidate.candidate_phone || '',
         agency: candidate.agency || '',
-        offerDate: candidate.offerDate ? candidate.offerDate.slice(0, 10) : '',
-        onboardDate: candidate.onboardDate ? candidate.onboardDate.slice(0, 10) : '',
-        expectedOnboardDate: candidate.expectedOnboardDate ? candidate.expectedOnboardDate.slice(0, 10) : '',
-        feedbackDate: candidate.feedbackDate ? candidate.feedbackDate.slice(0, 10) : '',
-        currentSalary: candidate.currentSalary || '',
-        expectedSalary: candidate.expectedSalary || '',
+        offerDate: candidate.offer_date ? String(candidate.offer_date).slice(0, 10) : '',
+        onboardDate: candidate.onboard_date ? String(candidate.onboard_date).slice(0, 10) : '',
+        expectedOnboardDate: candidate.expected_onboard_date ? String(candidate.expected_onboard_date).slice(0, 10) : '',
+        feedbackDate: candidate.feedback_date ? String(candidate.feedback_date).slice(0, 10) : '',
+        currentSalary: candidate.current_salary || '',
+        expectedSalary: candidate.expected_salary || '',
         status: candidate.status || 'CV Sent',
         note: candidate.note || '',
-        platformId: candidate.platform?.id || '',
-        recruiterId: candidate.recruiter?.id || '',
-        jobId: candidate.job?.id || '',
-        targetedCompanyId: candidate.targetedCompany?.id || '',
-        referenceId: candidate.reference?.id || '',
+        platformId: candidate.platform?.platform_id || candidate.platform_id || '',
+        recruiterId: candidate.recruiter?.user_id || candidate.recruiter || '',
+        jobId: candidate.job?.job_id || candidate.job_id || '',
+        targetedCompanyId: candidate.targeted_company?.company_id || candidate.targeted_company || '',
+        referenceId: candidate.reference?.user_id || candidate.reference || '',
         file: null,
       });
     } else {
@@ -83,23 +83,27 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
   const loadOptions = async () => {
     setLoadingOptions(true);
 
-    const [jobsRes, platformsRes, companiesRes, usersRes, agenciesRes, statusesRes] = await Promise.all([
-      searchJobsApi({ page: 1, limit: 100 }),
-      searchPlatformsApi({ page: 1, limit: 100 }),
-      searchCompaniesApi({ page: 1, limit: 100 }),
-      fetchUsersApi(),
-      fetchAgenciesApi(),
-      fetchStatusesApi(),
-    ]);
+    try {
+      const [jobsRes, platformsRes, companiesRes, usersRes, agenciesRes, statusesRes] = await Promise.all([
+        searchJobsApi({ page: 1, limit: 100 }),
+        searchPlatformsApi({ page: 1, limit: 100 }),
+        searchCompaniesApi({ page: 1, limit: 100 }),
+        fetchUsersApi({ page: 1, limit: 100 }),
+        fetchAgenciesApi(),
+        fetchStatusesApi(),
+      ]);
 
-    setOptions({
-      jobs: jobsRes.success ? jobsRes.jobs : [],
-      platforms: platformsRes.success ? platformsRes.platforms : [],
-      companies: companiesRes.success ? companiesRes.companies : [],
-      users: usersRes.success ? usersRes.users : [],
-      agencies: agenciesRes.success ? agenciesRes.agencies : [],
-      statuses: statusesRes.success ? statusesRes.statuses : [],
-    });
+      setOptions({
+        jobs: jobsRes.data || [],
+        platforms: platformsRes.data || [],
+        companies: companiesRes.data || [],
+        users: usersRes.data || [],
+        agencies: agenciesRes || [],
+        statuses: statusesRes || [],
+      });
+    } catch (err) {
+      console.error('Failed to load form options', err);
+    }
 
     setLoadingOptions(false);
   };
@@ -196,7 +200,7 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
               <select name="jobId" value={formData.jobId} onChange={handleChange} style={selectStyle} disabled={saving}>
                 <option value="">Select Job</option>
                 {options.jobs.map((j) => (
-                  <option key={j.id} value={j.id}>{j.code} — {j.project}</option>
+                  <option key={j.job_id} value={j.job_id}>{j.job_code} — {j.project}</option>
                 ))}
               </select>
             </label>
@@ -214,7 +218,7 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
               <select name="platformId" value={formData.platformId} onChange={handleChange} style={selectStyle} disabled={saving}>
                 <option value="">Select Platform</option>
                 {options.platforms.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.platform_id} value={p.platform_id}>{p.platform_name}</option>
                 ))}
               </select>
             </label>
@@ -223,7 +227,7 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
               <select name="recruiterId" value={formData.recruiterId} onChange={handleChange} style={selectStyle} disabled={saving}>
                 <option value="">Select Recruiter</option>
                 {options.users.map((u) => (
-                  <option key={u.id} value={u.id}>{u.displayName} ({u.role})</option>
+                  <option key={u.user_id} value={u.user_id}>{u.user_name} ({u.user_role})</option>
                 ))}
               </select>
             </label>
@@ -232,7 +236,7 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
               <select name="targetedCompanyId" value={formData.targetedCompanyId} onChange={handleChange} style={selectStyle} disabled={saving}>
                 <option value="">Select Company</option>
                 {options.companies.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.company_id} value={c.company_id}>{c.company_name}</option>
                 ))}
               </select>
             </label>
@@ -241,7 +245,7 @@ export const CandidateForm = ({ candidate, onSubmit, onClose, saving }) => {
               <select name="referenceId" value={formData.referenceId} onChange={handleChange} style={selectStyle} disabled={saving}>
                 <option value="">None</option>
                 {options.users.map((u) => (
-                  <option key={u.id} value={u.id}>{u.displayName}</option>
+                  <option key={u.user_id} value={u.user_id}>{u.user_name}</option>
                 ))}
               </select>
             </label>

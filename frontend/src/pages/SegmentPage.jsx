@@ -22,13 +22,12 @@ export const SegmentPage = () => {
 
   const loadSegments = useCallback(async (page, search) => {
     setLoading(true);
-    const result = await searchSegmentsApi({ page, limit: ITEMS_PER_PAGE, search });
-
-    if (result.success) {
-      setSegments(result.segments);
+    try {
+      const result = await searchSegmentsApi({ page, limit: ITEMS_PER_PAGE, search });
+      setSegments(result.data || []);
       if (result.pagination) setPagination(result.pagination);
-    } else if (result.message) {
-      toast.warning(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load segments.');
     }
     setLoading(false);
   }, []);
@@ -53,7 +52,7 @@ export const SegmentPage = () => {
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && pagination && page <= pagination.totalPages) {
+    if (page >= 1 && pagination && page <= pagination.total_pages) {
       setCurrentPage(page);
       loadSegments(page, searchQuery);
     }
@@ -68,7 +67,7 @@ export const SegmentPage = () => {
 
   const openEditForm = (seg) => {
     setEditingSegment(seg);
-    setFormData({ code: seg.code, name: seg.name, description: seg.description });
+    setFormData({ code: seg.segment_code || '', name: seg.segment_name, description: seg.segment_description || '' });
     setFormError('');
     setShowForm(true);
   };
@@ -102,22 +101,22 @@ export const SegmentPage = () => {
     setSaving(true);
 
     if (editingSegment) {
-      const result = await updateSegmentApi(editingSegment.id, formData.code.trim(), formData.name.trim(), formData.description.trim());
-      if (result.success) {
-        toast.success(result.message || 'Segment updated successfully.');
+      try {
+        await updateSegmentApi(editingSegment.segment_id, formData.code.trim(), formData.name.trim(), formData.description.trim());
+        toast.success('Segment updated successfully.');
         closeForm();
         loadSegments(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
     } else {
-      const result = await createSegmentApi(formData.code.trim(), formData.name.trim(), formData.description.trim());
-      if (result.success) {
-        toast.success(result.message || 'Segment created successfully.');
+      try {
+        await createSegmentApi(formData.code.trim(), formData.name.trim(), formData.description.trim());
+        toast.success('Segment created successfully.');
         closeForm();
         loadSegments(currentPage, searchQuery);
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
     }
 
@@ -125,19 +124,19 @@ export const SegmentPage = () => {
   };
 
   const handleDelete = async (seg) => {
-    if (!confirm(`Are you sure you want to delete "${seg.code} — ${seg.name}"?`)) return;
+    if (!confirm(`Are you sure you want to delete "${seg.segment_code} — ${seg.segment_name}"?`)) return;
 
-    const result = await deleteSegmentApi(seg.id);
-    if (result.success) {
-      toast.success(result.message || 'Segment deleted.');
+    try {
+      await deleteSegmentApi(seg.segment_id);
+      toast.success('Segment deleted.');
       loadSegments(currentPage, searchQuery);
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
 
-  const totalPages = pagination?.totalPages || 1;
-  const totalItems = pagination?.totalItems || segments.length;
+  const totalPages = pagination?.total_pages || 1;
+  const totalItems = pagination?.total_items || segments.length;
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
 
@@ -211,7 +210,7 @@ export const SegmentPage = () => {
       <p style={s.filterInfo}>
         Total: {totalItems} segments
         {searchQuery && ` • Search: "${searchQuery}"`}
-        {pagination && ` • Page ${pagination.currentPage} of ${pagination.totalPages}`}
+        {pagination && ` • Page ${pagination.current_page} of ${pagination.total_pages}`}
       </p>
 
       <table style={s.table}>
@@ -235,11 +234,11 @@ export const SegmentPage = () => {
             </tr>
           ) : (
             segments.map((seg) => (
-              <tr key={seg.id}>
-                <td style={s.td}><span style={s.idBadge}>{seg.id}</span></td>
-                <td style={s.td}><span style={s.codeBadge}>{seg.code}</span></td>
-                <td style={s.td}><strong>{seg.name}</strong></td>
-                <td style={{ ...s.td, color: '#64748b' }}>{seg.description || '—'}</td>
+              <tr key={seg.segment_id}>
+                <td style={s.td}><span style={s.idBadge}>{seg.segment_id}</span></td>
+                <td style={s.td}><span style={s.codeBadge}>{seg.segment_code}</span></td>
+                <td style={s.td}><strong>{seg.segment_name}</strong></td>
+                <td style={{ ...s.td, color: '#64748b' }}>{seg.segment_description || '—'}</td>
                 <td style={{ ...s.td, textAlign: 'center' }}>
                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                     <button type="button" style={{ ...s.actionBtn, color: '#3b82f6' }} onClick={() => openEditForm(seg)} title="Edit"><Edit2 size={16} /></button>
@@ -252,9 +251,9 @@ export const SegmentPage = () => {
         </tbody>
       </table>
 
-      {pagination && pagination.totalPages > 1 && (
+      {pagination && pagination.total_pages > 1 && (
         <div style={s.paginationRow}>
-          <span style={s.paginationInfo}>Page {pagination.currentPage} of {pagination.totalPages} • {totalItems} segments</span>
+          <span style={s.paginationInfo}>Page {pagination.current_page} of {pagination.total_pages} • {totalItems} segments</span>
           <div style={s.paginationButtons}>
             <button type="button" style={s.navBtn(currentPage <= 1)} onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}><ChevronLeft size={16} /></button>
             {pageNumbers.map((num) => (

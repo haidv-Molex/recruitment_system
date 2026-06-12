@@ -14,19 +14,19 @@ const statusClass = (status) => `status-pill status-${String(status || '').toLow
 
 // Map API job to local table format
 const mapApiJobToRow = (j) => ({
-  id: j.id,
-  jobCode: j.code,
+  id: j.job_id,
+  jobCode: j.job_code,
   project: j.project,
-  department: j.departments.map((d) => d.code).join(', '),
-  hcRequested: j.candidateRequired,
-  jobTitle: j.titles.map((t) => t.name).join(', '),
-  eeLevel: j.employeeLevels.map((el) => el.name).join(', '),
-  sites: j.sites.map((s) => s.code).join(', '),
-  projectSegment: j.segments.map((sg) => sg.name).join(', '),
-  hiringManager: j.managers.map((m) => m.name).join(', '),
-  hrbp: j.partners.map((p) => p.name).join(', '),
+  department: (j.departments || []).map((d) => d.department_code).join(', '),
+  hcRequested: j.candidate_required,
+  jobTitle: (j.titles || []).map((t) => t.level_name).join(', '),
+  eeLevel: (j.employee_levels || []).map((el) => el.level_name).join(', '),
+  sites: (j.sites || []).map((s) => s.site_code).join(', '),
+  projectSegment: (j.segments || []).map((sg) => sg.segment_name).join(', '),
+  hiringManager: (j.managers || []).map((m) => m.user_name).join(', '),
+  hrbp: (j.partners || []).map((p) => p.user_name).join(', '),
   recruiter: '',
-  myhrRequestDate: j.requestDate ? j.requestDate.slice(0, 10) : '',
+  myhrRequestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
   expectedOnboardDate: '',
   status: 'Searching',
   source: '',
@@ -34,14 +34,14 @@ const mapApiJobToRow = (j) => ({
   onboardDate: '',
   offerDate: '',
   note: j.note,
-  departments: j.departments,
-  segments: j.segments,
-  sitesData: j.sites,
-  titles: j.titles,
-  employeeLevels: j.employeeLevels,
-  partners: j.partners,
-  managers: j.managers,
-  file: j.file,
+  departments: j.departments || [],
+  segments: j.segments || [],
+  sitesData: j.sites || [],
+  titles: j.titles || [],
+  employee_levels: j.employee_levels || [],
+  partners: j.partners || [],
+  managers: j.managers || [],
+  file: j.file || null,
 });
 
 export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
@@ -58,12 +58,12 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
   // Load jobs from API on mount
   const loadJobsFromApi = useCallback(async () => {
     setLoading(true);
-    const result = await searchJobsApi({ page: 1, limit: 100 });
-
-    if (result.success && result.jobs.length > 0) {
-      setJobs(result.jobs.map(mapApiJobToRow));
+    try {
+      const result = await searchJobsApi({ page: 1, limit: 100 });
+      setJobs((result.data || []).map(mapApiJobToRow));
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load jobs.');
     }
-
     setLoading(false);
   }, [setJobs]);
 
@@ -100,36 +100,48 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     });
   }, [jobs, candidates, autoCalculate]);
 
-  // Save job (create or update)
   const handleSaveJob = async (formData) => {
     setSaving(true);
 
+    const apiPayload = {
+      job_code: formData.jobCode,
+      project: formData.project,
+      candidate_required: formData.candidateRequired,
+      note: formData.note,
+      request_date: formData.requestDate,
+      file: formData.file,
+      partners: formData.partners,
+      departments: formData.departments,
+      segments: formData.segments,
+      sites: formData.sites,
+      titles: formData.titles,
+      managers: formData.managers,
+      employee_levels: formData.employeeLevels,
+    };
+
     // If editing existing job, call update API
     if (editingJob) {
-      const result = await updateJobApi(editingJob.id, formData);
-
-      if (result.success) {
-        toast.success(result.message || 'Job updated successfully.');
+      try {
+        await updateJobApi(editingJob.id, apiPayload);
+        toast.success('Job updated successfully.');
         setShowJobForm(false);
         setEditingJob(null);
         await loadJobsFromApi();
-      } else {
-        toast.error(result.message);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
-
       setSaving(false);
       return;
     }
 
     // Call API to create new job
-    const result = await createJobApi(formData);
-
-    if (result.success) {
-      toast.success(result.message || 'Job created successfully.');
+    try {
+      await createJobApi(apiPayload);
+      toast.success('Job created successfully.');
       setShowJobForm(false);
       await loadJobsFromApi();
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Create failed.');
     }
 
     setSaving(false);
@@ -139,13 +151,12 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
   const handleDeleteJob = async (job) => {
     if (!confirm(`Delete job ${job.jobCode}?`)) return;
 
-    const result = await deleteJobApi(job.id);
-
-    if (result.success) {
-      toast.success(result.message || 'Job deleted.');
+    try {
+      await deleteJobApi(job.id);
+      toast.success('Job deleted.');
       await loadJobsFromApi();
-    } else {
-      toast.error(result.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
 
@@ -174,11 +185,11 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     const employeeLevels = splitByIdExists(parsedJob.employeeLevels);
 
     const formData = {
-      jobCode: parsedJob.jobCode,
+      job_code: parsedJob.jobCode,
       project: parsedJob.project,
-      candidateRequired: parsedJob.candidateRequired,
+      candidate_required: parsedJob.candidateRequired,
       note: parsedJob.note || '',
-      requestDate: parsedJob.requestDate || '',
+      request_date: parsedJob.requestDate || '',
       file: null,
       // Existing IDs
       partners: partners.ids,
@@ -187,7 +198,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
       sites: sites.ids,
       titles: titles.ids,
       managers: managers.ids,
-      employeeLevels: employeeLevels.ids,
+      employee_levels: employeeLevels.ids,
       // New names (backend auto-creates)
       partnersName: partners.names,
       managersName: managers.names,
@@ -206,15 +217,19 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }) => {
     loadJobsFromApi();
   };
   const handleDownloadTracking = async () => {
-    const result = await downloadIdlTrackingSheetApi();
-    if (!result.success) {
-      toast.error(result.message || 'Download failed.');
+    try {
+      await downloadIdlTrackingSheetApi();
+      toast.success('Download successful.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Download failed.');
     }
   };
   const handleDownloadFullWorkbook = async () => {
-    const result = await downloadFullWorkbookApi();
-    if (!result.success) {
-      toast.error(result.message || 'Download failed.');
+    try {
+      await downloadFullWorkbookApi();
+      toast.success('Download successful.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Download failed.');
     }
   };
 

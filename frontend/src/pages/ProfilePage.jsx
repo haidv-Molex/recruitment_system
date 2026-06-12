@@ -28,8 +28,8 @@ export const ProfilePage = () => {
     // If user data is available, populate the profile form
     if (user) {
       setProfileData({
-        username: user.displayName || '',
-        description: user.description || '',
+        username: user.user_name || '',
+        description: user.user_description || '',
       });
     }
   }, [user]);
@@ -162,9 +162,8 @@ export const ProfilePage = () => {
 
       {/* User info pills */}
       <div style={s.infoRow}>
-        <span style={s.infoPill}>Account: {user?.username}</span>
-        <span style={s.infoPill}>Name: {user?.displayName}</span>
-        <span style={s.infoPill}>Role: {user?.role}</span>
+        <span style={s.infoPill}>Name: {user?.user_name}</span>
+        <span style={s.infoPill}>Role: {user?.user_role}</span>
       </div>
 
       {/* ═══ Profile Information Card ═══ */}

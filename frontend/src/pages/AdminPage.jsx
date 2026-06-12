@@ -4,7 +4,7 @@ import { UserForm } from '../components/UserForm';
 import { ToastContainer } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/useToast';
-import { createHRApi } from '../services/userApi';
+import { createHRApi, fetchUsersApi, deleteUserApi } from '../services/userApi';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -23,7 +23,7 @@ const roleIcons = {
 };
 
 export const AdminPage = () => {
-  const { user: currentUser, fetchUsers, removeUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { toasts, removeToast, toast } = useToast();
   const [users, setUsers] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -34,34 +34,35 @@ export const AdminPage = () => {
   const [filterRole, setFilterRole] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  const loadUsers = () => {
-    // If fetchUsers exists (from mock context), use it
-    if (fetchUsers) {
-      setUsers(fetchUsers());
+  const loadUsers = async () => {
+    try {
+      const response = await fetchUsersApi({ page: 1, limit: 100 });
+      setUsers(response.data);
+    } catch (err) {
+      toast.error('Failed to load users.');
     }
   };
 
   useEffect(() => {
     loadUsers();
-  }, [fetchUsers]);
+  }, []);
 
   const filteredUsers = useMemo(() => {
     let result = users;
 
-    // If search query is not empty, filter users by username or displayName
+    // If search query is not empty, filter users by user_name
     if (searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase();
       result = result.filter(
         (u) =>
-          (u.username || '').toLowerCase().includes(query) ||
-          (u.displayName || '').toLowerCase().includes(query) ||
-          (u.account || '').toLowerCase().includes(query)
+          (u.user_name || '').toLowerCase().includes(query) ||
+          (u.user_account || '').toLowerCase().includes(query)
       );
     }
 
     // If a role filter is selected, keep only users matching that role
     if (filterRole) {
-      result = result.filter((u) => u.role === filterRole);
+      result = result.filter((u) => u.user_role === filterRole);
     }
 
     return result;
@@ -83,55 +84,44 @@ export const AdminPage = () => {
 
   const handleCreate = async (formData) => {
     setSaving(true);
-
-    const result = await createHRApi({
-      username: formData.username,
-      account: formData.account,
-      password: formData.password,
-      description: formData.description || undefined,
-    });
-
-    // If account creation succeeded, show success toast and add to local list
-    if (result.success) {
-      toast.success(result.message || `Account "${formData.account}" created successfully.`);
+    try {
+      const newUser = await createHRApi({
+        username: formData.username,
+        account: formData.account,
+        password: formData.password,
+        description: formData.description || undefined,
+      });
+      toast.success(`Account "${formData.account}" created successfully.`);
       setShowForm(false);
-      setUsers((prev) => [...prev, result.user]);
-    } else {
-      toast.error(result.message);
+      setUsers((prev) => [...prev, newUser]);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Create account failed.');
     }
-
     setSaving(false);
   };
 
   const handleEdit = (formData) => {
-    // TODO: Replace with API when backend provides update user endpoint
     toast.warning('Edit account — waiting for backend API.');
     setShowForm(false);
     setEditingUser(null);
   };
 
-  const handleDelete = (userToDelete) => {
-    // If trying to delete own account, show error toast
-    if (currentUser && userToDelete.id === currentUser.id) {
+  const handleDelete = async (userToDelete) => {
+    if (currentUser && userToDelete.user_id === currentUser.user_id) {
       toast.error('You cannot delete your own account.');
       return;
     }
 
-    // If user cancels the confirmation dialog, abort deletion
-    if (!confirm(`Are you sure you want to delete account "${userToDelete.displayName || userToDelete.username}"?`)) {
+    if (!confirm(`Are you sure you want to delete account "${userToDelete.user_name || userToDelete.user_account}"?`)) {
       return;
     }
 
-    // TODO: Replace with API when backend provides delete user endpoint
-    if (removeUser) {
-      const result = removeUser(userToDelete.id);
-      // If deletion succeeded, show success toast and remove from local list
-      if (result.success) {
-        toast.success(`Account "${userToDelete.displayName || userToDelete.username}" deleted.`);
-        setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
-      } else {
-        toast.error(result.message);
-      }
+    try {
+      await deleteUserApi(userToDelete.user_id);
+      toast.success(`Account "${userToDelete.user_name || userToDelete.user_account}" deleted.`);
+      setUsers((prev) => prev.filter((u) => u.user_id !== userToDelete.user_id));
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Delete user failed.');
     }
   };
 
@@ -183,11 +173,11 @@ export const AdminPage = () => {
 
   const totalUsers = users.length;
   // Filter users to count how many have admin role
-  const adminCount = users.filter((u) => u.role === 'admin').length;
+  const adminCount = users.filter((u) => u.user_role === 'admin').length;
   // Filter users to count how many have hr role
-  const hrCount = users.filter((u) => u.role === 'hr' || u.role === 'recruiter').length;
+  const hrCount = users.filter((u) => u.user_role === 'hr' || u.user_role === 'recruiter').length;
   // Filter users to count how many have viewer role
-  const viewerCount = users.filter((u) => u.role === 'viewer').length;
+  const viewerCount = users.filter((u) => u.user_role === 'viewer').length;
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endIndex = Math.min(currentPage * ITEMS_PER_PAGE, filteredUsers.length);
@@ -290,23 +280,23 @@ export const AdminPage = () => {
           ) : (
             // Loop through paginated users to render each row
             paginatedUsers.map((u) => {
-              const RoleIcon = roleIcons[u.role] || User;
-              const isCurrentUser = currentUser && currentUser.id === u.id;
+              const RoleIcon = roleIcons[u.user_role] || User;
+              const isCurrentUser = currentUser && currentUser.user_id === u.user_id;
 
               return (
-                <tr key={u.id}>
+                <tr key={u.user_id}>
                   <td style={s.td}>
-                    <strong>{u.account || u.username}</strong>
+                    <strong>{u.user_account || u.user_name}</strong>
                     {isCurrentUser && <span style={s.youBadge}>(you)</span>}
                   </td>
-                  <td style={s.td}>{u.displayName}</td>
+                  <td style={s.td}>{u.user_name}</td>
                   <td style={{ ...s.td, color: '#64748b', fontSize: '13px' }}>
-                    {u.description || '—'}
+                    {u.user_description || '—'}
                   </td>
                   <td style={s.td}>
-                    <span style={s.rolePill(u.role)}>
+                    <span style={s.rolePill(u.user_role)}>
                       <RoleIcon size={12} />
-                      {u.role.toUpperCase()}
+                      {(u.user_role || '').toUpperCase()}
                     </span>
                   </td>
                   <td style={{ ...s.td, textAlign: 'center' }}>

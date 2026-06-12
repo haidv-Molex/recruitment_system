@@ -1,0 +1,228 @@
+import axiosInstance from '@/config/axiosInstance';
+import type { candidateModel } from '@/types/candidateModel';
+import type { PaginationMetadata } from '@/types/pagination';
+
+export async function createCandidateApi(formData: any): Promise<candidateModel> {
+  const fd = new FormData();
+
+  // Required fields
+  fd.append('candidate_name', formData.candidateName);
+  fd.append('candidate_code', formData.candidateCode);
+
+  // Optional text fields
+  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
+  if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
+  if (formData.agency) fd.append('agency', formData.agency);
+  if (formData.offerDate) fd.append('offer_date', formData.offerDate);
+  if (formData.onboardDate) fd.append('onboard_date', formData.onboardDate);
+  if (formData.expectedOnboardDate) fd.append('expected_onboard_date', formData.expectedOnboardDate);
+  if (formData.feedbackDate) fd.append('feedback_date', formData.feedbackDate);
+  if (formData.currentSalary) fd.append('current_salary', formData.currentSalary);
+  if (formData.expectedSalary) fd.append('expected_salary', formData.expectedSalary);
+  if (formData.status) fd.append('status', formData.status);
+  if (formData.note) fd.append('note', formData.note);
+
+  // FK fields
+  if (formData.platformId) fd.append('platform_id', String(formData.platformId));
+  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
+  if (formData.jobId) fd.append('job_id', String(formData.jobId));
+  if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
+  if (formData.referenceId) fd.append('reference', String(formData.referenceId));
+
+  // File upload
+  if (formData.file) fd.append('file', formData.file);
+
+  const response = await axiosInstance.post('/candidate', fd);
+  return response.data.data!;
+}
+
+export async function searchCandidatesApi({
+  page = 1,
+  limit = 10,
+  search = '',
+  searchAt = '',
+  status = '',
+  offerDateFrom = '',
+  offerDateTo = '',
+  onboardDateFrom = '',
+  onboardDateTo = '',
+  expectedOnboardDateFrom = '',
+  expectedOnboardDateTo = '',
+  feedbackDateFrom = '',
+  feedbackDateTo = '',
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  searchAt?: string;
+  status?: string;
+  offerDateFrom?: string;
+  offerDateTo?: string;
+  onboardDateFrom?: string;
+  onboardDateTo?: string;
+  expectedOnboardDateFrom?: string;
+  expectedOnboardDateTo?: string;
+  feedbackDateFrom?: string;
+  feedbackDateTo?: string;
+} = {}): Promise<{ data: candidateModel[]; pagination?: PaginationMetadata }> {
+  const params: Record<string, any> = { page, limit };
+
+  if (search.trim()) params.search = search.trim();
+  if (searchAt) params.search_at = searchAt;
+  if (status) params.status = status;
+
+  if (offerDateFrom) params.offer_date_from = offerDateFrom;
+  if (offerDateTo) params.offer_date_to = offerDateTo;
+  if (onboardDateFrom) params.onboard_date_from = onboardDateFrom;
+  if (onboardDateTo) params.onboard_date_to = onboardDateTo;
+  if (expectedOnboardDateFrom) params.expected_onboard_date_from = expectedOnboardDateFrom;
+  if (expectedOnboardDateTo) params.expected_onboard_date_to = expectedOnboardDateTo;
+  if (feedbackDateFrom) params.feedback_date_from = feedbackDateFrom;
+  if (feedbackDateTo) params.feedback_date_to = feedbackDateTo;
+
+  const response = await axiosInstance.get('/candidate/search', { params });
+  return {
+    data: response.data.data || [],
+    pagination: response.data.pagination as PaginationMetadata | undefined,
+  };
+}
+
+export async function getCandidateApi(id: number): Promise<candidateModel> {
+  const response = await axiosInstance.get('/candidate', { params: { id } });
+  return response.data.data!;
+}
+
+export async function deleteCandidateApi(id: number): Promise<void> {
+  await axiosInstance.delete('/candidate', { params: { id } });
+}
+
+export async function createCandidateExtendedApi(formData: any): Promise<candidateModel> {
+  const fd = new FormData();
+
+  // Required fields
+  fd.append('candidate_name', formData.candidateName);
+  fd.append('candidate_code', formData.candidateCode);
+
+  // Optional text fields
+  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
+  if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
+  if (formData.agency) fd.append('agency', formData.agency);
+  if (formData.offerDate) fd.append('offer_date', formData.offerDate);
+  if (formData.onboardDate) fd.append('onboard_date', formData.onboardDate);
+  if (formData.expectedOnboardDate) fd.append('expected_onboard_date', formData.expectedOnboardDate);
+  if (formData.feedbackDate) fd.append('feedback_date', formData.feedbackDate);
+  if (formData.currentSalary) fd.append('current_salary', formData.currentSalary);
+  if (formData.expectedSalary) fd.append('expected_salary', formData.expectedSalary);
+  if (formData.status) fd.append('status', formData.status);
+  if (formData.note) fd.append('note', formData.note);
+
+  // FK by ID
+  if (formData.platformId) fd.append('platform_id', String(formData.platformId));
+  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
+  if (formData.jobId) fd.append('job_id', String(formData.jobId));
+  if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
+  if (formData.referenceId) fd.append('reference', String(formData.referenceId));
+
+  // FK by Name
+  if (formData.platformName) fd.append('platform_name', formData.platformName);
+  if (formData.recruiterName) fd.append('recruiter_name', formData.recruiterName);
+  if (formData.targetedCompanyName) fd.append('targeted_company_name', formData.targetedCompanyName);
+  if (formData.referenceName) fd.append('reference_name', formData.referenceName);
+
+  // File upload
+  if (formData.file) fd.append('file', formData.file);
+
+  const response = await axiosInstance.post('/candidate/extended', fd);
+  return response.data.data!;
+}
+
+export async function updateCandidateApi(id: number, formData: any): Promise<candidateModel> {
+  const fd = new FormData();
+
+  // Text fields
+  fd.append('candidate_name', formData.candidateName);
+  fd.append('candidate_code', formData.candidateCode);
+  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
+  if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
+  if (formData.agency) fd.append('agency', formData.agency);
+  if (formData.offerDate) fd.append('offer_date', formData.offerDate);
+  if (formData.onboardDate) fd.append('onboard_date', formData.onboardDate);
+  if (formData.expectedOnboardDate) fd.append('expected_onboard_date', formData.expectedOnboardDate);
+  if (formData.feedbackDate) fd.append('feedback_date', formData.feedbackDate);
+  if (formData.currentSalary) fd.append('current_salary', formData.currentSalary);
+  if (formData.expectedSalary) fd.append('expected_salary', formData.expectedSalary);
+  if (formData.status) fd.append('status', formData.status);
+  if (formData.note) fd.append('note', formData.note);
+
+  // FK fields
+  if (formData.platformId) fd.append('platform_id', String(formData.platformId));
+  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
+  if (formData.jobId) fd.append('job_id', String(formData.jobId));
+  if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
+
+  if (formData.referenceId) {
+    fd.append('reference', String(formData.referenceId));
+  } else {
+    fd.append('reference', 'null');
+  }
+
+  // File upload
+  if (formData.file) fd.append('file', formData.file);
+
+  const response = await axiosInstance.put('/candidate', fd, { params: { id } });
+  return response.data.data!;
+}
+
+export async function fetchAgenciesApi(): Promise<string[]> {
+  const response = await axiosInstance.get('/candidate/agencies');
+  return response.data.data || [];
+}
+
+export async function fetchStatusesApi(): Promise<string[]> {
+  const response = await axiosInstance.get('/candidate/statuses');
+  return response.data.data || [];
+}
+
+export async function parseCandidateSheetApi(file: File): Promise<any[]> {
+  const fd = new FormData();
+  fd.append('file', file);
+
+  const response = await axiosInstance.post('/file/parse-candidate-sheet', fd);
+  return response.data.data || [];
+}
+
+export async function downloadValidationSheetApi(): Promise<void> {
+  const response = await axiosInstance.get('/file/validation-sheet', {
+    responseType: 'blob',
+  });
+
+  const blob = new Blob([response.data], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'validation-sheet.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export async function downloadDatabaseSheetApi(): Promise<void> {
+  const response = await axiosInstance.get('/file/database-sheet', {
+    responseType: 'blob',
+  });
+
+  const blob = new Blob([response.data], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'database-sheet.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}

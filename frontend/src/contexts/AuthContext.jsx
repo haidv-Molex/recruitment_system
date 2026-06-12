@@ -22,16 +22,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (account, password) => {
-    const result = await loginApi(account, password);
-
-    // If login API succeeded, save user to state and localStorage
-    if (result.success) {
-      setUser(result.user);
-      localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+    try {
+      const userObj = await loginApi(account, password);
+      setUser(userObj);
+      localStorage.setItem(USER_KEY, JSON.stringify(userObj));
       return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Login failed.',
+      };
     }
-
-    return { success: false, message: result.message };
   };
 
   const logout = () => {
@@ -40,31 +41,41 @@ export const AuthProvider = ({ children }) => {
   };
 
   const changePassword = async (oldPassword, newPassword) => {
-    return await changePasswordApi(oldPassword, newPassword);
+    try {
+      await changePasswordApi(oldPassword, newPassword);
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Change password failed.',
+      };
+    }
   };
 
   const updateProfile = async (username, description) => {
-    const result = await updateProfileApi(username, description);
-
-    // If profile update succeeded, sync user state and localStorage
-    if (result.success) {
-      const updatedUser = {
+    try {
+      const updatedUser = await updateProfileApi(username, description);
+      const newUserData = {
         ...user,
-        displayName: result.user.displayName,
-        description: result.user.description,
-        departmentId: result.user.departmentId,
+        user_name: updatedUser.user_name,
+        user_description: updatedUser.user_description,
+        department_id: updatedUser.department_id,
       };
-      setUser(updatedUser);
-      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+      setUser(newUserData);
+      localStorage.setItem(USER_KEY, JSON.stringify(newUserData));
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || err.message || 'Update profile failed.',
+      };
     }
-
-    return result;
   };
 
   const value = {
     user,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.user_role === 'admin',
     isLoading,
     login,
     logout,
