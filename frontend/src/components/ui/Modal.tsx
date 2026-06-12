@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidthClass?: string; // e.g. 'max-w-md', 'max-w-lg', 'max-w-2xl'

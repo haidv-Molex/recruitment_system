@@ -325,11 +325,11 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
     const jdList: JdRow[] = jobs.map((job) => ({
         job_code: job.job_code,
         project: job.project,
-        dept: job.departments?.[0]?.department_code ?? "",
+        dept: job.departments?.[0]?.department_code || job.departments?.[0]?.department_name || "",
         hc_requested: job.candidate_required,
         job_title: job.titles?.[0]?.level_name ?? "",
         ee_level: job.employee_levels?.[0]?.level_name ?? "",
-        sites: job.sites?.map((s) => s.site_code).join(", ") ?? "",
+        sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
         project_segment: job.segments?.[0]?.segment_name ?? null,
         hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
         hrbp: job.partners?.map((p) => p.user_name).join(", ") ?? "",
@@ -350,13 +350,13 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
 
     const jdLookupList: JdLookupRow[] = jobs.map((job) => ({
         job_code: job.job_code,
-        dept: job.departments?.[0]?.department_code ?? "",
+        dept: job.departments?.[0]?.department_code || job.departments?.[0]?.department_name || "",
         job_title: job.titles?.[0]?.level_name ?? "",
         ee_level: job.employee_levels?.[0]?.level_name ?? "",
         project: job.project,
         hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
         recruiter: "",
-        sites: job.sites?.map((s) => s.site_code).join(", ") ?? "",
+        sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
     }));
 
     const candidatesForDb: CandidateRow[] = rows.map((row) => ({

@@ -104,11 +104,42 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
     onSubmit(formData);
   };
 
+  const fileToDisplay = formData.file || job?.file;
+
+  const modalTitle = (
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="font-semibold text-slate-800">
+        {job ? 'Edit Job Requisition' : 'Add Job Requisition'}
+      </span>
+      {fileToDisplay && (
+        <span
+          onClick={() => {
+            if (fileToDisplay instanceof File) {
+              const fileUrl = URL.createObjectURL(fileToDisplay);
+              setPreviewFile({
+                file_name: fileToDisplay.name,
+                file_path: fileUrl,
+                file_url: fileUrl,
+              });
+            } else {
+              setPreviewFile(fileToDisplay);
+            }
+          }}
+          className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-emerald-200 cursor-pointer transition-colors max-w-[240px] truncate"
+          title="Click to preview JD File"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          JD: {fileToDisplay instanceof File ? fileToDisplay.name : (fileToDisplay.file_name || fileToDisplay.file_path?.split('/').pop() || 'File')}
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <Modal
       isOpen={true}
       onClose={onClose}
-      title={job ? 'Edit Job Requisition' : 'Add Job Requisition'}
+      title={modalTitle}
       maxWidthClass="max-w-4xl"
       footer={
         <>
@@ -155,6 +186,18 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
           selectedManagers={selectedManagers}
           setSelectedManagers={setSelectedManagers}
         />
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-700">Note</label>
+          <textarea
+            name="note"
+            value={formData.note}
+            onChange={handleChange}
+            rows={2}
+            disabled={saving}
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+          />
+        </div>
       </form>
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
     </Modal>

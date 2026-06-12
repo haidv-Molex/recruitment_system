@@ -62,34 +62,22 @@ export default function JobBasicInfoFields({
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-700">JD File (optional)</label>
-          {job?.file && (
-            <FileLink file={job.file} onClick={() => setPreviewFile(job.file)} />
-          )}
-          <input
-            type="file"
-            onChange={handleFileChange}
-            disabled={saving}
-            accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.png"
-            className="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
-          />
-          {formData.file && (
-            <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-              New: {formData.file.name}
-            </p>
-          )}
+          <label className="flex items-center justify-between border border-slate-300 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-50 hover:border-emerald-500 transition-colors bg-white h-10 w-full">
+            <span className="text-xs text-slate-500 truncate max-w-[70%]">
+              {formData.file ? formData.file.name : 'Click to select JD file...'}
+            </span>
+            <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              Browse
+            </span>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              disabled={saving}
+              accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.png"
+              className="hidden"
+            />
+          </label>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-slate-700">Note</label>
-        <textarea
-          name="note"
-          value={formData.note}
-          onChange={handleChange}
-          rows={2}
-          disabled={saving}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-        />
       </div>
     </>
   );

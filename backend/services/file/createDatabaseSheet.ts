@@ -70,13 +70,13 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
   // 3. Map jobs → JdLookupRow[]
   const jd_list: JdLookupRow[] = jobs.map((job) => ({
     job_code: job.job_code,
-    dept: job.departments?.[0]?.department_code ?? "",
+    dept: job.departments?.[0]?.department_code || job.departments?.[0]?.department_name || "",
     job_title: job.titles?.[0]?.level_name ?? "",
     ee_level: job.employee_levels?.[0]?.level_name ?? "",
     project: job.project,
     hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
     recruiter: "",
-    sites: job.sites?.map((s) => s.site_code).join(", ") ?? "",
+    sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
   }));
 
   // 4. Map candidate DB rows → CandidateRow[]
