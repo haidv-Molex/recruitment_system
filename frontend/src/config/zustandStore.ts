@@ -10,6 +10,7 @@ export type StoreKey =
     | 'userRole'
     | 'isNetWorkConnected'
     | 'theme'
+    | 'visibleJobColumns'
 
 // ─── Kiểu dữ liệu ─────────────────────────────────────────────────────────────
 export type StoreData = {
@@ -20,6 +21,7 @@ export type StoreData = {
     userRole?: 'user' | 'admin'
     isNetWorkConnected: boolean
     theme: 'light' | 'dark'
+    visibleJobColumns?: string[]
 }
 
 // ─── Default values ────────────────────────────────────────────────────────────

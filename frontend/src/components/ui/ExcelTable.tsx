@@ -53,6 +53,7 @@ export interface ExcelTableProps<T> {
   actions?: ExcelAction<T>[];
   selectedId?: string | number;
   onSelectRow?: (row: T) => void;
+  onChangeVisibleColumns?: (visibleColumns: string[]) => void;
   /**
    * When provided, column-filter inputs and the global search box will NOT
    * filter locally. Instead, clicking "Search" (or pressing Enter) calls this
@@ -69,6 +70,7 @@ export default function ExcelTable<T extends Record<string, any>>({
   columns,
   emptyMessage = 'No data found',
   defaultVisibleColumns,
+  onChangeVisibleColumns,
   toolbarRight,
   compact = false,
   isLoading = false,
@@ -79,6 +81,13 @@ export default function ExcelTable<T extends Record<string, any>>({
 }: ExcelTableProps<T>) {
   const initialVisible = defaultVisibleColumns || columns.map((col) => col.key);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(initialVisible);
+
+  useEffect(() => {
+    if (defaultVisibleColumns) {
+      setVisibleColumns(defaultVisibleColumns);
+    }
+  }, [defaultVisibleColumns]);
+
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [globalSearch, setGlobalSearch] = useState('');
   const [showColumns, setShowColumns] = useState(false);
@@ -176,9 +185,11 @@ export default function ExcelTable<T extends Record<string, any>>({
   };
 
   const toggleColumn = (key: string) => {
-    setVisibleColumns((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+    const next = visibleColumns.includes(key)
+      ? visibleColumns.filter((k) => k !== key)
+      : [...visibleColumns, key];
+    setVisibleColumns(next);
+    onChangeVisibleColumns?.(next);
   };
 
   const triggerSearch = () => {

@@ -20,6 +20,7 @@ import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
 import JobExcelImport from '../components/job/JobExcelImport';
 import JobConfirmDeleteModal from '../components/job/JobConfirmDeleteModal';
 import { useHeader } from '../contexts/HeaderContext';
+import { useItem, setItem } from '../config/zustandStore';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
@@ -82,6 +83,11 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
+
+  const savedColumns = useItem('visibleJobColumns');
+  const handleVisibleColumnsChange = (cols: string[]) => {
+    setItem('visibleJobColumns', cols);
+  };
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -275,7 +281,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       if (result.success) {
         toast.success(`Imported ${result.importedCount} jobs successfully!`);
       } else {
-        toast.warn(`Imported ${result.importedCount} jobs, but encountered ${result.errors.length} error(s).`);
+        toast.warning(`Imported ${result.importedCount} jobs, but encountered ${result.errors.length} error(s).`);
       }
       return result;
     } catch (err: any) {
@@ -442,6 +448,8 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             title="Active Job Openings"
             rows={jobs}
             columns={columns}
+            defaultVisibleColumns={savedColumns}
+            onChangeVisibleColumns={handleVisibleColumnsChange}
             actions={tableActions}
             selectedId={selectedJobCode}
             onSelectRow={(row: any) => setSelectedJobCode(row.jobCode === selectedJobCode ? '' : row.jobCode)}

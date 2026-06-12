@@ -12,6 +12,9 @@ describe('zustandStore tests', () => {
 
         setItem('theme', 'dark')
         expect(getItem('theme')).toBe('dark')
+
+        setItem('visibleJobColumns', ['jobCode', 'project'])
+        expect(getItem('visibleJobColumns')).toEqual(['jobCode', 'project'])
     })
 
     it('should remove items correctly', () => {

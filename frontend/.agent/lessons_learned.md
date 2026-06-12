@@ -272,6 +272,21 @@ All filters use `ILIKE` (case-insensitive). Multiple filters are combined with `
   - `JobExcelImport.tsx` handles importing job requisitions from Excel sheets.
   - `JobConfirmDeleteModal.tsx` provides a job-specific deletion confirmation dialog wrapper around `ConfirmModal`.
 
+## 10. Job Excel Import & Batch Import Deduplication System
 
+### Frontend Excel Import Layout
+- **Preview & Action Controls**: Place actions like "Delete Selected" and "Import Selected" inside the header area next to the title `Preview — N Job(s) Found` to maximize table space.
+- **Table Height**: Keep the modal footer set to `null` and enable `fullScreen={true}` during preview mode so the grid fits the viewport height.
+- **Sticky Column**: Keep the checkbox select column `sticky left-0` with explicit row background colors to prevent background bleed-through during horizontal scrolling.
 
+### Backend Batch Import (`POST /api/job/batch`)
+- **JSON Payload**: Excel bulk import uses a JSON payload (not multi-part FormData) for simplicity and schema validation, as there are no binary files in bulk preview imports.
+- **Case-Insensitive Deduplication**: Before inserting any records, the backend collects all string-based name relations (sites, departments, managers, etc.) from all jobs in the batch, normalizes them to lowercase, and checks the database using `LOWER(col) = ANY($1)`. Any missing relation entities are created once, preventing duplicate key violations.
+- **Nested Transactions**: To allow partial import success, execute each job creation within a nested sub-transaction using `SAVEPOINT` and `ROLLBACK TO SAVEPOINT`. This ensures that a single bad job (e.g. duplicate job code) does not crash the entire import batch.
 
+### Grid Column Visibility Store
+- **Persisting Layout Settings**: Use the custom Zustand store to persist the user's selected visible columns (key: `visibleJobColumns`).
+- **Implementation**:
+  - Expose `onChangeVisibleColumns` and `defaultVisibleColumns` props in `ExcelTable`.
+  - Inside `ExcelTable`, sync `visibleColumns` state using `useEffect` whenever `defaultVisibleColumns` changes.
+  - In `JobTracking.tsx`, read with `useItem('visibleJobColumns')` and write with `setItem('visibleJobColumns', cols)`.
