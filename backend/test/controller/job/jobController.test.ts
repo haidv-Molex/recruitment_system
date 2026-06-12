@@ -190,7 +190,8 @@ describe("JobController API", () => {
         pagination: {
           current_page: 1,
           total_pages: 1,
-          total_items: 1
+          total_items: 1,
+          limit: 10
         }
       });
 
@@ -290,6 +291,7 @@ describe("JobController API", () => {
         message: "Xóa công việc thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnce).to.be.true;
+    expectLocal(deleteStub.firstCall.args[0]).to.deep.equal([1]);
   });
 });

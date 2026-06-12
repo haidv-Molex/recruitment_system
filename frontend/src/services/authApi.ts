@@ -27,6 +27,15 @@ export async function updateProfileApi(username: string, description: string): P
   return response.data.data!;
 }
 
+export async function refreshTokenApi(): Promise<string> {
+  const response = await axiosInstance.post('/auth/token');
+  const token = response.data.data?.accessToken;
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+  return token;
+}
+
 export function logoutApi(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem('recruitment_auth_user');

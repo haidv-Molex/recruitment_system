@@ -2,6 +2,32 @@ import axios, { AxiosError, AxiosResponse } from 'axios'
 import { showToast } from '@/config/ToastConfig'
 import { setItem } from '@/config/zustandStore'
 
+let isRefreshing = false
+let failedQueue: Array<{
+    resolve: (token: string) => void
+    reject: (error: any) => void
+}> = []
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error)
+        } else {
+            prom.resolve(token!)
+        }
+    })
+    failedQueue = []
+}
+
+const handleLogoutAndRedirect = () => {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('recruitment_auth_user')
+    showToast('warning', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
+    if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+    }
+}
+
 // ─── Kiểu API response ────────────────────────────────────────────────────────
 export interface ApiResponse<T = any> {
     result: boolean
@@ -62,14 +88,52 @@ axiosInstance.interceptors.response.use(
 
         // ── 401: Hết hạn phiên đăng nhập / Không có quyền truy cập ────────────────
         if (status === 401) {
-            const currentPath = window.location.pathname
-            if (currentPath !== '/login') {
-                localStorage.removeItem('authToken')
-                localStorage.removeItem('recruitment_auth_user')
-                showToast('warning', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
-                window.location.href = '/login'
+            const config = error.config as any
+
+            if (config && (config.url?.includes('/auth/token') || config.url?.includes('/auth/login'))) {
+                handleLogoutAndRedirect()
+                return Promise.reject(error)
             }
-            return Promise.reject(error)
+
+            if (config && !config._retry) {
+                config._retry = true
+
+                if (isRefreshing) {
+                    return new Promise((resolve, reject) => {
+                        failedQueue.push({ resolve, reject })
+                    })
+                        .then((token) => {
+                            config.headers.Authorization = `Bearer ${token}`
+                            return axiosInstance(config)
+                        })
+                        .catch((err) => {
+                            return Promise.reject(err)
+                        })
+                }
+
+                isRefreshing = true
+
+                return new Promise(async (resolve, reject) => {
+                    try {
+                        const response = await axiosInstance.post('/auth/token')
+                        const newAccessToken = response.data.data?.accessToken
+                        if (newAccessToken) {
+                            localStorage.setItem('authToken', newAccessToken)
+                            processQueue(null, newAccessToken)
+                            config.headers.Authorization = `Bearer ${newAccessToken}`
+                            resolve(axiosInstance(config))
+                        } else {
+                            throw new Error('Refresh token returned empty access token')
+                        }
+                    } catch (refreshError) {
+                        processQueue(refreshError, null)
+                        handleLogoutAndRedirect()
+                        reject(refreshError)
+                    } finally {
+                        isRefreshing = false
+                    }
+                })
+            }
         }
 
         // ── Các lỗi HTTP khác ─────────────────────────────────────────────────

@@ -247,10 +247,14 @@ All filters use `ILIKE` (case-insensitive). Multiple filters are combined with `
 
 ---
 
-## 8. CORS / API Setup
+## 8. CORS / API Setup & Token Refresh
 
 - Frontend dev server: **port 5173** (Vite default).
 - Backend: **port 3000**.
 - CORS must explicitly allow `http://localhost:5173`.
 - `axiosInstance` is configured at `src/config/axiosInstance.ts` — always use
   this instance, never raw `axios`, to ensure auth headers are forwarded.
+- **Token Refresh Mechanism:** The response interceptor automatically intercepts `401` status codes. It calls `/auth/token` via POST to exchange the HttpOnly cookie `refreshToken` for a new `accessToken`, stores it in localStorage under `authToken`, and queues/re-runs all concurrent failed requests. If refreshing itself fails or returns `401`, the user is logged out and redirected.
+- **Auto Token Refresh on Startup:** When the application starts up, `AuthContext.tsx` automatically calls `refreshTokenApi()` to verify and obtain a new `accessToken` using the persistent `refreshToken` cookie. If valid, the user enters the application directly without needing to log in again.
+
+

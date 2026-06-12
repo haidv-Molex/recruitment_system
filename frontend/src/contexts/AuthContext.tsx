@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginApi, logoutApi, changePasswordApi, updateProfileApi } from '../services/authApi';
+import { loginApi, logoutApi, changePasswordApi, updateProfileApi, refreshTokenApi } from '../services/authApi';
 
 export interface AuthUser {
   user_id: number;
@@ -23,20 +23,56 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 const USER_KEY = 'recruitment_auth_user';
 
+function decodeJwt(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(USER_KEY);
-      if (saved) {
-        setUser(JSON.parse(saved));
+    const initializeAuth = async () => {
+      try {
+        const token = await refreshTokenApi();
+        if (token) {
+          const saved = localStorage.getItem(USER_KEY);
+          if (saved) {
+            setUser(JSON.parse(saved));
+          } else {
+            const decoded = decodeJwt(token);
+            if (decoded && decoded.user_id) {
+              const basicUser: AuthUser = {
+                user_id: decoded.user_id,
+                user_name: decoded.name || 'User',
+                user_role: 'user',
+              };
+              setUser(basicUser);
+              localStorage.setItem(USER_KEY, JSON.stringify(basicUser));
+            }
+          }
+        }
+      } catch (err) {
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem('authToken');
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      localStorage.removeItem(USER_KEY);
-    }
-    setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (account: string, password: string) => {
