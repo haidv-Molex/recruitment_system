@@ -367,3 +367,71 @@ export const fetchStatusesApi = async () => {
     return { success: false, statuses: [], message: err.message };
   }
 };
+
+export const parseCandidateSheetApi = async (file) => {
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const response = await apiClient.post('/file/parse-candidate-sheet', fd);
+    const body = response.data;
+
+    if (!body.result) {
+      return { success: false, message: body.message || 'Parse candidate sheet failed.', candidates: [] };
+    }
+
+    const list = Array.isArray(body.data) ? body.data : [];
+
+    // Map parsed data to frontend format
+    const candidates = list.map((d) => ({
+      candidateName: d.candidate_name || '',
+      candidateEmail: d.candidate_email || '',
+      candidatePhone: d.candidate_phone || '',
+      agency: d.agency || '',
+      status: d.status || '',
+      note: d.note || '',
+      currentSalary: d.current_salary || '',
+      expectedSalary: d.expected_salary || '',
+      targetedCompany: d.targeted_company || 'No',
+      targetedCompanyName: d.targeted_company_name || '',
+      inputDate: d.input_date ? d.input_date.slice(0, 10) : '',
+      offerDate: d.offer_date ? d.offer_date.slice(0, 10) : '',
+      onboardDate: d.onboard_date ? d.onboard_date.slice(0, 10) : '',
+      feedbackDate: d.feedback_date ? d.feedback_date.slice(0, 10) : '',
+      departmentCode: d.department_code || '',
+      jobCode: d.job_code || '',
+      jobTitle: d.job_title || '',
+      eeLevel: d.ee_level || '',
+      project: d.project || '',
+      dlIdl: d.dl_idl || '',
+      source: d.source || '',
+      employeeCode: d.employee_code || '',
+      referenceName: d.reference_name || '',
+      referenceDepartment: d.reference_department || '',
+      // Recruiter object (may have null id = new user)
+      recruiter: d.recruiter ? {
+        id: d.recruiter.user_id,
+        name: d.recruiter.user_name,
+      } : null,
+      // Hiring manager object (may have existing id)
+      hiringManager: d.hiring_manager ? {
+        id: d.hiring_manager.user_id,
+        name: d.hiring_manager.user_name,
+      } : null,
+    }));
+
+    return { success: true, message: body.message, candidates };
+  } catch (err) {
+    if (err.response) {
+      const data = err.response.data;
+      const msg = data?.details?.length
+        ? data.details.join(', ')
+        : data?.message || 'Parse candidate sheet failed.';
+      return { success: false, message: msg, candidates: [] };
+    }
+    if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+      return { success: false, message: 'Cannot connect to server.', candidates: [] };
+    }
+    return { success: false, message: err.message || 'An unexpected error occurred.', candidates: [] };
+  }
+};

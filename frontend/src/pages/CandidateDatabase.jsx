@@ -6,8 +6,9 @@ import { ExcelTable, formatDate } from '../components/ExcelTable';
 import { masterData } from '../services/mockData';
 import { ToastContainer } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
+import { createCandidateApi, createCandidateExtendedApi, searchCandidatesApi, deleteCandidateApi, updateCandidateApi } from '../services/candidateApi';
 import { FileBadge, FilePreviewModal } from '../components/FilePreview';
-import { createCandidateApi, searchCandidatesApi, deleteCandidateApi, updateCandidateApi } from '../services/candidateApi';
+import { CandidateExcelImport } from '../components/CandidateExcelImport';
 
 const statusClass = (status) => `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
@@ -54,8 +55,9 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState(null);
+  const [showExcelImport, setShowExcelImport] = useState(false);
 
-  const jobCodes = useMemo(() => jobs.map((job) => job.jobCode), [jobs]);
+  const jobCodes = useMemo(() => Array.from(new Set(jobs.map((job) => job.jobCode).filter(Boolean))), [jobs]);
   const recruiters = useMemo(() => Array.from(new Set(candidates.map((c) => c.recruiter).filter(Boolean))), [candidates]);
 
   // Load candidates from API on mount
@@ -74,6 +76,7 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
     loadCandidatesFromApi();
   }, []);
 
+  // Save candidate (create or update)
   const handleSaveCandidate = async (formData) => {
     setSaving(true);
 
@@ -85,7 +88,6 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
         toast.success(result.message || 'Candidate updated successfully.');
         setShowForm(false);
         setEditingCandidate(null);
-        // Reload from API to get fresh data (including file)
         await loadCandidatesFromApi();
       } else {
         toast.error(result.message);
@@ -101,7 +103,6 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
     if (result.success) {
       toast.success(result.message || 'Candidate created successfully.');
       setShowForm(false);
-      // Reload from API to get fresh data (including file)
       await loadCandidatesFromApi();
     } else {
       toast.error(result.message);
@@ -110,6 +111,7 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
     setSaving(false);
   };
 
+  // Delete candidate
   const handleDeleteCandidate = async (candidate) => {
     if (!confirm(`Delete candidate ${candidate.name}?`)) return;
 
@@ -119,15 +121,56 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
       toast.success(result.message || 'Candidate deleted.');
       await loadCandidatesFromApi();
     } else {
-      // If API not available, delete locally
-      setCandidates((prev) => prev.filter((item) => item.id !== candidate.id));
-      toast.warning('Deleted locally (API not available).');
+      toast.error(result.message);
     }
   };
 
+  // Bulk CV upload (legacy)
   const handleBulkUpload = (fileArray) => {
     alert(`${fileArray.length} CV file(s) uploaded successfully.\n\nNote: Files are stored in memory. Backend integration needed for permanent storage.`);
     setShowBulkUpload(false);
+  };
+
+  // Import a single parsed candidate from Excel (use extended API)
+  const handleImportCandidate = async (parsedCandidate) => {
+    // Validate email before sending — skip invalid emails
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validEmail = parsedCandidate.candidateEmail && emailRegex.test(parsedCandidate.candidateEmail)
+      ? parsedCandidate.candidateEmail
+      : '';
+
+    const formData = {
+      candidateCode: '',
+      candidateName: parsedCandidate.candidateName,
+      candidateEmail: validEmail,
+      candidatePhone: parsedCandidate.candidatePhone,
+      agency: parsedCandidate.agency,
+      offerDate: parsedCandidate.offerDate,
+      onboardDate: parsedCandidate.onboardDate,
+      expectedOnboardDate: '',
+      feedbackDate: parsedCandidate.feedbackDate,
+      currentSalary: parsedCandidate.currentSalary,
+      expectedSalary: parsedCandidate.expectedSalary,
+      status: parsedCandidate.status,
+      note: parsedCandidate.note,
+      file: null,
+      platformId: '',
+      recruiterId: parsedCandidate.recruiter?.id || '',
+      jobId: '',
+      targetedCompanyId: '',
+      referenceId: '',
+      platformName: parsedCandidate.source || '',
+      recruiterName: parsedCandidate.recruiter?.id === null ? parsedCandidate.recruiter.name : '',
+      targetedCompanyName: parsedCandidate.targetedCompany === 'Yes' ? parsedCandidate.targetedCompanyName : '',
+      referenceName: parsedCandidate.referenceName || '',
+    };
+
+    return await createCandidateExtendedApi(formData);
+  };
+
+  const handleExcelImportClose = () => {
+    setShowExcelImport(false);
+    loadCandidatesFromApi();
   };
 
   const columns = [
@@ -193,6 +236,9 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
           <button type="button" className="excel-button secondary" onClick={() => setShowBulkUpload(true)}>
             <FileUp size={16} /> Bulk Upload
           </button>
+          <button type="button" className="excel-button secondary" onClick={() => setShowExcelImport(true)}>
+            <FileUp size={16} /> Import Excel
+          </button>
           <button type="button" className="excel-button primary" onClick={() => { setEditingCandidate(null); setShowForm(true); }}>
             <Plus size={16} /> Add Candidate
           </button>
@@ -225,11 +271,20 @@ export const CandidateDatabasePage = ({ candidates, setCandidates, jobs }) => {
           onClose={() => setShowBulkUpload(false)}
         />
       )}
+
       {/* File Preview Modal */}
       {previewFile && (
         <FilePreviewModal
           file={previewFile}
           onClose={() => setPreviewFile(null)}
+        />
+      )}
+
+      {/* Excel Import Modal */}
+      {showExcelImport && (
+        <CandidateExcelImport
+          onImport={handleImportCandidate}
+          onClose={handleExcelImportClose}
         />
       )}
     </div>
