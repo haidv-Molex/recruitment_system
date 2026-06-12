@@ -162,6 +162,17 @@ export async function createJobExtendedApi(formData: any): Promise<jobOutputMode
   return response.data.data!;
 }
 
+export interface BatchImportResult {
+  success: boolean;
+  importedCount: number;
+  errors: Array<{ job_code: string; message: string }>;
+}
+
+export async function batchImportJobsApi(jobs: any[]): Promise<BatchImportResult> {
+  const response = await axiosInstance.post('/job/batch', { jobs });
+  return response.data.data;
+}
+
 export async function downloadIdlTrackingSheetApi(): Promise<void> {
   const response = await axiosInstance.get('/file/idl-tracking-sheet', {
     responseType: 'blob',

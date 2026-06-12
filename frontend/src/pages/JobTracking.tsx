@@ -14,6 +14,7 @@ import {
   downloadIdlTrackingSheetApi,
   downloadFullWorkbookApi,
   getJobApi,
+  batchImportJobsApi,
 } from '../services/jobApi';
 import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
 import JobExcelImport from '../components/job/JobExcelImport';
@@ -213,59 +214,78 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     [loadJobsFromApi, pageSize]
   );
 
-  const handleImportJob = async (parsedJob: any): Promise<{ success: boolean; message?: string }> => {
+  const handleImportJobsBatch = async (
+    parsedJobs: any[]
+  ): Promise<{ success: boolean; importedCount: number; errors: any[] }> => {
     const splitByIdExists = (items: any[]) => {
       const ids: number[] = [];
       const names: string[] = [];
       (items || []).forEach((item) => {
-        if (item.id !== null && item.id !== undefined) {
-          ids.push(item.id);
-        } else if (item.name) {
-          names.push(item.name);
+        const idVal = item.id !== null && item.id !== undefined ? item.id
+                    : item.department_id !== null && item.department_id !== undefined ? item.department_id
+                    : item.site_id !== null && item.site_id !== undefined ? item.site_id
+                    : item.segment_id !== null && item.segment_id !== undefined ? item.segment_id
+                    : item.level_id !== null && item.level_id !== undefined ? item.level_id
+                    : item.user_id !== null && item.user_id !== undefined ? item.user_id
+                    : null;
+
+        if (idVal !== null && idVal !== undefined) {
+          ids.push(idVal);
+        } else if (item.name || item.department_name || item.site_name || item.segment_name || item.level_name || item.user_name) {
+          names.push(item.name || item.department_name || item.site_name || item.segment_name || item.level_name || item.user_name);
         }
       });
       return { ids, names };
     };
 
-    const partners = splitByIdExists(parsedJob.partners);
-    const managers = splitByIdExists(parsedJob.managers);
-    const departments = splitByIdExists(parsedJob.departments);
-    const segments = splitByIdExists(parsedJob.segments);
-    const sites = splitByIdExists(parsedJob.sites);
-    const titles = splitByIdExists(parsedJob.titles);
-    const employeeLevels = splitByIdExists(parsedJob.employeeLevels);
+    const jobsPayload = parsedJobs.map((parsedJob) => {
+      const partners = splitByIdExists(parsedJob.partners);
+      const managers = splitByIdExists(parsedJob.managers);
+      const departments = splitByIdExists(parsedJob.departments);
+      const segments = splitByIdExists(parsedJob.segments);
+      const sites = splitByIdExists(parsedJob.sites);
+      const titles = splitByIdExists(parsedJob.titles);
+      const employeeLevels = splitByIdExists(parsedJob.employeeLevels);
 
-    const formData = {
-      job_code: parsedJob.jobCode,
-      project: parsedJob.project,
-      candidate_required: parsedJob.candidateRequired,
-      note: parsedJob.note || '',
-      request_date: parsedJob.requestDate || '',
-      file: null,
-      partners: partners.ids,
-      departments: departments.ids,
-      segments: segments.ids,
-      sites: sites.ids,
-      titles: titles.ids,
-      managers: managers.ids,
-      employee_levels: employeeLevels.ids,
-      new_partners: partners.names,
-      new_managers: managers.names,
-      new_departments: departments.names,
-      new_segments: segments.names,
-      new_sites: sites.names,
-      new_titles: titles.names,
-      new_employee_levels: employeeLevels.names,
-    };
+      return {
+        job_code: parsedJob.jobCode,
+        project: parsedJob.project,
+        candidate_required: parsedJob.candidateRequired,
+        note: parsedJob.note || '',
+        request_date: parsedJob.requestDate || '',
+        partners: partners.ids,
+        departments: departments.ids,
+        segments: segments.ids,
+        sites: sites.ids,
+        titles: titles.ids,
+        managers: managers.ids,
+        employee_levels: employeeLevels.ids,
+        partners_name: partners.names,
+        managers_name: managers.names,
+        departments_name: departments.names,
+        segments_name: segments.names,
+        sites_name: sites.names,
+        titles_name: titles.names,
+        employee_levels_name: employeeLevels.names,
+      };
+    });
 
     try {
-      await createJobExtendedApi(formData);
-      toast.success(`Job Code ${parsedJob.jobCode} imported successfully.`);
-      return { success: true };
+      const result = await batchImportJobsApi(jobsPayload);
+      if (result.success) {
+        toast.success(`Imported ${result.importedCount} jobs successfully!`);
+      } else {
+        toast.warn(`Imported ${result.importedCount} jobs, but encountered ${result.errors.length} error(s).`);
+      }
+      return result;
     } catch (err: any) {
-      const errMsg = err.response?.data?.message || err.message || 'Import failed';
-      toast.error(`Import Job ${parsedJob.jobCode} failed: ` + errMsg);
-      return { success: false, message: errMsg };
+      const errMsg = err.response?.data?.message || err.message || 'Batch import failed';
+      toast.error('Batch import failed: ' + errMsg);
+      return {
+        success: false,
+        importedCount: 0,
+        errors: parsedJobs.map(j => ({ job_code: j.jobCode, message: errMsg }))
+      };
     }
   };
 
@@ -498,7 +518,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       {/* Excel Import Modal */}
       {showExcelImport && (
         <JobExcelImport
-          onImport={handleImportJob}
+          onImportBatch={handleImportJobsBatch}
           onClose={() => {
             setShowExcelImport(false);
             loadJobsFromApi(currentPage, pageSize);

@@ -28,6 +28,7 @@ export default function CandidateExcelImport({ onImport, onClose }: CandidateExc
     total: 0,
     errors: [],
   });
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] || null;
@@ -151,14 +152,58 @@ export default function CandidateExcelImport({ onImport, onClose }: CandidateExc
         {/* STEP 1: Upload */}
         {step === STEPS.UPLOAD && (
           <div className="space-y-4">
-            <div
-              onClick={() => document.getElementById('candidate-excel-input')?.click()}
-              className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50/50 hover:bg-slate-50 cursor-pointer transition-all flex flex-col items-center justify-center"
-            >
-              <Upload size={36} className="text-slate-400 mb-2" />
-              <p className="text-sm font-semibold text-slate-700">Click to select Excel file</p>
-              <p className="text-xs text-slate-400 mt-1">.xlsx, .xls, .csv supported</p>
-            </div>
+            {!file ? (
+              <div
+                onClick={() => document.getElementById('candidate-excel-input')?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const selected = e.dataTransfer.files?.[0] || null;
+                  if (selected) {
+                    const ext = selected.name.split('.').pop()?.toLowerCase();
+                    if (['xlsx', 'xls', 'csv'].includes(ext || '')) {
+                      setFile(selected);
+                      setParseError('');
+                    } else {
+                      setParseError('Unsupported file format. Please select an Excel or CSV file.');
+                    }
+                  }
+                }}
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center ${
+                  isDragging
+                    ? 'border-emerald-500 bg-emerald-50/50 text-emerald-700 shadow-sm scale-[1.01]'
+                    : 'border-slate-300 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-400 text-slate-700'
+                }`}
+              >
+                <Upload size={36} className={`mb-2 ${isDragging ? 'text-emerald-500 animate-bounce' : 'text-slate-400'}`} />
+                <p className="text-sm font-semibold">
+                  {isDragging ? 'Drop file here!' : 'Drag and drop Excel file here, or click to select'}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">.xlsx, .xls, .csv supported</p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl shadow-sm transition-all animate-fadeIn">
+                <div className="p-2 bg-emerald-100 rounded-lg text-emerald-700">
+                  <FileSpreadsheet size={24} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 truncate">{file.name}</p>
+                  <p className="text-xs text-slate-400 font-medium">{(file.size / 1024).toFixed(1)} KB</p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer"
+                  onClick={() => setFile(null)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
             <input
               id="candidate-excel-input"
               type="file"
@@ -166,19 +211,6 @@ export default function CandidateExcelImport({ onImport, onClose }: CandidateExc
               accept=".xlsx,.xls,.csv"
               onChange={handleFileChange}
             />
-            {file && (
-              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <FileSpreadsheet size={20} className="text-emerald-600" />
-                <span className="flex-1 text-xs font-semibold text-blue-600 truncate">{file.name}</span>
-                <button
-                  type="button"
-                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
-                  onClick={() => setFile(null)}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            )}
             {parseError && (
               <div className="bg-red-50 text-red-600 text-xs px-3.5 py-2 rounded-lg border border-red-200">
                 {parseError}
