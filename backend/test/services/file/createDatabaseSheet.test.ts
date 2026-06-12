@@ -141,7 +141,7 @@ describe("createDatabaseSheet Service", () => {
     expect(String(statusVal)).to.equal("Interview");
   });
 
-  it("should auto-fill department, job_title, ee_level from JD lookup", async () => {
+  it("should auto-fill department, job_title from JD lookup, and ee_level from candidate levels", async () => {
     const ts = Date.now();
 
     // Seed dept
@@ -155,7 +155,7 @@ describe("createDatabaseSheet Service", () => {
     );
     const deptId = deptRes.rows[0].department_id;
 
-    // Seed level (used for both title and ee_level)
+    // Seed level (used for title)
     const levelName = "level_" + ts;
     await client.query(
       `INSERT INTO level (level_code, level_name) VALUES ($1, $2)`,
@@ -166,15 +166,28 @@ describe("createDatabaseSheet Service", () => {
     );
     const levelId = levelRes.rows[0].level_id;
 
+    // Seed candidate level (different from job title level)
+    const candLevelName = "cand_level_" + ts;
+    await client.query(
+      `INSERT INTO level (level_code, level_name) VALUES ($1, $2)`,
+      [candLevelName, candLevelName]
+    );
+    const candLevelRes = await client.query<{ level_id: number }>(
+      `SELECT level_id FROM level WHERE level_code = $1`, [candLevelName]
+    );
+    const candLevelId = candLevelRes.rows[0].level_id;
+
     // Seed job and link relations
     const jobCode = "JOB-JD-" + ts;
     const jobId = await seedJob(jobCode, "Project JD " + ts);
     await client.query(`INSERT INTO job_department (job_id, department_id) VALUES ($1, $2)`, [jobId, deptId]);
     await client.query(`INSERT INTO job_title (job_id, level_id) VALUES ($1, $2)`, [jobId, levelId]);
-    await client.query(`INSERT INTO employee_level (job_id, level_id) VALUES ($1, $2)`, [jobId, levelId]);
+    await client.query(`INSERT INTO employee_level (job_id, level_id) VALUES ($1, $2)`, [jobId, levelId]); // Job level
 
     // Seed one candidate for this job
-    await seedCandidate({ name: "Candidate_JD_" + ts, status: "CV Sent", jobId });
+    const candidateId = await seedCandidate({ name: "Candidate_JD_" + ts, status: "CV Sent", jobId });
+    // Link candidate level
+    await client.query(`INSERT INTO candidate_level (candidate_id, level_id) VALUES ($1, $2)`, [candidateId, candLevelId]);
 
     const workbook = await createDatabaseSheet(client);
     const sheet = workbook.getWorksheet("Database")!;
@@ -196,7 +209,7 @@ describe("createDatabaseSheet Service", () => {
 
     expect(String(deptVal ?? "")).to.include(deptCode);
     expect(String(titleVal ?? "")).to.include(levelName);
-    expect(String(eeLevelVal ?? "")).to.include(levelName);
+    expect(String(eeLevelVal ?? "")).to.include(candLevelName); // candidate level, not job level
   });
 
   it("should populate Recruiter column from candidate's recruiter user", async () => {

@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
+import { numberArray } from "@utilities/joiTypes";
 import Candidate from "@services/candidate/_Candidate";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -74,7 +75,8 @@ const updateBodySchema = Joi.object({
   reference: Joi.number().integer().empty(["", "null"]).allow(null).optional().messages({
     "number.base": "Reference ID phải là số nguyên",
     "number.integer": "Reference ID phải là số nguyên"
-  })
+  }),
+  candidate_levels: numberArray().optional()
 });
 
 updateCandidateController.put("",
@@ -107,6 +109,7 @@ updateCandidateController.put("",
     if (hasProp(body, "job_id")) updateData.job_id = body.job_id;
     if (hasProp(body, "targeted_company")) updateData.targeted_company = body.targeted_company;
     if (hasProp(body, "reference")) updateData.reference = body.reference;
+    if (hasProp(body, "candidate_levels")) updateData.candidate_levels = body.candidate_levels;
 
     if (req.file) {
       updateData.file = {

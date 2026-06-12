@@ -2,6 +2,7 @@ import { PoolClient } from "pg";
 import User from "@services/user/_User";
 import Platform from "@services/platform/_Platform";
 import Company from "@services/company/_Company";
+import Level from "@services/level/_Level";
 import { create, CreateCandidateInput } from "@services/candidate/create";
 
 /**
@@ -42,12 +43,14 @@ export interface CreateCandidateWithAllInput {
   platform_id?: number | null;
   targeted_company?: number | null;
   reference?: number | null;
+  candidate_levels?: number[];
 
   // FK bằng tên – sẽ tự tạo bản ghi mới nếu không truyền ID tương ứng
   recruiter_name?: string | null;
   platform_name?: string | null;
   targeted_company_name?: string | null;
   reference_name?: string | null;
+  candidate_levels_name?: string[];
 }
 
 export async function createWithAll(
@@ -83,7 +86,21 @@ export async function createWithAll(
     targetedCompanyId = company.company_id;
   }
 
-  // 5. Gọi service create gốc với dữ liệu đã được resolve
+  // 5. Giải quyết candidate_levels_name thành IDs và gộp với candidate_levels
+  const newLevelIds: number[] = [];
+  if (data.candidate_levels_name && data.candidate_levels_name.length > 0) {
+    const uniqueNames = [...new Set(data.candidate_levels_name.filter(Boolean).map(n => n.trim().toLowerCase()))];
+    for (const name of uniqueNames) {
+      const level = await Level.create({ level_name: name }, pool);
+      newLevelIds.push(level.level_id);
+    }
+  }
+  const mergedCandidateLevels = [
+    ...(data.candidate_levels || []),
+    ...newLevelIds
+  ];
+
+  // 6. Gọi service create gốc với dữ liệu đã được resolve
   const input: CreateCandidateInput = {
     candidate_code: data.candidate_code ?? null,
     candidate_name: data.candidate_name,
@@ -104,6 +121,7 @@ export async function createWithAll(
     platform_id: platformId,
     targeted_company: targetedCompanyId,
     reference: referenceId,
+    candidate_levels: mergedCandidateLevels.length > 0 ? mergedCandidateLevels : undefined,
   };
 
   return create(input, pool);

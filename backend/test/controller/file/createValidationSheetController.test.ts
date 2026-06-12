@@ -109,7 +109,7 @@ describe("createValidationSheetController API", () => {
       )
       .expectHeader(
         "content-disposition",
-        'attachment; filename="excelTemplate.xlsx"'
+        'attachment; filename="dataValidation.xlsx"'
       );
 
     // Verify service was called once

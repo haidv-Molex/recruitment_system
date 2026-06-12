@@ -28,6 +28,7 @@ import express from "express";
 import multer from "multer";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
+import { numberArray } from "@utilities/joiTypes";
 import Candidate from "@services/candidate/_Candidate";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -106,7 +107,8 @@ const bodySchema = Joi.object({
   reference: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
     "number.base": "Reference ID phải là số nguyên",
     "number.integer": "Reference ID phải là số nguyên"
-  })
+  }),
+  candidate_levels: numberArray().optional()
 });
 
 createCandidateController.post("",
@@ -133,6 +135,7 @@ createCandidateController.post("",
       job_id: req.body.job_id,
       targeted_company: req.body.targeted_company,
       reference: req.body.reference,
+      candidate_levels: req.body.candidate_levels ?? [],
       file: req.file ? {
         originalname: req.file.originalname,
         buffer: req.file.buffer

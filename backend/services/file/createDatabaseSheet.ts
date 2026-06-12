@@ -30,6 +30,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     reference_name: string | null;
     reference_department: string | null;
     targeted_company_name: string | null;
+    candidate_level_name: string | null;
   }>(`
     SELECT
       c.candidate_id, c.candidate_name, c.candidate_email, c.candidate_phone,
@@ -42,7 +43,8 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
       u.user_name  AS recruiter_name,
       ref.user_name AS reference_name,
       ref_dept.department_name AS reference_department,
-      comp.company_name AS targeted_company_name
+      comp.company_name AS targeted_company_name,
+      cl_level.level_name AS candidate_level_name
     FROM candidate c
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
@@ -50,6 +52,12 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     LEFT JOIN "user" ref ON c.reference = ref.user_id
     LEFT JOIN department ref_dept ON ref.department_id = ref_dept.department_id
     LEFT JOIN company comp ON c.targeted_company = comp.company_id
+    LEFT JOIN (
+      SELECT cl.candidate_id, STRING_AGG(l.level_name, ', ') AS level_name
+      FROM candidate_level cl
+      JOIN level l ON cl.level_id = l.level_id
+      GROUP BY cl.candidate_id
+    ) cl_level ON c.candidate_id = cl_level.candidate_id
     ORDER BY c.candidate_id ASC
   `);
 
@@ -88,6 +96,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     referrer_department: row.reference_department ?? null,
     note: row.note ?? null,
     recruiter: row.recruiter_name ?? "",
+    ee_level: row.candidate_level_name ?? null,
     current_salary: row.current_salary != null
       ? parseFloat(row.current_salary.replace(/,/g, "")) || null
       : null,

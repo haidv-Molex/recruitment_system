@@ -60,6 +60,19 @@ describe("Candidate update service", () => {
     );
     const referenceId = referenceRes.rows[0].user_id;
 
+    // 2.5 Seed levels
+    const levelRes1 = await client.query(
+      `INSERT INTO level (level_name, level_code) VALUES ($1, $2) RETURNING level_id`,
+      ["Senior", "SEN"]
+    );
+    const levelId1 = levelRes1.rows[0].level_id;
+
+    const levelRes2 = await client.query(
+      `INSERT INTO level (level_name, level_code) VALUES ($1, $2) RETURNING level_id`,
+      ["Engineer", "ENG"]
+    );
+    const levelId2 = levelRes2.rows[0].level_id;
+
     // 3. Call update service
     const offerDate = new Date("2026-06-01T00:00:00.000Z");
     const onboardDate = new Date("2026-06-10T00:00:00.000Z");
@@ -84,7 +97,8 @@ describe("Candidate update service", () => {
       recruiter: recruiterId,
       job_id: jobId,
       targeted_company: companyId,
-      reference: referenceId
+      reference: referenceId,
+      candidate_levels: [levelId1]
     };
 
     const result = await update(candidateId, updateData, client);
@@ -94,6 +108,8 @@ describe("Candidate update service", () => {
     expect(result.candidate_name).to.equal("Jane Doe Updated");
     expect(result.candidate_email).to.equal("jane.updated@example.com");
     expect(result.onboard_date).to.not.be.null;
+    expect(result.candidate_levels).to.be.an("array").with.lengthOf(1);
+    expect(result.candidate_levels[0].level_id).to.equal(levelId1);
 
     const assertDateEquals = (d1: any, d2: any) => {
       const date1 = new Date(d1);
@@ -106,6 +122,11 @@ describe("Candidate update service", () => {
     assertDateEquals(result.onboard_date, onboardDate);
     expect(result.platform).to.not.be.null;
     expect(result.platform.platform_id).to.equal(platformId);
+
+    // Update levels again to levelId2
+    const result2 = await update(candidateId, { candidate_levels: [levelId2] }, client);
+    expect(result2.candidate_levels).to.be.an("array").with.lengthOf(1);
+    expect(result2.candidate_levels[0].level_id).to.equal(levelId2);
   });
 
   it("should successfully update candidate fields to null", async () => {
