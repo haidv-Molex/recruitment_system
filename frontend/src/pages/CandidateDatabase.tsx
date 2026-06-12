@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import CandidateForm from '../components/common/CandidateForm';
 import BulkCVUpload from '../components/common/BulkCVUpload';
 import ExcelTable, { formatDate } from '../components/common/ExcelTable';
+import Pagination from '../components/ui/Pagination';
 import { masterData } from '../services/mockData';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
@@ -19,6 +20,7 @@ import CandidateExcelImport from '../components/common/CandidateExcelImport';
 import { downloadFullWorkbookApi } from '../services/jobApi';
 import { useHeader } from '../contexts/HeaderContext';
 import DatabaseFilters from '../components/candidate-database/DatabaseFilters';
+import { useItem, setItem } from '../config/zustandStore';
 import { FileUp, Download, Plus, Upload } from 'lucide-react';
 
 const statusClass = (status: string) =>
@@ -78,6 +80,28 @@ export const CandidateDatabasePage = ({
   const [showExcelImport, setShowExcelImport] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const savedColumns = useItem('visibleCandidateColumns');
+  const defaultVisible = savedColumns || [
+    'candidateCode',
+    'file',
+    'inputDate',
+    'name',
+    'email',
+    'phone',
+    'recruiter',
+    'jobCode',
+    'status',
+    'onboardingDate',
+    'offerSentDate',
+    'source',
+    'currentSalary',
+    'expectedSalary',
+    'note',
+  ];
+  const handleVisibleColumnsChange = (cols: string[]) => {
+    setItem('visibleCandidateColumns', cols);
+  };
+
   const jobCodes = useMemo(
     () => Array.from(new Set(jobs.map((job) => job.jobCode).filter(Boolean))),
     [jobs]
@@ -87,20 +111,87 @@ export const CandidateDatabasePage = ({
     [candidates]
   );
 
-  const loadCandidatesFromApi = useCallback(async () => {
+  // Pagination & Filter state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
+  const [activeSearchParams, setActiveSearchParams] = useState<Record<string, any>>({});
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  const loadCandidatesFromApi = useCallback(async (
+    page: number = 1,
+    limit: number = pageSize,
+    extraParams: Record<string, any> = {}
+  ) => {
     setLoading(true);
     try {
-      const result = await searchCandidatesApi({ page: 1, limit: 100 });
+      const result = await searchCandidatesApi({ page, limit, ...extraParams });
       setCandidates((result.data || []).map(mapCandidateToRow));
+      setTotalItems(result.pagination?.total_items ?? result.data?.length ?? 0);
+      setCurrentPage(page);
     } catch (err: any) {
       toast.error('Failed to load candidates.');
     }
     setLoading(false);
-  }, [setCandidates, toast]);
+  }, [setCandidates, toast, pageSize]);
 
   useEffect(() => {
-    loadCandidatesFromApi();
-  }, []);
+    const params = { ...activeSearchParams };
+    if (searchQuery.trim()) {
+      params.search = searchQuery.trim();
+    } else {
+      delete params.search;
+    }
+    setActiveSearchParams(params);
+    loadCandidatesFromApi(1, pageSize, params);
+  }, [searchQuery, pageSize]);
+
+  const handlePageChange = (page: number) => {
+    loadCandidatesFromApi(page, pageSize, activeSearchParams);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    loadCandidatesFromApi(1, newSize, activeSearchParams);
+  };
+
+  const handleTableSearch = useCallback((colFilters: Record<string, string>, globalSearch: string) => {
+    const params: Record<string, any> = {};
+
+    if (globalSearch.trim()) {
+      params.search = globalSearch.trim();
+    } else if (searchQuery.trim()) {
+      params.search = searchQuery.trim();
+    }
+
+    if (colFilters.status) {
+      params.status = colFilters.status;
+    }
+
+    const filterKeys = Object.keys(colFilters).filter(k => k !== 'status' && colFilters[k].trim());
+    if (filterKeys.length > 0) {
+      const keyToSearchAt: Record<string, string> = {
+        candidateCode: 'code',
+        name: 'name',
+        email: 'email',
+        phone: 'phone',
+        recruiter: 'recruiter',
+        jobCode: 'job_code',
+        project: 'job_name',
+        source: 'platform',
+        headhuntAgency: 'agency',
+        targetedCompanyName: 'company',
+        referrerName: 'reference',
+        note: 'note',
+      };
+      const firstKey = filterKeys[0];
+      params.search = colFilters[firstKey].trim();
+      params.searchAt = keyToSearchAt[firstKey];
+    }
+
+    setActiveSearchParams(params);
+    loadCandidatesFromApi(1, pageSize, params);
+  }, [loadCandidatesFromApi, pageSize, searchQuery]);
 
   const handleSaveCandidate = async (formData: any) => {
     setSaving(true);
@@ -111,12 +202,12 @@ export const CandidateDatabasePage = ({
         toast.success('Candidate updated successfully.');
         setShowForm(false);
         setEditingCandidate(null);
-        await loadCandidatesFromApi();
+        await loadCandidatesFromApi(currentPage, pageSize, activeSearchParams);
       } else {
         await createCandidateApi(formData);
         toast.success('Candidate created successfully.');
         setShowForm(false);
-        await loadCandidatesFromApi();
+        await loadCandidatesFromApi(1, pageSize, activeSearchParams);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Save candidate failed.');
@@ -131,7 +222,7 @@ export const CandidateDatabasePage = ({
     try {
       await deleteCandidateApi(candidate.id);
       toast.success('Candidate deleted.');
-      await loadCandidatesFromApi();
+      await loadCandidatesFromApi(currentPage, pageSize, activeSearchParams);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete candidate failed.');
     }
@@ -188,7 +279,7 @@ export const CandidateDatabasePage = ({
 
   const handleExcelImportClose = () => {
     setShowExcelImport(false);
-    loadCandidatesFromApi();
+    loadCandidatesFromApi(currentPage, pageSize, activeSearchParams);
   };
 
   const handleDownloadTemplate = async () => {
@@ -221,16 +312,7 @@ export const CandidateDatabasePage = ({
     }
   };
 
-  const filteredRows = useMemo(() => {
-    if (!searchQuery.trim()) return candidates;
-    const query = searchQuery.toLowerCase().trim();
-    return candidates.filter(
-      (c) =>
-        (c.name || '').toLowerCase().includes(query) ||
-        (c.email || '').toLowerCase().includes(query) ||
-        (c.phone || '').toLowerCase().includes(query)
-    );
-  }, [candidates, searchQuery]);
+
 
   const columns = useMemo(
     () => [
@@ -355,9 +437,9 @@ export const CandidateDatabasePage = ({
 
   useHeader({
     title: '📂 Candidate Database',
-    subTitle: `Comprehensive resume repository. Total: ${filteredRows.length} candidates`,
+    subTitle: `Comprehensive resume repository. Total: ${totalItems} candidates`,
     actions: headerActions,
-  }, [filteredRows.length, headerActions]);
+  }, [totalItems, headerActions]);
 
   return (
     <div className="space-y-6">
@@ -365,34 +447,27 @@ export const CandidateDatabasePage = ({
 
       <DatabaseFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
-        {loading ? (
-          <div className="text-center py-20 text-slate-500 font-medium">Loading candidate data...</div>
-        ) : (
-          <ExcelTable
-            title="Candidate Database Records"
-            rows={filteredRows}
-            columns={columns}
-            actions={tableActions}
-            defaultVisibleColumns={[
-              'candidateCode',
-              'file',
-              'inputDate',
-              'name',
-              'email',
-              'phone',
-              'recruiter',
-              'jobCode',
-              'status',
-              'onboardingDate',
-              'offerSentDate',
-              'source',
-              'currentSalary',
-              'expectedSalary',
-              'note',
-            ]}
-          />
-        )}
+      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-4">
+        <ExcelTable
+          title="Candidate Database Records"
+          rows={candidates}
+          columns={columns}
+          actions={tableActions}
+          defaultVisibleColumns={defaultVisible}
+          onChangeVisibleColumns={handleVisibleColumnsChange}
+          onSearch={handleTableSearch}
+          isLoading={loading}
+        />
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={handlePageChange}
+          itemLabel="candidates"
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+        />
       </div>
 
       {showForm && (

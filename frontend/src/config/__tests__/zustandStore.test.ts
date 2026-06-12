@@ -15,6 +15,9 @@ describe('zustandStore tests', () => {
 
         setItem('visibleJobColumns', ['jobCode', 'project'])
         expect(getItem('visibleJobColumns')).toEqual(['jobCode', 'project'])
+
+        setItem('visibleCandidateColumns', ['candidateCode', 'name'])
+        expect(getItem('visibleCandidateColumns')).toEqual(['candidateCode', 'name'])
     })
 
     it('should remove items correctly', () => {

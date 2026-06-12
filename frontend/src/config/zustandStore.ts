@@ -11,6 +11,7 @@ export type StoreKey =
     | 'isNetWorkConnected'
     | 'theme'
     | 'visibleJobColumns'
+    | 'visibleCandidateColumns'
 
 // ─── Kiểu dữ liệu ─────────────────────────────────────────────────────────────
 export type StoreData = {
@@ -22,6 +23,7 @@ export type StoreData = {
     isNetWorkConnected: boolean
     theme: 'light' | 'dark'
     visibleJobColumns?: string[]
+    visibleCandidateColumns?: string[]
 }
 
 // ─── Default values ────────────────────────────────────────────────────────────
