@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Database,
-  FileSpreadsheet,
   Table2,
   Shield,
   FolderOpen,
@@ -14,6 +13,9 @@ import {
   Award,
   Menu,
   ChevronLeft,
+  Settings,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import HeaderContext from '../../contexts/HeaderContext';
@@ -31,10 +33,19 @@ export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
 
+  const configRoutes = ['/companies', '/departments', '/platforms', '/segments', '/sites', '/levels'];
+  const [configOpen, setConfigOpen] = useState(() => configRoutes.includes(location.pathname));
+
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (configRoutes.includes(location.pathname)) {
+      setConfigOpen(true);
+    }
+  }, [location.pathname]);
 
   const formattedDate = now.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -43,22 +54,20 @@ export default function Layout({ children }: LayoutProps) {
     year: 'numeric',
   });
 
-  const tabs = [
+  const mainTabs = [
     { path: '/', label: 'Job Tracking', icon: Table2 },
     { path: '/candidates', label: 'Candidate Database', icon: Database },
     { path: '/jd-library', label: 'JD Library', icon: FolderOpen },
+  ];
+
+  const configTabs = [
     { path: '/companies', label: 'Companies', icon: Building2 },
     { path: '/departments', label: 'Departments', icon: Layers },
     { path: '/platforms', label: 'Platforms', icon: Globe },
     { path: '/segments', label: 'Segments', icon: LayoutGrid },
     { path: '/sites', label: 'Sites', icon: MapPin },
     { path: '/levels', label: 'Levels', icon: Award },
-    { path: '/master-data', label: 'Master Data', icon: FileSpreadsheet },
   ];
-
-  if (isAdmin) {
-    tabs.push({ path: '/admin', label: 'Admin Panel', icon: Shield });
-  }
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -90,24 +99,80 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Sidebar Menu */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar select-none">
-          {tabs.map(({ path, label, icon: Icon }) => {
+        <nav className="flex-1 py-4 px-3 space-y-1.5 overflow-y-auto custom-scrollbar select-none">
+          {mainTabs.map(({ path, label, icon: Icon }) => {
             const active = isActive(path);
             return (
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   active
                     ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-600'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    : 'text-slate-650 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
-                <Icon size={18} className={active ? 'text-white' : 'text-slate-400'} />
+                <Icon size={18} className={active ? 'text-white' : 'text-slate-450'} />
                 <span>{label}</span>
               </Link>
             );
           })}
+
+          {/* Configuration Collapsible Group */}
+          <div>
+            <button
+              onClick={() => setConfigOpen(!configOpen)}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                configRoutes.includes(location.pathname)
+                  ? 'text-emerald-600 bg-emerald-50/50'
+                  : 'text-slate-650 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Settings size={18} className={configRoutes.includes(location.pathname) ? 'text-emerald-600' : 'text-slate-400'} />
+                <span>Configuration</span>
+              </div>
+              {configOpen ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+            </button>
+
+            {/* Sub-menu items */}
+            {configOpen && (
+              <div className="mt-1 pl-4 space-y-0.5 border-l border-slate-250 ml-5 animate-fadeIn">
+                {configTabs.map(({ path, label, icon: Icon }) => {
+                  const active = isActive(path);
+                  return (
+                    <Link
+                      key={path}
+                      to={path}
+                      className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
+                        active
+                          ? 'text-emerald-600 font-bold bg-emerald-50'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                      }`}
+                    >
+                      <Icon size={14} className={active ? 'text-emerald-600' : 'text-slate-400'} />
+                      <span>{label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Admin tab (if admin) */}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                isActive('/admin')
+                  ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-600'
+                  : 'text-slate-650 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <Shield size={18} className={isActive('/admin') ? 'text-white' : 'text-slate-400'} />
+              <span>Admin Panel</span>
+            </Link>
+          )}
         </nav>
 
         {/* Sidebar Footer */}

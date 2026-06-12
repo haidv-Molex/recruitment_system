@@ -19,7 +19,6 @@ import CandidateExcelImport from '../components/common/CandidateExcelImport';
 import { downloadFullWorkbookApi } from '../services/jobApi';
 import { useHeader } from '../contexts/HeaderContext';
 import DatabaseFilters from '../components/candidate-database/DatabaseFilters';
-import Modal from '../components/ui/Modal';
 import { FileUp, Download, Plus, Upload } from 'lucide-react';
 
 const statusClass = (status: string) =>
@@ -397,32 +396,21 @@ export const CandidateDatabasePage = ({
       </div>
 
       {showForm && (
-        <Modal
-          isOpen={true}
+        <CandidateForm
+          candidate={
+            editingCandidate?._apiData || (editingCandidate?.id ? editingCandidate : null)
+          }
+          saving={saving}
+          onSubmit={handleSaveCandidate}
           onClose={() => {
             setShowForm(false);
             setEditingCandidate(null);
           }}
-          title={editingCandidate ? '✏️ Edit Candidate' : '👤 Add Candidate'}
-        >
-          <CandidateForm
-            candidate={
-              editingCandidate?._apiData || (editingCandidate?.id ? editingCandidate : null)
-            }
-            saving={saving}
-            onSubmit={handleSaveCandidate}
-            onClose={() => {
-              setShowForm(false);
-              setEditingCandidate(null);
-            }}
-          />
-        </Modal>
+        />
       )}
 
       {showBulkUpload && (
-        <Modal isOpen={true} onClose={() => setShowBulkUpload(false)} title="📁 Bulk CV Upload">
-          <BulkCVUpload onUpload={handleBulkUpload} onClose={() => setShowBulkUpload(false)} />
-        </Modal>
+        <BulkCVUpload onUpload={handleBulkUpload} onClose={() => setShowBulkUpload(false)} />
       )}
 
       {/* File Preview Modal */}
@@ -430,9 +418,7 @@ export const CandidateDatabasePage = ({
 
       {/* Excel Import Modal */}
       {showExcelImport && (
-        <Modal isOpen={true} onClose={handleExcelImportClose} title="📂 Import Candidates from Excel" maxWidthClass="max-w-4xl">
-          <CandidateExcelImport onImport={handleImportCandidate} onClose={handleExcelImportClose} />
-        </Modal>
+        <CandidateExcelImport onImport={handleImportCandidate} onClose={handleExcelImportClose} />
       )}
     </div>
   );
