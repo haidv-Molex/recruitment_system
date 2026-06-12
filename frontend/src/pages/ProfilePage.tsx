@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileForm from '../components/profile/ProfileForm';
 import PasswordChangeForm from '../components/profile/PasswordChangeForm';
 import { useHeader } from '../contexts/HeaderContext';
+import Button from '../components/common/Button';
+import { LogOut } from 'lucide-react';
 
 export const ProfilePage = () => {
-  const { user, updateProfile, changePassword } = useAuth();
+  const { user, updateProfile, changePassword, logout } = useAuth() as any;
 
   const [profileMessage, setProfileMessage] = useState({ text: '', type: '' });
   const [savingProfile, setSavingProfile] = useState(false);
@@ -74,10 +76,21 @@ export const ProfilePage = () => {
     }
   };
 
+  const headerActions = useMemo(() => (
+    <Button
+      onClick={logout}
+      variant="danger"
+      icon={<LogOut size={16} />}
+    >
+      Logout
+    </Button>
+  ), [logout]);
+
   useHeader({
     title: '👤 User Profile & Settings',
-    subTitle: 'Customize your display name and update your account credentials.',
-  }, []);
+    subTitle: 'Customize your display name and update your credentials.',
+    actions: headerActions,
+  }, [headerActions]);
 
   return (
     <div className="space-y-8">

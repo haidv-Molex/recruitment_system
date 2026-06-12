@@ -4,8 +4,6 @@ import {
   Database,
   FileSpreadsheet,
   Table2,
-  LogOut,
-  User,
   Shield,
   FolderOpen,
   Building2,
@@ -27,7 +25,7 @@ export interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
-  const { user, isAdmin, logout } = useAuth() as any;
+  const { user, isAdmin } = useAuth() as any;
   const headerCtx = useContext(HeaderContext);
   const headerState = headerCtx?.headerState || { title: '' };
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -65,27 +63,27 @@ export default function Layout({ children }: LayoutProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex bg-slate-50 overflow-hidden font-sans">
+    <div className="h-screen w-screen flex bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar */}
       <aside
-        className={`bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 transition-all duration-300 ease-in-out z-30 shrink-0 ${
+        className={`bg-white text-slate-700 flex flex-col border-r border-slate-200 transition-all duration-300 ease-in-out z-30 shrink-0 ${
           sidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-r-0'
         }`}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-950">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-emerald-600 grid place-items-center font-extrabold text-sm text-white shadow-md">
               HR
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white tracking-wider leading-none">Molex Recruit</h1>
-              <span className="text-[10px] text-emerald-400 font-medium">Tracking System</span>
+              <h1 className="text-sm font-bold text-slate-800 tracking-wider leading-none">Molex Recruit</h1>
+              <span className="text-[10px] text-emerald-600 font-medium">Tracking System</span>
             </div>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors"
           >
             <ChevronLeft size={16} />
           </button>
@@ -102,7 +100,7 @@ export default function Layout({ children }: LayoutProps) {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   active
                     ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-600'
-                    : 'text-slate-400 hover:bg-slate-850 hover:text-white'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
                 <Icon size={18} className={active ? 'text-white' : 'text-slate-400'} />
@@ -113,23 +111,26 @@ export default function Layout({ children }: LayoutProps) {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/50 flex flex-col gap-2">
+        <Link
+          to="/profile"
+          className="p-4 border-t border-slate-200 bg-slate-50 flex flex-col gap-2 hover:bg-slate-100 transition-colors select-none"
+        >
           {user && (
             <div className="flex items-center gap-2.5 px-1 py-0.5">
-              <div className="w-8 h-8 rounded-full bg-slate-800 grid place-items-center text-xs font-bold text-emerald-400 border border-slate-700">
+              <div className="w-8 h-8 rounded-full bg-slate-800 grid place-items-center text-xs font-bold text-emerald-400 border border-slate-700 shrink-0">
                 {user.user_name.slice(0, 2).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-slate-200 truncate">{user.user_name}</p>
+                <p className="text-xs font-semibold text-slate-700 truncate">{user.user_name}</p>
                 <p className="text-[10px] text-slate-500 capitalize">{user.user_role}</p>
               </div>
             </div>
           )}
-        </div>
+        </Link>
       </aside>
 
       {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="flex-1 flex flex-col min-w-0 h-screen max-h-screen overflow-hidden relative">
         {/* Topbar */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm shrink-0 z-20">
           <div className="flex items-center gap-4 min-w-0">
@@ -160,41 +161,14 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
 
-          {/* Right Action Controls & User Meta */}
+          {/* Right Action Controls */}
           <div className="flex items-center gap-4 shrink-0">
             {/* Dynamic Actions */}
             {headerState.actions && (
-              <div className="flex items-center gap-2 border-r border-slate-200 pr-4">
+              <div className="flex items-center gap-2">
                 {headerState.actions}
               </div>
             )}
-
-            {/* User Meta & Log out */}
-            <div className="flex items-center gap-3">
-              <span className="hidden xl:inline-block text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">
-                {formattedDate}
-              </span>
-              
-              {user && (
-                <div className="flex items-center gap-2">
-                  <Link
-                    to="/profile"
-                    className="p-2 rounded-full border border-slate-200 hover:bg-slate-50 active:bg-slate-100 transition-colors text-slate-600 hover:text-slate-900"
-                    title="View Profile"
-                  >
-                    <User size={16} />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-red-600 hover:border-red-200 active:bg-red-50 cursor-pointer transition-colors shadow-sm"
-                  >
-                    <LogOut size={14} />
-                    <span className="hidden sm:inline">Logout</span>
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </header>
 
