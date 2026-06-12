@@ -22,6 +22,7 @@ export interface ExcelColumn<T> {
   width?: number;
   align?: 'left' | 'right' | 'center';
   disableFilter?: boolean;
+  disableTruncate?: boolean;
   filterOptions?: string[];
   valueGetter?: (row: T) => any;
   render?: (row: T, value: any) => React.ReactNode;
@@ -61,6 +62,31 @@ export default function ExcelTable<T extends Record<string, any>>({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [globalSearch, setGlobalSearch] = useState('');
   const [showColumns, setShowColumns] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<{ text: string; x: number; y: number } | null>(null);
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLTableCellElement>) => {
+    const element = e.currentTarget;
+    if (element.scrollWidth > element.clientWidth) {
+      const text = element.innerText || element.textContent || '';
+      if (text && text.trim() !== '-' && text.trim() !== '') {
+        setHoveredCell({
+          text,
+          x: e.clientX,
+          y: e.clientY,
+        });
+      }
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLTableCellElement>) => {
+    if (hoveredCell) {
+      setHoveredCell((prev) => (prev ? { ...prev, x: e.clientX, y: e.clientY } : null));
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredCell(null);
+  };
 
   const activeColumns = useMemo(
     () => columns.filter((col) => visibleColumns.includes(col.key)),
@@ -171,28 +197,29 @@ export default function ExcelTable<T extends Record<string, any>>({
 
       {/* Grid Table */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left text-sm text-slate-600">
+        <table className="w-full border-collapse text-left text-sm text-slate-650 border-t border-slate-300">
           <thead>
-            <tr className="bg-slate-50/75 border-b border-slate-200">
+            {/* Header label row */}
+            <tr className="bg-slate-100 border-b border-slate-300">
               {activeColumns.map((col) => (
                 <th
                   key={col.key}
                   style={{ minWidth: col.width || 140 }}
-                  className="px-4 py-3 font-semibold text-slate-700 text-xs tracking-wider uppercase border-r border-slate-100 last:border-r-0"
+                  className="px-4 py-3 font-semibold text-slate-700 text-xs tracking-wider uppercase border-r border-slate-300 last:border-r-0"
                 >
                   {col.label}
                 </th>
               ))}
               {actions && (
-                <th className="px-4 py-3 font-semibold text-slate-700 text-xs tracking-wider uppercase min-w-[150px]">
+                <th className="px-4 py-3 font-semibold text-slate-700 text-xs tracking-wider uppercase min-w-[150px] border-r border-slate-300 last:border-r-0">
                   Actions
                 </th>
               )}
             </tr>
             {/* Filter row */}
-            <tr className="bg-slate-50/20 border-b border-slate-200">
+            <tr className="bg-slate-50 border-b-2 border-slate-350">
               {activeColumns.map((col) => (
-                <th key={`${col.key}-filter`} className="p-2 border-r border-slate-100 last:border-r-0">
+                <th key={`${col.key}-filter`} className="p-2 border-r border-slate-300 last:border-r-0">
                   {col.disableFilter ? null : col.filterOptions ? (
                     <select
                       value={columnFilters[col.key] || ''}
@@ -212,15 +239,15 @@ export default function ExcelTable<T extends Record<string, any>>({
                       value={columnFilters[col.key] || ''}
                       onChange={(e) => updateFilter(col.key, e.target.value)}
                       placeholder="Filter..."
-                      className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
                     />
                   )}
                 </th>
               ))}
-              {actions && <th className="p-2"></th>}
+              {actions && <th className="p-2 border-r border-slate-300 last:border-r-0"></th>}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-200">
             {filteredRows.length === 0 ? (
               <tr>
                 <td colSpan={(activeColumns.length || 1) + (actions ? 1 : 0)} className="px-6 py-10 text-center text-slate-400">
@@ -234,10 +261,12 @@ export default function ExcelTable<T extends Record<string, any>>({
                   <tr
                     key={row.id || row.jobCode || rowIndex}
                     onClick={() => onSelectRow?.(row)}
-                    className={`transition-colors cursor-pointer ${
+                    className={`transition-colors cursor-pointer border-b border-slate-200 last:border-b-0 ${
                       isSelected
-                        ? 'bg-emerald-50/70 hover:bg-emerald-50'
-                        : 'hover:bg-slate-50/60'
+                        ? 'bg-emerald-50/70 hover:bg-emerald-100/70'
+                        : rowIndex % 2 === 0
+                        ? 'bg-white hover:bg-slate-100/70'
+                        : 'bg-slate-50/50 hover:bg-slate-100/70'
                     }`}
                   >
                     {activeColumns.map((col) => {
@@ -245,19 +274,28 @@ export default function ExcelTable<T extends Record<string, any>>({
                       const alignmentClass =
                         col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : '';
 
+                      const shouldTruncate = col.key !== 'status' && col.key !== 'file' && !col.disableTruncate;
                       return (
                         <td
                           key={`${row.id || row.jobCode || rowIndex}-${col.key}`}
-                          className={`px-4 py-2.5 border-r border-slate-100 last:border-r-0 ${
+                          style={shouldTruncate ? { maxWidth: col.width || 140 } : undefined}
+                          className={`px-4 py-2.5 border-r border-slate-200 last:border-r-0 ${
+                            shouldTruncate
+                              ? 'truncate whitespace-nowrap overflow-hidden text-ellipsis'
+                              : ''
+                          } ${
                             compact ? 'py-1.5 text-xs' : 'py-2.5 text-sm'
                           } ${alignmentClass}`}
+                          onMouseEnter={shouldTruncate ? handleMouseEnter : undefined}
+                          onMouseMove={shouldTruncate ? handleMouseMove : undefined}
+                          onMouseLeave={shouldTruncate ? handleMouseLeave : undefined}
                         >
                           {col.render ? col.render(row, rawValue) : displayValue(rawValue)}
                         </td>
                       );
                     })}
                     {actions && (
-                      <td className="px-4 py-2 flex items-center gap-2 border-slate-100">
+                      <td className="px-4 py-2 flex items-center gap-2 border-r border-slate-200 last:border-r-0">
                         {actions.map((act) => (
                           <button
                             key={act.label}
@@ -282,6 +320,18 @@ export default function ExcelTable<T extends Record<string, any>>({
           </tbody>
         </table>
       </div>
+
+      {hoveredCell && (
+        <div
+          className="fixed z-[9999] pointer-events-none bg-slate-900/95 backdrop-blur-sm text-white text-xs rounded-lg px-3 py-2 shadow-xl max-w-sm break-words font-medium border border-slate-700/50 transition-opacity duration-150"
+          style={{
+            left: hoveredCell.x + 12,
+            top: hoveredCell.y + 12,
+          }}
+        >
+          {hoveredCell.text}
+        </div>
+      )}
     </div>
   );
 }
