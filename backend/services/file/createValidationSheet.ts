@@ -1,6 +1,5 @@
 import { PoolClient } from "pg";
 import ExcelJS from "exceljs";
-import path from "path";
 import { createDataValidationSheet } from "@utilities/file/createDataValidationSheet";
 import { getStatuses } from "@services/candidate/getStatuses";
 import { getAgencies } from "@services/candidate/getAgencies";
@@ -32,95 +31,66 @@ const DEFAULT_RECRUITMENT_STATUSES = ['Onboarded', 'Offered', 'In progress', 'Ov
 
 const DEFAULT_DATA_SOURCES = ['D', 'S', 'SK', 'MXV'];
 
-/**
- * Service function to load the Excel template, fetch validation data from the database,
- * recreate the "Data Validation" sheet, and return the populated workbook.
- */
 async function createValidationSheet(pool: PoolClient): Promise<ExcelJS.Workbook> {
-  // 1. Load the template Excel file
-  const templatePath = path.join(process.cwd(), "utilities/file/excelTemplate.xlsx");
+  // 1. Tạo workbook mới — KHÔNG đọc template
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(templatePath);
 
   // 2. Fetch data from DB (with fallbacks to defaults)
-  // Dept
   const deptRes = await pool.query<{ department_code: string }>(
-    `SELECT DISTINCT department_code 
-     FROM department 
-     WHERE department_code IS NOT NULL AND department_code <> '' 
+    `SELECT DISTINCT department_code FROM department
+     WHERE department_code IS NOT NULL AND department_code <> ''
      ORDER BY department_code`
   );
-  const depts = deptRes.rows.length > 0 
-    ? deptRes.rows.map((r) => r.department_code) 
+  const depts = deptRes.rows.length > 0
+    ? deptRes.rows.map((r) => r.department_code)
     : DEFAULT_DEPTS;
 
-  // PIC
   const picRes = await pool.query<{ user_name: string }>(
-    `SELECT DISTINCT u.user_name 
-     FROM "user" u
-     JOIN candidate c ON u.user_id = c.recruiter
-     WHERE u.user_name IS NOT NULL AND u.user_name <> '' 
+    `SELECT DISTINCT u.user_name
+     FROM "user" u JOIN candidate c ON u.user_id = c.recruiter
+     WHERE u.user_name IS NOT NULL AND u.user_name <> ''
      ORDER BY u.user_name`
   );
-  const pics = picRes.rows.length > 0 
-    ? picRes.rows.map((r) => r.user_name) 
+  const pics = picRes.rows.length > 0
+    ? picRes.rows.map((r) => r.user_name)
     : DEFAULT_PICS;
 
-  // Final Status
   const statuses = await getStatuses(pool);
-
-  // Function (No DB table - use defaults)
   const functions = DEFAULT_FUNCTIONS;
 
-  // Source (Platform table)
   const sourceRes = await pool.query<{ platform_name: string }>(
-    `SELECT DISTINCT platform_name 
-     FROM platform 
-     WHERE platform_name IS NOT NULL AND platform_name <> '' 
+    `SELECT DISTINCT platform_name FROM platform
+     WHERE platform_name IS NOT NULL AND platform_name <> ''
      ORDER BY platform_name`
   );
-  const sources = sourceRes.rows.length > 0 
-    ? sourceRes.rows.map((r) => r.platform_name) 
+  const sources = sourceRes.rows.length > 0
+    ? sourceRes.rows.map((r) => r.platform_name)
     : DEFAULT_SOURCES;
 
-  // EE Level (Level table)
   const levelRes = await pool.query<{ level_name: string }>(
-    `SELECT DISTINCT level_name 
-     FROM level 
-     WHERE level_name IS NOT NULL AND level_name <> '' 
+    `SELECT DISTINCT level_name FROM level
+     WHERE level_name IS NOT NULL AND level_name <> ''
      ORDER BY level_name`
   );
-  const eeLevels = levelRes.rows.length > 0 
-    ? levelRes.rows.map((r) => r.level_name) 
+  const eeLevels = levelRes.rows.length > 0
+    ? levelRes.rows.map((r) => r.level_name)
     : DEFAULT_LEVELS;
 
-  // Recruitment Cost Categories (No DB table - use defaults)
   const costCategories = DEFAULT_COST_CATEGORIES;
-
-  // Recruitment Status (No DB table - use defaults)
   const recruitmentStatuses = DEFAULT_RECRUITMENT_STATUSES;
 
-  // Data Source (Site table)
   const siteRes = await pool.query<{ site_code: string }>(
-    `SELECT DISTINCT site_code 
-     FROM site 
-     WHERE site_code IS NOT NULL AND site_code <> '' 
+    `SELECT DISTINCT site_code FROM site
+     WHERE site_code IS NOT NULL AND site_code <> ''
      ORDER BY site_code`
   );
-  const dataSources = siteRes.rows.length > 0 
-    ? siteRes.rows.map((r) => r.site_code) 
+  const dataSources = siteRes.rows.length > 0
+    ? siteRes.rows.map((r) => r.site_code)
     : DEFAULT_DATA_SOURCES;
 
-  // Headhunt Agency
   const agencies = await getAgencies(pool);
 
-  // 3. Remove existing "Data Validation" sheet to avoid conflicts
-  const oldWs = workbook.getWorksheet("Data Validation");
-  if (oldWs) {
-    workbook.removeWorksheet(oldWs.id);
-  }
-
-  // 4. Extra sections data matching the template
+  // 3. Extra sections
   const extraSections = [
     {
       rows: [
@@ -142,7 +112,7 @@ async function createValidationSheet(pool: PoolClient): Promise<ExcelJS.Workbook
     }
   ];
 
-  // 5. Generate new sheet using utilities helper
+  // 4. Tạo sheet Data Validation
   createDataValidationSheet(workbook, {
     columns: {
       "Dept": depts,

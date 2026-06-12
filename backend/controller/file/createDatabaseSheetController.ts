@@ -3,13 +3,13 @@ import FileService from "@services/file/_File";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
 
-const createValidationSheetController = express.Router();
+const createDatabaseSheetController = express.Router();
 
-createValidationSheetController.get("",
+createDatabaseSheetController.get("",
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     const workbook = await withTransaction(async (pool) => {
-      return await FileService.createValidationSheet(pool);
+      return await FileService.createDatabaseSheet(pool);
     });
 
     res.setHeader(
@@ -18,7 +18,7 @@ createValidationSheetController.get("",
     );
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="dataValidation.xlsx"'
+      'attachment; filename="databaseSheet.xlsx"'
     );
 
     await workbook.xlsx.write(res);
@@ -26,4 +26,4 @@ createValidationSheetController.get("",
   }
 );
 
-export default createValidationSheetController;
+export default createDatabaseSheetController;
