@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Edit2, Trash2, Users, FileUp, Download, Plus } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
 import ExcelTable from '../components/common/ExcelTable';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import JobForm from '../components/common/JobForm';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
@@ -20,6 +21,20 @@ import { useHeader } from '../contexts/HeaderContext';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
+
+// Map ExcelTable column-filter keys → API search params
+const COLUMN_KEY_TO_API: Record<string, string> = {
+  jobCode: 'job_code',
+  project: 'project',
+  department: 'department',
+  jobTitle: 'job_title',
+  eeLevel: 'ee_level',
+  sites: 'site',
+  projectSegment: 'segment',
+  hiringManager: 'manager',
+  hrbp: 'partner',
+  note: 'note',
+};
 
 const mapApiJobToRow = (j: any) => ({
   id: j.job_id,
@@ -140,36 +155,43 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     setSaving(false);
   };
 
-  const handleDeleteJob = async (job: any) => {
-    if (!confirm(`Delete job ${job.jobCode}?`)) return;
+  // Active search params must be declared before handlers that reload data
+  const [activeSearchParams, setActiveSearchParams] = useState<Record<string, any>>({});
+
+  const [confirmDeleteState, setConfirmDeleteState] = useState<{
+    isOpen: boolean;
+    jobIds: number[];
+    message: string;
+  }>({
+    isOpen: false,
+    jobIds: [],
+    message: '',
+  });
+
+  const requestDeleteJobs = (ids: number[], message: string) => {
+    setConfirmDeleteState({
+      isOpen: true,
+      jobIds: ids,
+      message,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const ids = confirmDeleteState.jobIds;
+    setConfirmDeleteState((prev) => ({ ...prev, isOpen: false }));
+    if (ids.length === 0) return;
 
     try {
-      await deleteJobApi(job.id);
-      toast.success('Job deleted.');
-      const newTotal = totalItems - 1;
+      await deleteJobApi(ids);
+      toast.success(ids.length === 1 ? 'Job deleted successfully.' : `Successfully deleted ${ids.length} jobs.`);
+      const newTotal = totalItems - ids.length;
       const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
       const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
-      await loadJobsFromApi(targetPage, pageSize);
+      await loadJobsFromApi(targetPage, pageSize, activeSearchParams);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
-
-  // Map ExcelTable column-filter keys → API search params
-  const COLUMN_KEY_TO_API: Record<string, string> = {
-    jobCode: 'job_code',
-    project: 'project',
-    department: 'department',
-    jobTitle: 'job_title',
-    eeLevel: 'ee_level',
-    sites: 'site',
-    projectSegment: 'segment',
-    hiringManager: 'manager',
-    hrbp: 'partner',
-    note: 'note',
-  };
-
-  const [activeSearchParams, setActiveSearchParams] = useState<Record<string, any>>({});
 
   const handleTableSearch = useCallback(
     (colFilters: Record<string, string>, globalSearch: string) => {
@@ -322,19 +344,16 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
-      onClick: (row: any) => handleDeleteJob(row),
-      onBulkClick: async (selectedRows: any[]) => {
-        if (!confirm(`Delete ${selectedRows.length} selected jobs? This cannot be undone.`)) return;
-        for (const row of selectedRows) {
-          try {
-            await deleteJobApi(row.id);
-          } catch (err: any) {
-            toast.error(`Failed to delete ${row.jobCode}: ` + (err.response?.data?.message || err.message));
-          }
-        }
-        toast.success(`Deleted ${selectedRows.length} jobs.`);
-        await loadJobsFromApi(currentPage, pageSize, activeSearchParams);
-      },
+      onClick: (row: any) =>
+        requestDeleteJobs(
+          [row.id],
+          `Bạn có chắc chắn muốn xóa công việc ${row.jobCode} không? Hành động này không thể hoàn tác.`
+        ),
+      onBulkClick: (selectedRows: any[]) =>
+        requestDeleteJobs(
+          selectedRows.map((r) => r.id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} công việc đã chọn không? Hành động này không thể hoàn tác.`
+        ),
     },
   ];
 
@@ -479,6 +498,18 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
 
       {/* File Preview Modal */}
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={confirmDeleteState.isOpen}
+        title="Xóa công việc"
+        message={confirmDeleteState.message}
+        confirmLabel="Xóa"
+        cancelLabel="Hủy"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDeleteState((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

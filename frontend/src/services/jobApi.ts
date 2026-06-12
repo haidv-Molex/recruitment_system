@@ -86,8 +86,12 @@ export async function getJobApi(id: number): Promise<jobOutputModel> {
   return response.data.data!;
 }
 
-export async function deleteJobApi(id: number): Promise<void> {
-  await axiosInstance.delete('/job', { params: { id } });
+export async function deleteJobApi(idOrIds: number | number[]): Promise<void> {
+  if (Array.isArray(idOrIds)) {
+    await axiosInstance.delete('/job', { params: { ids: idOrIds.join(',') } });
+  } else {
+    await axiosInstance.delete('/job', { params: { id: idOrIds } });
+  }
 }
 
 export async function updateJobApi(id: number, formData: any): Promise<jobOutputModel> {

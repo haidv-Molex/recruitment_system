@@ -51,13 +51,31 @@ const tableActions = [
     label: 'Delete',
     icon: <Trash2 size={14} />,
     onClick: (row) => deleteSingle(row),
-    onBulkClick: async (rows) => {
-      if (!confirm(`Delete ${rows.length} items?`)) return;
-      for (const row of rows) await deleteApi(row.id);
-      reload();
+    onBulkClick: (rows) => {
+      requestDeleteJobs(
+        rows.map((r) => r.id),
+        `Bạn có chắc chắn muốn xóa ${rows.length} công việc đã chọn không?`
+      );
     },
   },
 ];
+```
+
+### 1.1 ConfirmModal Component (`src/components/ui/ConfirmModal.tsx`)
+
+A custom styled confirmation modal to replace native browser `confirm()` windows. It supports danger/warning/info variants, backdrop blur, Escape to cancel, and Enter to confirm.
+
+```tsx
+<ConfirmModal
+  isOpen={isOpen}
+  title="Xác nhận"
+  message="Bạn có chắc chắn muốn thực hiện hành động này?"
+  confirmLabel="Xác nhận"
+  cancelLabel="Hủy"
+  variant="danger"
+  onConfirm={handleConfirm}
+  onCancel={handleCancel}
+/>
 ```
 
 ### Checkbox Column (Sticky Left)
