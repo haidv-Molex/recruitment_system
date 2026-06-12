@@ -35,6 +35,13 @@ export interface ExcelTableProps<T> {
   defaultVisibleColumns?: string[];
   toolbarRight?: React.ReactNode;
   compact?: boolean;
+  actions?: {
+    label: string;
+    icon?: React.ReactNode;
+    onClick: (row: T) => void;
+  }[];
+  selectedId?: string | number;
+  onSelectRow?: (row: T) => void;
 }
 
 export default function ExcelTable<T extends Record<string, any>>({
@@ -45,6 +52,9 @@ export default function ExcelTable<T extends Record<string, any>>({
   defaultVisibleColumns,
   toolbarRight,
   compact = false,
+  actions,
+  selectedId,
+  onSelectRow,
 }: ExcelTableProps<T>) {
   const initialVisible = defaultVisibleColumns || columns.map((col) => col.key);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(initialVisible);
@@ -173,6 +183,11 @@ export default function ExcelTable<T extends Record<string, any>>({
                   {col.label}
                 </th>
               ))}
+              {actions && (
+                <th className="px-4 py-3 font-semibold text-slate-700 text-xs tracking-wider uppercase min-w-[150px]">
+                  Actions
+                </th>
+              )}
             </tr>
             {/* Filter row */}
             <tr className="bg-slate-50/20 border-b border-slate-200">
@@ -202,39 +217,67 @@ export default function ExcelTable<T extends Record<string, any>>({
                   )}
                 </th>
               ))}
+              {actions && <th className="p-2"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={activeColumns.length || 1} className="px-6 py-10 text-center text-slate-400">
+                <td colSpan={(activeColumns.length || 1) + (actions ? 1 : 0)} className="px-6 py-10 text-center text-slate-400">
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
-              filteredRows.map((row, rowIndex) => (
-                <tr
-                  key={row.id || row.jobCode || rowIndex}
-                  className="hover:bg-slate-50/60 transition-colors"
-                >
-                  {activeColumns.map((col) => {
-                    const rawValue = col.valueGetter ? col.valueGetter(row) : row[col.key];
-                    const alignmentClass =
-                      col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : '';
+              filteredRows.map((row, rowIndex) => {
+                const isSelected = selectedId !== undefined && (row.id === selectedId || row.jobCode === selectedId);
+                return (
+                  <tr
+                    key={row.id || row.jobCode || rowIndex}
+                    onClick={() => onSelectRow?.(row)}
+                    className={`transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-emerald-50/70 hover:bg-emerald-50'
+                        : 'hover:bg-slate-50/60'
+                    }`}
+                  >
+                    {activeColumns.map((col) => {
+                      const rawValue = col.valueGetter ? col.valueGetter(row) : row[col.key];
+                      const alignmentClass =
+                        col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : '';
 
-                    return (
-                      <td
-                        key={`${row.id || row.jobCode || rowIndex}-${col.key}`}
-                        className={`px-4 py-2.5 border-r border-slate-100 last:border-r-0 ${
-                          compact ? 'py-1.5 text-xs' : 'py-2.5 text-sm'
-                        } ${alignmentClass}`}
-                      >
-                        {col.render ? col.render(row, rawValue) : displayValue(rawValue)}
+                      return (
+                        <td
+                          key={`${row.id || row.jobCode || rowIndex}-${col.key}`}
+                          className={`px-4 py-2.5 border-r border-slate-100 last:border-r-0 ${
+                            compact ? 'py-1.5 text-xs' : 'py-2.5 text-sm'
+                          } ${alignmentClass}`}
+                        >
+                          {col.render ? col.render(row, rawValue) : displayValue(rawValue)}
+                        </td>
+                      );
+                    })}
+                    {actions && (
+                      <td className="px-4 py-2 flex items-center gap-2 border-slate-100">
+                        {actions.map((act) => (
+                          <button
+                            key={act.label}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              act.onClick(row);
+                            }}
+                            className="text-xs font-semibold text-slate-600 hover:text-emerald-600 transition-colors flex items-center gap-1 hover:bg-slate-100 px-2 py-1 rounded"
+                            title={act.label}
+                          >
+                            {act.icon}
+                            <span className={act.icon ? 'sr-only md:not-sr-only' : ''}>{act.label}</span>
+                          </button>
+                        ))}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))
+                    )}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

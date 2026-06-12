@@ -400,3 +400,45 @@ export const hasDuplicateCandidate = (candidate: Partial<MockCandidate>, candida
     return sameEmail || sameNameAndPhone;
   });
 };
+
+export const mockDashboardStats = {
+  totalCandidates: 124,
+  totalRequests: 42,
+  openPositions: 15,
+  filledPositions: 27,
+};
+
+export const mockRequests = [
+  {
+    id: 1,
+    requestNumber: 'REQ-2026-001',
+    position: 'QA Engineer',
+    department: 'Quality Assurance',
+    factory: 'Molex Keangnam',
+    quantity: 3,
+    status: 'open',
+    requiredDate: '2026-07-15',
+  },
+  {
+    id: 2,
+    requestNumber: 'REQ-2026-002',
+    position: 'Automation Engineer',
+    department: 'Engineering',
+    factory: 'Molex Keangnam',
+    quantity: 2,
+    status: 'filled',
+    requiredDate: '2026-06-30',
+  },
+  {
+    id: 3,
+    requestNumber: 'REQ-2026-003',
+    position: 'Assembly Operator',
+    department: 'Production',
+    factory: 'Molex Keangnam',
+    quantity: 10,
+    status: 'cancelled',
+    requiredDate: '2026-05-20',
+  },
+];
+
+
