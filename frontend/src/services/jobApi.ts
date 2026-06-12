@@ -112,6 +112,14 @@ export async function updateJobApi(id: number, formData: any): Promise<jobOutput
   if (formData.managers?.length) fd.append('managers', JSON.stringify(formData.managers));
   if (formData.employee_levels?.length) fd.append('employee_levels', JSON.stringify(formData.employee_levels));
 
+  if (formData.partners_name?.length) fd.append('partners_name', JSON.stringify(formData.partners_name));
+  if (formData.departments_name?.length) fd.append('departments_name', JSON.stringify(formData.departments_name));
+  if (formData.segments_name?.length) fd.append('segments_name', JSON.stringify(formData.segments_name));
+  if (formData.sites_name?.length) fd.append('sites_name', JSON.stringify(formData.sites_name));
+  if (formData.titles_name?.length) fd.append('titles_name', JSON.stringify(formData.titles_name));
+  if (formData.managers_name?.length) fd.append('managers_name', JSON.stringify(formData.managers_name));
+  if (formData.employee_levels_name?.length) fd.append('employee_levels_name', JSON.stringify(formData.employee_levels_name));
+
   const response = await axiosInstance.put('/job', fd, { params: { id } });
   return response.data.data!;
 }

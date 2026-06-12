@@ -33,6 +33,11 @@ export default function OutlookSearchSelect<T>({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
+  const searchApiRef = React.useRef(searchApi);
+  useEffect(() => {
+    searchApiRef.current = searchApi;
+  }, [searchApi]);
+
   useEffect(() => {
     setSelectedItems(initialItems);
   }, [initialItems]);
@@ -40,9 +45,9 @@ export default function OutlookSearchSelect<T>({
   const loadDefaultSuggestions = async () => {
     setIsLoading(true);
     try {
-      const res = await searchApi('');
+      const res = await searchApiRef.current('');
       setSuggestions((res.data || []).slice(0, 5));
-      setActiveIndex(res.data && res.data.length > 0 ? 0 : -1);
+      setActiveIndex(-1);
     } catch (err) {
       console.error(err);
     } finally {
@@ -69,10 +74,10 @@ export default function OutlookSearchSelect<T>({
     setIsLoading(true);
     const handler = setTimeout(async () => {
       try {
-        const res = await searchApi(inputValue);
+        const res = await searchApiRef.current(inputValue);
         const data = (res.data || []).slice(0, 5);
         setSuggestions(data);
-        setActiveIndex(data.length > 0 ? 0 : -1);
+        setActiveIndex(-1);
       } catch (err) {
         console.error(err);
       } finally {
@@ -81,7 +86,7 @@ export default function OutlookSearchSelect<T>({
     }, 400);
 
     return () => clearTimeout(handler);
-  }, [inputValue, searchApi]);
+  }, [inputValue]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -99,7 +104,7 @@ export default function OutlookSearchSelect<T>({
     if (!exists) {
       const updated = [...selectedItems, item];
       setSelectedItems(updated);
-      onChange(updated.map((s) => s[keyProp] as any as number), updated);
+      onChange(updated.map((s) => s[keyProp] as any), updated);
     }
     setInputValue('');
     setSuggestions([]);
@@ -112,7 +117,7 @@ export default function OutlookSearchSelect<T>({
     const itemId = item[keyProp] as any;
     const updated = selectedItems.filter((s) => (s[keyProp] as any) !== itemId);
     setSelectedItems(updated);
-    onChange(updated.map((s) => s[keyProp] as any as number), updated);
+    onChange(updated.map((s) => s[keyProp] as any), updated);
     inputRef.current?.focus();
   };
 
@@ -129,8 +134,27 @@ export default function OutlookSearchSelect<T>({
       e.preventDefault();
       if (activeIndex >= 0 && activeIndex < suggestions.length) {
         handleSelect(suggestions[activeIndex]);
-      } else if (suggestions.length > 0) {
-        handleSelect(suggestions[0]);
+      } else if (inputValue.trim()) {
+        const trimmed = inputValue.trim();
+        const newItem = {
+          [keyProp]: trimmed,
+        } as unknown as T;
+        if (keyProp === 'department_id') {
+          (newItem as any).department_code = trimmed;
+          (newItem as any).department_name = trimmed;
+        } else if (keyProp === 'segment_id') {
+          (newItem as any).segment_code = trimmed;
+          (newItem as any).segment_name = trimmed;
+        } else if (keyProp === 'site_id') {
+          (newItem as any).site_code = trimmed;
+          (newItem as any).site_name = trimmed;
+        } else if (keyProp === 'level_id') {
+          (newItem as any).level_code = trimmed;
+          (newItem as any).level_name = trimmed;
+        } else if (keyProp === 'user_id') {
+          (newItem as any).user_name = trimmed;
+        }
+        handleSelect(newItem);
       }
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);

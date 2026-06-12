@@ -264,11 +264,14 @@ All filters use `ILIKE` (case-insensitive). Multiple filters are combined with `
 - **OutlookSearchSelect Component:** Located in `src/components/ui/OutlookSearchSelect.tsx`. A premium component showing selected chips inside the input area and dynamically searching the database on 400ms debounce.
   - Suggestion dropdown values display name details (e.g. `department_name`).
   - Selected chips prioritize code details if available (e.g. `department_code`), falling back to name.
-- **Job Form Components:** Located in `src/components/job/`. The original massive `JobForm.tsx` file has been split:
+- **Job Form & Modal Components:** Located in `src/components/job/`. The original massive `JobForm.tsx` file and modal dependencies inside `JobTracking.tsx` have been split and decoupled:
   - `types.ts` contains `emptyJob` initial state and common props.
   - `JobBasicInfoFields.tsx` renders standard info text fields, dates, and files.
   - `JobRelationFields.tsx` handles Outlook search components for all 7 relations.
-  - `JobForm.tsx` is the parent container.
+  - `JobForm.tsx` is the parent form container modal.
+  - `JobExcelImport.tsx` handles importing job requisitions from Excel sheets.
+  - `JobConfirmDeleteModal.tsx` provides a job-specific deletion confirmation dialog wrapper around `ConfirmModal`.
+
 
 
 

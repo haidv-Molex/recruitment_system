@@ -21,7 +21,7 @@ import express from "express";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
 import multer from "multer";
-import { numberArray } from "@utilities/joiTypes";
+import { numberArray, stringArray } from "@utilities/joiTypes";
 import Job from "@services/job/_Job";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -74,6 +74,14 @@ const bodySchema = Joi.object({
   titles: numberArray().optional(),
   managers: numberArray().optional(),
   employee_levels: numberArray().optional(),
+
+  partners_name: stringArray().optional(),
+  departments_name: stringArray().optional(),
+  segments_name: stringArray().optional(),
+  sites_name: stringArray().optional(),
+  titles_name: stringArray().optional(),
+  managers_name: stringArray().optional(),
+  employee_levels_name: stringArray().optional(),
 });
 
 updateJobController.put(
@@ -101,6 +109,13 @@ updateJobController.put(
       "titles",
       "managers",
       "employee_levels",
+      "partners_name",
+      "departments_name",
+      "segments_name",
+      "sites_name",
+      "titles_name",
+      "managers_name",
+      "employee_levels_name",
     ];
     for (const key of keys) {
       if (Object.prototype.hasOwnProperty.call(body, key)) {

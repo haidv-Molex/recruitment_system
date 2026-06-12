@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, FileSpreadsheet, Check, AlertTriangle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { parseJobSheetApi } from '../../services/jobApi';
 import Modal from '../ui/Modal';
-import Button from './Button';
+import Button from '../common/Button';
 
 const STEPS = {
   UPLOAD: 'upload',

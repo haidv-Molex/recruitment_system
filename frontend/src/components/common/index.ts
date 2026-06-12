@@ -27,9 +27,6 @@ export * from './FilePreview';
 export { default as JDUploadForm } from './JDUploadForm';
 export * from './JDUploadForm';
 
-export { default as JobExcelImport } from './JobExcelImport';
-export * from './JobExcelImport';
-
 export { default as Layout } from './Layout';
 export * from './Layout';
 

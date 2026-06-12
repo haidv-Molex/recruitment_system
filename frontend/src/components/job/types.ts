@@ -5,13 +5,13 @@ export const emptyJob = {
   note: '',
   requestDate: '',
   file: null as File | null,
-  departments: [] as number[],
-  segments: [] as number[],
-  sites: [] as number[],
-  titles: [] as number[],
-  employeeLevels: [] as number[],
-  partners: [] as number[],
-  managers: [] as number[],
+  departments: [] as any[],
+  segments: [] as any[],
+  sites: [] as any[],
+  titles: [] as any[],
+  employeeLevels: [] as any[],
+  partners: [] as any[],
+  managers: [] as any[],
 };
 
 export interface JobFormProps {

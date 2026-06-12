@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Edit2, Trash2, Users, FileUp, Download, Plus } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
 import ExcelTable from '../components/common/ExcelTable';
-import ConfirmModal from '../components/ui/ConfirmModal';
 import JobForm from '../components/job/JobForm';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
@@ -14,9 +13,11 @@ import {
   deleteJobApi,
   downloadIdlTrackingSheetApi,
   downloadFullWorkbookApi,
+  getJobApi,
 } from '../services/jobApi';
 import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
-import JobExcelImport from '../components/common/JobExcelImport';
+import JobExcelImport from '../components/job/JobExcelImport';
+import JobConfirmDeleteModal from '../components/job/JobConfirmDeleteModal';
 import { useHeader } from '../contexts/HeaderContext';
 
 const statusClass = (status: string) =>
@@ -120,39 +121,43 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       note: formData.note,
       request_date: formData.requestDate,
       file: formData.file,
-      partners: formData.partners,
-      departments: formData.departments,
-      segments: formData.segments,
-      sites: formData.sites,
-      titles: formData.titles,
-      managers: formData.managers,
-      employee_levels: formData.employeeLevels,
+      // Existing IDs
+      partners: (formData.partners || []).filter((p: any) => typeof p === 'number' || !isNaN(Number(p))).map(Number),
+      departments: (formData.departments || []).filter((d: any) => typeof d === 'number' || !isNaN(Number(d))).map(Number),
+      segments: (formData.segments || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
+      sites: (formData.sites || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
+      titles: (formData.titles || []).filter((t: any) => typeof t === 'number' || !isNaN(Number(t))).map(Number),
+      managers: (formData.managers || []).filter((m: any) => typeof m === 'number' || !isNaN(Number(m))).map(Number),
+      employee_levels: (formData.employeeLevels || []).filter((el: any) => typeof el === 'number' || !isNaN(Number(el))).map(Number),
+
+      // New Names to auto-create on backend
+      partners_name: (formData.partners || []).filter((p: any) => typeof p === 'string' && isNaN(Number(p))),
+      departments_name: (formData.departments || []).filter((d: any) => typeof d === 'string' && isNaN(Number(d))),
+      segments_name: (formData.segments || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
+      sites_name: (formData.sites || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
+      titles_name: (formData.titles || []).filter((t: any) => typeof t === 'string' && isNaN(Number(t))),
+      managers_name: (formData.managers || []).filter((m: any) => typeof m === 'string' && isNaN(Number(m))),
+      employee_levels_name: (formData.employeeLevels || []).filter((el: any) => typeof el === 'string' && isNaN(Number(el))),
     };
 
-    if (editingJob) {
-      try {
-        await updateJobApi(editingJob.id, apiPayload);
+    try {
+      if (editingJob) {
+        await updateJobApi(editingJob.job_id || editingJob.id, apiPayload);
         toast.success('Job updated successfully.');
         setShowJobForm(false);
         setEditingJob(null);
         await loadJobsFromApi(currentPage, pageSize);
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || err.message || 'Update failed.');
+      } else {
+        await createJobExtendedApi(apiPayload);
+        toast.success('Job created successfully.');
+        setShowJobForm(false);
+        await loadJobsFromApi(1, pageSize);
       }
-      setSaving(false);
-      return;
-    }
-
-    try {
-      await createJobApi(apiPayload);
-      toast.success('Job created successfully.');
-      setShowJobForm(false);
-      await loadJobsFromApi(1, pageSize);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Create failed.');
+      toast.error(err.response?.data?.message || err.message || 'Operation failed.');
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   };
 
   // Active search params must be declared before handlers that reload data
@@ -335,9 +340,14 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     {
       label: 'Edit',
       icon: <Edit2 size={14} />,
-      onClick: (row: any) => {
-        setEditingJob(row);
-        setShowJobForm(true);
+      onClick: async (row: any) => {
+        try {
+          const fullJob = await getJobApi(row.id);
+          setEditingJob(fullJob);
+          setShowJobForm(true);
+        } catch (err: any) {
+          toast.error(err.response?.data?.message || err.message || 'Failed to load job details.');
+        }
       },
       // onBulkClick omitted → disabled for multi-select
     },
@@ -500,13 +510,9 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
 
       {/* Confirm Delete Modal */}
-      <ConfirmModal
+      <JobConfirmDeleteModal
         isOpen={confirmDeleteState.isOpen}
-        title="Xóa công việc"
         message={confirmDeleteState.message}
-        confirmLabel="Xóa"
-        cancelLabel="Hủy"
-        variant="danger"
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmDeleteState((prev) => ({ ...prev, isOpen: false }))}
       />
