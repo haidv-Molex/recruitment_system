@@ -38,7 +38,6 @@ app.use(helmet({
   },
 }));
 
-// 3. CORS - Đồng bộ giữa Express và Socket.io
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // App Mobile thường không có origin, cho phép luôn
@@ -46,7 +45,7 @@ const corsOptions = {
 
     // Nếu có origin (từ Web), kiểm tra whitelist
     const allowed = [...clientUrls, "http://localhost:5173"];
-    if (allowed.includes(origin)) {
+    if (allowed.includes(origin) || origin.startsWith("http://localhost:")) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));

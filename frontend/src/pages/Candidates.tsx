@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import CandidateTable from '../components/common/CandidateTable';
 import CandidateForm from '../components/common/CandidateForm';
 import { mockCandidates } from '../services/mockData';
-import CandidatesHeader from '../components/candidates/CandidatesHeader';
 import InputField from '../components/common/InputField';
 import SelectField from '../components/common/SelectField';
-
+import Button from '../components/common/Button';
+import { Plus } from 'lucide-react';
+import { useHeader } from '../contexts/HeaderContext';
 
 export const CandidatesPage = () => {
   const [candidates, setCandidates] = useState<any[]>(mockCandidates);
@@ -111,9 +112,20 @@ export const CandidatesPage = () => {
     ...uniqueDepartments.map((dept) => ({ value: dept, label: dept })),
   ];
 
+  const headerActions = useMemo(() => (
+    <Button onClick={() => handleOpenForm()} icon={<Plus size={16} />}>
+      Add Candidate
+    </Button>
+  ), []);
+
+  useHeader({
+    title: '👤 Candidates',
+    subTitle: `Total: ${filteredCandidates.length} candidates listed`,
+    actions: headerActions,
+  }, [filteredCandidates.length, headerActions]);
+
   return (
-    <div className="max-w-[1000px] mx-auto p-6 space-y-6">
-      <CandidatesHeader total={filteredCandidates.length} onAddCandidate={() => handleOpenForm()} />
+    <div className="space-y-6">
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 space-y-4">

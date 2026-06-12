@@ -1,6 +1,8 @@
 import ExcelTable from '../components/common/ExcelTable';
 import MasterCardsList from '../components/master-data/MasterCardsList';
 import { masterData } from '../services/mockData';
+import { useHeader } from '../contexts/HeaderContext';
+import { useMemo } from 'react';
 
 export const MasterDataPage = () => {
   const rows = Object.entries(masterData).flatMap(([type, values]) =>
@@ -13,16 +15,13 @@ export const MasterDataPage = () => {
     { key: 'value', label: 'Dropdown Value', width: 260 },
   ];
 
+  useHeader({
+    title: '📊 Data Validation - Master Data',
+    subTitle: 'Dropdown values used by Job Tracking and Candidate Database to keep the Excel-like tables consistent.',
+  }, []);
+
   return (
     <div className="space-y-8 p-1">
-      {/* Hero Strip */}
-      <section className="bg-gradient-to-r from-emerald-800 to-teal-700 text-white rounded-2xl p-6 md:p-8 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-widest text-emerald-200">Module 3</p>
-        <h1 className="text-2xl md:text-3xl font-extrabold mt-1 tracking-tight">Data Validation - Master Data</h1>
-        <p className="text-sm md:text-base text-emerald-100/90 mt-2 max-w-2xl font-medium">
-          Dropdown values used by Job Tracking and Candidate Database to keep the Excel-like tables consistent.
-        </p>
-      </section>
 
       {/* Cards List */}
       <section className="space-y-4">

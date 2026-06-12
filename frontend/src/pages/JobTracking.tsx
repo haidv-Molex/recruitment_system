@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Edit2, Trash2, Users } from 'lucide-react';
+import { Edit2, Trash2, Users, FileUp, Download, Plus } from 'lucide-react';
 import ExcelTable, { formatDate } from '../components/common/ExcelTable';
 import JobForm from '../components/common/JobForm';
 import ToastContainer from '../components/common/Toast';
@@ -16,7 +16,7 @@ import {
 } from '../services/jobApi';
 import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
 import JobExcelImport from '../components/common/JobExcelImport';
-import JobTrackingHeader from '../components/job-tracking/JobTrackingHeader';
+import { useHeader } from '../contexts/HeaderContext';
 import Modal from '../components/ui/Modal';
 
 const statusClass = (status: string) =>
@@ -342,20 +342,55 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     },
   ];
 
-  return (
-    <div className="space-y-6">
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
-
-      <JobTrackingHeader
-        onAddJob={() => {
+  const headerActions = useMemo(() => (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => setShowExcelImport(true)}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+      >
+        <FileUp size={14} />
+        <span>Import Excel</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleExportIDL}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+      >
+        <Download size={14} />
+        <span>Export IDL</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleExportWorkbook}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+      >
+        <Download size={14} />
+        <span>Export Workbook</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
           setEditingJob(null);
           setShowJobForm(true);
         }}
-        onImportExcel={() => setShowExcelImport(true)}
-        onExportIDL={handleExportIDL}
-        onExportWorkbook={handleExportWorkbook}
-        totalJobs={jobs.length}
-      />
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white active:bg-emerald-800 transition-all cursor-pointer"
+      >
+        <Plus size={14} />
+        <span>Add Job</span>
+      </button>
+    </div>
+  ), [handleExportIDL, handleExportWorkbook]);
+
+  useHeader({
+    title: '📊 Job Tracking Sheet',
+    subTitle: `Excel-like job tracking database. Total: ${jobs.length} job requests`,
+    actions: headerActions,
+  }, [jobs.length, headerActions]);
+
+  return (
+    <div className="space-y-6">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
         {loading ? (

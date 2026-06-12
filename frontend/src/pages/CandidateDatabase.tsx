@@ -17,9 +17,10 @@ import {
 import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
 import CandidateExcelImport from '../components/common/CandidateExcelImport';
 import { downloadFullWorkbookApi } from '../services/jobApi';
-import DatabaseHeader from '../components/candidate-database/DatabaseHeader';
+import { useHeader } from '../contexts/HeaderContext';
 import DatabaseFilters from '../components/candidate-database/DatabaseFilters';
 import Modal from '../components/ui/Modal';
+import { FileUp, Download, Plus, Upload } from 'lucide-react';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
@@ -295,22 +296,73 @@ export const CandidateDatabasePage = ({
     },
   ];
 
-  return (
-    <div className="space-y-6">
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
-
-      <DatabaseHeader
-        total={filteredRows.length}
-        onDownloadTemplate={handleDownloadTemplate}
-        onDownloadDatabase={handleDownloadDatabase}
-        onDownloadFullWorkbook={handleDownloadFullWorkbook}
-        onBulkUpload={() => setShowBulkUpload(true)}
-        onImportExcel={() => setShowExcelImport(true)}
-        onAddCandidate={() => {
+  const headerActions = useMemo(() => (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={() => setShowExcelImport(true)}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+      >
+        <FileUp size={14} />
+        <span>Import Excel</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setShowBulkUpload(true)}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+      >
+        <Upload size={14} />
+        <span>Bulk CV</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleDownloadTemplate}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+        title="Download Validation Template"
+      >
+        <Download size={14} />
+        <span>Template</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleDownloadDatabase}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+      >
+        <Download size={14} />
+        <span>Export DB</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleDownloadFullWorkbook}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+        title="Download Full Workbook"
+      >
+        <Download size={14} />
+        <span>Full Workbook</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
           setEditingCandidate(null);
           setShowForm(true);
         }}
-      />
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white active:bg-emerald-800 transition-all cursor-pointer"
+      >
+        <Plus size={14} />
+        <span>Add Candidate</span>
+      </button>
+    </div>
+  ), [handleDownloadTemplate, handleDownloadDatabase, handleDownloadFullWorkbook]);
+
+  useHeader({
+    title: '📂 Candidate Database',
+    subTitle: `Comprehensive resume repository. Total: ${filteredRows.length} candidates`,
+    actions: headerActions,
+  }, [filteredRows.length, headerActions]);
+
+  return (
+    <div className="space-y-6">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       <DatabaseFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 

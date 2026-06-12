@@ -14,8 +14,12 @@ import {
   LayoutGrid,
   MapPin,
   Award,
+  Menu,
+  ChevronLeft,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import HeaderContext from '../../contexts/HeaderContext';
+import { useContext } from 'react';
 
 export interface LayoutProps {
   children: React.ReactNode;
@@ -24,6 +28,9 @@ export interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, isAdmin, logout } = useAuth() as any;
+  const headerCtx = useContext(HeaderContext);
+  const headerState = headerCtx?.headerState || { title: '' };
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -32,7 +39,7 @@ export default function Layout({ children }: LayoutProps) {
   }, []);
 
   const formattedDate = now.toLocaleDateString('en-US', {
-    weekday: 'long',
+    weekday: 'short',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -52,74 +59,152 @@ export default function Layout({ children }: LayoutProps) {
   ];
 
   if (isAdmin) {
-    tabs.push({ path: '/admin', label: 'Admin', icon: Shield });
+    tabs.push({ path: '/admin', label: 'Admin Panel', icon: Shield });
   }
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <header className="min-h-[74px] bg-gradient-to-r from-[var(--excel-green-dark)] to-[var(--excel-green)] text-white flex items-center justify-between gap-6 px-6 py-3.5 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white/20 grid place-items-center font-extrabold text-lg border border-white/30 tracking-wider shadow-inner">
-            HR
+    <div className="min-h-screen flex bg-slate-50 overflow-hidden font-sans">
+      {/* Sidebar */}
+      <aside
+        className={`bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 transition-all duration-300 ease-in-out z-30 shrink-0 ${
+          sidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-r-0'
+        }`}
+      >
+        {/* Sidebar Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-950">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 grid place-items-center font-extrabold text-sm text-white shadow-md">
+              HR
+            </div>
+            <div>
+              <h1 className="text-sm font-bold text-white tracking-wider leading-none">Molex Recruit</h1>
+              <span className="text-[10px] text-emerald-400 font-medium">Tracking System</span>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold leading-tight tracking-wide">Molex IDL Recruitment Tracking</h1>
-            <p className="text-xs text-white/80 mt-0.5 font-medium">Excel-style model front-end interface</p>
-          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          >
+            <ChevronLeft size={16} />
+          </button>
         </div>
-        <div className="flex items-center gap-6 text-sm text-white/95 font-medium">
-          <span className="hidden sm:inline-block bg-white/10 px-2.5 py-1 rounded-md text-xs tracking-wider">
-            Mode: Mock Frontend
-          </span>
-          <span className="hidden md:inline-block">{formattedDate}</span>
 
-          {user && (
-            <div className="flex items-center gap-3">
+        {/* Sidebar Menu */}
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar select-none">
+          {tabs.map(({ path, label, icon: Icon }) => {
+            const active = isActive(path);
+            return (
               <Link
-                to="/profile"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 transition-all text-white hover:text-white"
+                key={path}
+                to={path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  active
+                    ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-600'
+                    : 'text-slate-400 hover:bg-slate-850 hover:text-white'
+                }`}
               >
-                <User size={14} />
-                <span>{user.user_name}</span>
+                <Icon size={18} className={active ? 'text-white' : 'text-slate-400'} />
+                <span>{label}</span>
               </Link>
-              <button
-                type="button"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/15 border border-white/25 hover:bg-white/25 active:bg-white/30 transition-all cursor-pointer text-white shadow-sm"
-                onClick={logout}
-              >
-                <LogOut size={14} />
-                <span>Logout</span>
-              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/50 flex flex-col gap-2">
+          {user && (
+            <div className="flex items-center gap-2.5 px-1 py-0.5">
+              <div className="w-8 h-8 rounded-full bg-slate-800 grid place-items-center text-xs font-bold text-emerald-400 border border-slate-700">
+                {user.user_name.slice(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-slate-200 truncate">{user.user_name}</p>
+                <p className="text-[10px] text-slate-500 capitalize">{user.user_role}</p>
+              </div>
             </div>
           )}
         </div>
-      </header>
+      </aside>
 
-      {/* Navigation tabs */}
-      <nav className="flex items-end bg-white border-b border-slate-200 px-6 gap-1 overflow-x-auto select-none shadow-sm">
-        {tabs.map(({ path, label, icon: Icon }) => {
-          const active = isActive(path);
-          return (
-            <Link
-              key={path}
-              to={path}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold transition-all border-b-2 outline-none whitespace-nowrap ${
-                active
-                  ? 'border-[var(--excel-green)] text-[var(--excel-green)] bg-emerald-50/50 shadow-inner'
-                  : 'border-transparent text-slate-600 hover:text-[var(--excel-green)] hover:bg-slate-50'
-              }`}
-            >
-              <Icon size={16} />
-              <span>{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Main Content Pane */}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {/* Topbar */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm shrink-0 z-20">
+          <div className="flex items-center gap-4 min-w-0">
+            {/* Sidebar toggle button (visible if sidebar is closed) */}
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 active:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all shadow-sm"
+              >
+                <Menu size={18} />
+              </button>
+            )}
 
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto">{children}</main>
+            {/* Page Header (Title + Subtitle) */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-slate-800">
+                {typeof headerState.title === 'string' ? (
+                  <h1 className="text-lg font-bold tracking-tight truncate">{headerState.title}</h1>
+                ) : (
+                  headerState.title
+                )}
+              </div>
+              {headerState.subTitle && (
+                <div className="mt-0.5 text-xs text-slate-500 font-medium truncate">
+                  {headerState.subTitle}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Action Controls & User Meta */}
+          <div className="flex items-center gap-4 shrink-0">
+            {/* Dynamic Actions */}
+            {headerState.actions && (
+              <div className="flex items-center gap-2 border-r border-slate-200 pr-4">
+                {headerState.actions}
+              </div>
+            )}
+
+            {/* User Meta & Log out */}
+            <div className="flex items-center gap-3">
+              <span className="hidden xl:inline-block text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md">
+                {formattedDate}
+              </span>
+              
+              {user && (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/profile"
+                    className="p-2 rounded-full border border-slate-200 hover:bg-slate-50 active:bg-slate-100 transition-colors text-slate-600 hover:text-slate-900"
+                    title="View Profile"
+                  >
+                    <User size={16} />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-red-600 hover:border-red-200 active:bg-red-50 cursor-pointer transition-colors shadow-sm"
+                  >
+                    <LogOut size={14} />
+                    <span className="hidden sm:inline">Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* Content Body */}
+        <main className="flex-1 p-6 overflow-auto bg-slate-50 w-full max-w-none">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
+
 export { Layout };

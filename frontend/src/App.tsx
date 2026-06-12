@@ -17,6 +17,7 @@ import { AdminPage } from './pages/AdminPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { mockCandidates, mockJobs } from './services/mockData';
+import { HeaderProvider } from './contexts/HeaderContext';
 import './styles/index.css';
 
 function App() {
@@ -25,7 +26,8 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
+      <HeaderProvider>
+        <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
 
@@ -65,6 +67,7 @@ function App() {
           />
         </Routes>
       </Router>
+      </HeaderProvider>
     </AuthProvider>
   );
 }

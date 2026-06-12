@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Search } from 'lucide-react';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
@@ -9,6 +9,7 @@ import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
 import Pagination from '../components/ui/Pagination';
 import Modal from '../components/ui/Modal';
+import { useHeader } from '../contexts/HeaderContext';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -137,24 +138,20 @@ export const PlatformPage = () => {
 
   const totalPages = pagination?.total_pages || 1;
 
-  return (
-    <div className="max-w-[900px] mx-auto p-6 space-y-6">
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
+  const headerActions = useMemo(() => (
+    <Button onClick={openCreateForm} icon={<Plus size={16} />}>
+      Add Platform
+    </Button>
+  ), []);
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            🌎 Kênh tuyển dụng
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage sourcing channels and recruitment platforms.
-          </p>
-        </div>
-        <Button onClick={openCreateForm} icon={<Plus size={16} />}>
-          Add Platform
-        </Button>
-      </div>
+  useHeader({
+    title: '🌎 Kênh tuyển dụng',
+    subTitle: 'Manage sourcing channels and recruitment platforms.',
+    actions: headerActions,
+  }, [headerActions]);
+
+  return (
+    <div className="space-y-6">
 
       {/* Search Bar */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex flex-col sm:flex-row gap-3 items-end">

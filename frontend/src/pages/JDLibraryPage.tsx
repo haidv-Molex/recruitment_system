@@ -8,6 +8,7 @@ import InputField from '../components/common/InputField';
 import SelectField from '../components/common/SelectField';
 import Button from '../components/common/Button';
 import Modal from '../components/ui/Modal';
+import { useHeader } from '../contexts/HeaderContext';
 
 export interface JDLibraryPageProps {
   jobs?: any[];
@@ -129,22 +130,20 @@ export const JDLibraryPage = ({ jobs = [] }: JDLibraryPageProps) => {
     ...sitesList.map((site) => ({ value: site, label: site })),
   ];
 
+  const headerActions = useMemo(() => (
+    <Button onClick={() => setShowUpload(true)} icon={<Plus size={16} />}>
+      Upload JD
+    </Button>
+  ), []);
+
+  useHeader({
+    title: '📁 JD Library',
+    subTitle: 'Store and organize Job Descriptions by Site and Department.',
+    actions: headerActions,
+  }, [headerActions]);
+
   return (
-    <div className="max-w-[1000px] mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            📁 JD Library
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Store and organize Job Descriptions by Site and Department.
-          </p>
-        </div>
-        <Button onClick={() => setShowUpload(true)} icon={<Plus size={16} />}>
-          Upload JD
-        </Button>
-      </div>
+    <div className="space-y-6">
 
       {/* Site Stats Cards Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">

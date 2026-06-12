@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import ProfileForm from '../components/profile/ProfileForm';
 import PasswordChangeForm from '../components/profile/PasswordChangeForm';
+import { useHeader } from '../contexts/HeaderContext';
 
 export const ProfilePage = () => {
   const { user, updateProfile, changePassword } = useAuth();
@@ -73,17 +74,13 @@ export const ProfilePage = () => {
     }
   };
 
+  useHeader({
+    title: '👤 User Profile & Settings',
+    subTitle: 'Customize your display name and update your account credentials.',
+  }, []);
+
   return (
-    <div className="max-w-[900px] mx-auto p-6 space-y-8">
-      {/* Header */}
-      <div className="border-b border-slate-100 pb-4">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-          👤 User Profile & Settings
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Customize your display name and update your account credentials.
-        </p>
-      </div>
+    <div className="space-y-8">
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
         {/* Profile Card */}

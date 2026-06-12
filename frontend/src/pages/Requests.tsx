@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus } from 'lucide-react';
 import { mockRequests } from '../services/mockData';
 import RequestsTable from '../components/requests/RequestsTable';
 import SelectField from '../components/common/SelectField';
 import Button from '../components/common/Button';
+import { useHeader } from '../contexts/HeaderContext';
 
 export const RequestsPage = () => {
   const [requests, setRequests] = useState<any[]>(mockRequests);
@@ -26,16 +27,18 @@ export const RequestsPage = () => {
     { value: 'cancelled', label: 'Cancelled' },
   ];
 
+  const headerActions = useMemo(() => (
+    <Button icon={<Plus size={16} />}>New Request</Button>
+  ), []);
+
+  useHeader({
+    title: '📋 Recruitment Requests',
+    subTitle: `Total: ${filteredRequests.length} requests`,
+    actions: headerActions,
+  }, [filteredRequests.length, headerActions]);
+
   return (
-    <div className="max-w-[1000px] mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">📋 Recruitment Requests</h1>
-          <p className="text-sm text-slate-500 mt-1">Total: {filteredRequests.length} requests</p>
-        </div>
-        <Button icon={<Plus size={16} />}>New Request</Button>
-      </div>
+    <div className="space-y-6">
 
       {/* Filter */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 max-w-sm">

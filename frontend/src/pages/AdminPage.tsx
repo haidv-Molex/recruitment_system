@@ -11,6 +11,7 @@ import { createHRApi, fetchUsersApi, deleteUserApi } from '../services/userApi';
 import AdminStats from '../components/admin/AdminStats';
 import AdminFilters from '../components/admin/AdminFilters';
 import AdminTable from '../components/admin/AdminTable';
+import { useHeader } from '../contexts/HeaderContext';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -71,33 +72,31 @@ export const AdminPage = () => {
     return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredUsers, currentPage]);
 
-  const handleCreate = async (formData: any) => {
+  const handleCreateOrUpdateUser = async (formData: any) => {
     setSaving(true);
     try {
-      const newUser = await createHRApi({
-        username: formData.username,
-        account: formData.account,
-        password: formData.password,
-        description: formData.description || undefined,
-      });
-      toast.success(`Account "${formData.account}" created successfully.`);
-      setShowForm(false);
-      setUsers((prev) => [...prev, newUser]);
+      if (editingUser) {
+        toast.error('Edit account API not fully implemented yet.');
+      } else {
+        await createHRApi({
+          username: formData.username.trim(),
+          account: formData.account.trim(),
+          password: formData.password,
+          description: formData.description || undefined,
+        });
+        toast.success(`Account "${formData.account}" created successfully.`);
+        setShowForm(false);
+        loadUsers();
+      }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Create account failed.');
+      toast.error(err.response?.data?.message || err.message || 'Action failed.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEdit = (_formData: any) => {
-    toast.warning('Edit account — waiting for backend API.');
-    setShowForm(false);
-    setEditingUser(null);
-  };
-
-  const handleDelete = async (userToDelete: any) => {
-    if (currentUser && userToDelete.user_id === (currentUser as any).user_id) {
+  const handleDeleteUser = async (userToDelete: any) => {
+    if (currentUser && (currentUser as any).user_id === userToDelete.user_id) {
       toast.error('You cannot delete your own account.');
       return;
     }
@@ -136,22 +135,21 @@ export const AdminPage = () => {
   const hrCount = users.filter((u) => u.user_role === 'hr' || u.user_role === 'recruiter').length;
   const viewerCount = users.filter((u) => u.user_role === 'viewer').length;
 
-  return (
-    <div className="max-w-[1000px] mx-auto p-6 space-y-6">
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
+  const headerActions = useMemo(() => (
+    <Button onClick={openCreateForm} icon={<Plus size={16} />}>
+      Add Account
+    </Button>
+  ), []);
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">👤 Account Management</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage HR user accounts. Only administrators can access this page.
-          </p>
-        </div>
-        <Button onClick={openCreateForm} icon={<Plus size={16} />}>
-          Add Account
-        </Button>
-      </div>
+  useHeader({
+    title: '👤 Account Management',
+    subTitle: 'Manage HR user accounts. Only administrators can access this page.',
+    actions: headerActions,
+  }, [headerActions]);
+
+  return (
+    <div className="space-y-6">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       {/* Stats Cards */}
       <AdminStats total={totalUsers} admins={adminCount} hrs={hrCount} viewers={viewerCount} />
@@ -172,7 +170,7 @@ export const AdminPage = () => {
         users={paginatedUsers}
         currentUser={currentUser}
         onEdit={openEditForm}
-        onDelete={handleDelete}
+        onDelete={handleDeleteUser}
       />
 
       {/* Pagination */}
@@ -187,7 +185,7 @@ export const AdminPage = () => {
       {showForm && (
         <UserForm
           user={editingUser}
-          onSubmit={editingUser ? handleEdit : handleCreate}
+          onSubmit={handleCreateOrUpdateUser}
           onClose={() => setShowForm(false)}
           saving={saving}
         />

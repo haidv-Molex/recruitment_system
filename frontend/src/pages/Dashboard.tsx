@@ -3,6 +3,7 @@ import { DashboardGrid } from '../components/common/StatCard';
 import { CandidateTable } from '../components/common/CandidateTable';
 import DashboardSummary from '../components/dashboard/DashboardSummary';
 import { mockDashboardStats, mockCandidates } from '../services/mockData';
+import { useHeader } from '../contexts/HeaderContext';
 
 export const DashboardPage = () => {
   const [stats] = useState(mockDashboardStats);
@@ -17,6 +18,11 @@ export const DashboardPage = () => {
     }, 500);
 
     return () => clearTimeout(timer);
+  }, []);
+
+  useHeader({
+    title: '📊 Recruiting Dashboard',
+    subTitle: 'Overview of key metrics and recent candidate actions.',
   }, []);
 
   return (
