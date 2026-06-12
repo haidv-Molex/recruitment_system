@@ -43,19 +43,36 @@ export async function createJobApi(formData: any): Promise<jobOutputModel> {
   return response.data.data!;
 }
 
+export interface JobSearchParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  job_code?: string;
+  project?: string;
+  department?: string;
+  segment?: string;
+  site?: string;
+  job_title?: string;
+  ee_level?: string;
+  manager?: string;
+  partner?: string;
+  note?: string;
+  request_date_from?: string;
+  request_date_to?: string;
+}
+
 export async function searchJobsApi({
   page = 1,
   limit = 10,
   search = '',
-}: {
-  page?: number;
-  limit?: number;
-  search?: string;
-} = {}): Promise<{ data: jobOutputModel[]; pagination?: PaginationMetadata }> {
+  ...filters
+}: JobSearchParams = {}): Promise<{ data: jobOutputModel[]; pagination?: PaginationMetadata }> {
   const params: Record<string, any> = { page, limit };
-  if (search.trim()) {
-    params.search = search.trim();
-  }
+  if (search.trim()) params.search = search.trim();
+  // Append per-field filters
+  Object.entries(filters).forEach(([key, val]) => {
+    if (val !== undefined && val !== '') params[key] = val;
+  });
 
   const response = await axiosInstance.get('/job/search', { params });
   return {

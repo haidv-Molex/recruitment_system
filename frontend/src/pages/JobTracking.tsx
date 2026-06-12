@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Edit2, Trash2, Users, FileUp, Download, Plus } from 'lucide-react';
-import ExcelTable, { formatDate } from '../components/common/ExcelTable';
+import Pagination from '../components/ui/Pagination';
+import ExcelTable from '../components/common/ExcelTable';
 import JobForm from '../components/common/JobForm';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
-import { calculatePipelineForJob } from '../services/mockData';
 import {
   createJobApi,
   createJobExtendedApi,
@@ -17,7 +17,6 @@ import {
 import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
 import JobExcelImport from '../components/common/JobExcelImport';
 import { useHeader } from '../contexts/HeaderContext';
-import Modal from '../components/ui/Modal';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
@@ -36,11 +35,7 @@ const mapApiJobToRow = (j: any) => ({
   hrbp: (j.partners || []).map((p: any) => p.user_name).join(', '),
   recruiter: '',
   myhrRequestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
-  expectedOnboardDate: '',
   status: 'Searching',
-  source: '',
-  candidateName: '',
-  onboardDate: '',
   offerDate: '',
   note: j.note,
   departments: j.departments || [],
@@ -59,60 +54,46 @@ export interface JobTrackingPageProps {
   candidates: any[];
 }
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
 export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPageProps) => {
   const { toasts, removeToast, toast } = useToast();
   const [selectedJobCode, setSelectedJobCode] = useState('');
   const [editingJob, setEditingJob] = useState<any | null>(null);
   const [showJobForm, setShowJobForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [autoCalculate] = useState(true);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
 
-  const loadJobsFromApi = useCallback(async () => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  const loadJobsFromApi = useCallback(async (page: number = 1, limit: number = pageSize, extraParams: Record<string, any> = {}) => {
     setLoading(true);
     try {
-      const result = await searchJobsApi({ page: 1, limit: 100 });
+      const result = await searchJobsApi({ page, limit, ...extraParams });
       setJobs((result.data || []).map(mapApiJobToRow));
+      setTotalItems(result.pagination?.total_items ?? result.data?.length ?? 0);
+      setCurrentPage(page);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to load jobs.');
     }
     setLoading(false);
-  }, [setJobs, toast]);
+  }, [setJobs, toast, pageSize]);
 
   useEffect(() => {
-    loadJobsFromApi();
+    loadJobsFromApi(1, pageSize);
   }, []);
 
   const selectedJob = jobs.find((job) => job.jobCode === selectedJobCode);
   const selectedCandidates = selectedJobCode
     ? candidates.filter((candidate) => candidate.jobCode === selectedJobCode)
     : [];
-
-  const rows = useMemo(() => {
-    return jobs.map((job) => {
-      const pipeline = calculatePipelineForJob(job.jobCode, candidates);
-      const jobCandidates = candidates.filter((candidate) => candidate.jobCode === job.jobCode);
-      const finalCandidate =
-        jobCandidates.find((candidate) => candidate.status === 'Onboarded') ||
-        jobCandidates.find((candidate) => candidate.status === 'Offer Accepted') ||
-        jobCandidates.find((candidate) => candidate.status === 'Offered' || candidate.status === 'Offer');
-
-      return {
-        ...job,
-        cvSent: autoCalculate ? pipeline.cvSent : job.cvSent || 0,
-        interview: autoCalculate ? pipeline.interview : job.interview || 0,
-        offered: autoCalculate ? pipeline.offered : job.offered || 0,
-        offerAccepted: autoCalculate ? pipeline.offerAccepted : job.offerAccepted || 0,
-        onboarded: autoCalculate ? pipeline.onboarded : job.onboarded || 0,
-        offerRejected: autoCalculate ? pipeline.offerRejected : job.offerRejected || 0,
-        candidateName: job.candidateName || finalCandidate?.name || '',
-        onboardDate: job.onboardDate || finalCandidate?.onboardingDate || '',
-        offerDate: job.offerDate || finalCandidate?.offerSentDate || '',
-      };
-    });
-  }, [jobs, candidates, autoCalculate]);
 
   const handleSaveJob = async (formData: any) => {
     setSaving(true);
@@ -139,7 +120,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         toast.success('Job updated successfully.');
         setShowJobForm(false);
         setEditingJob(null);
-        await loadJobsFromApi();
+        await loadJobsFromApi(currentPage, pageSize);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
@@ -151,7 +132,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       await createJobApi(apiPayload);
       toast.success('Job created successfully.');
       setShowJobForm(false);
-      await loadJobsFromApi();
+      await loadJobsFromApi(1, pageSize);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Create failed.');
     }
@@ -165,11 +146,45 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     try {
       await deleteJobApi(job.id);
       toast.success('Job deleted.');
-      await loadJobsFromApi();
+      const newTotal = totalItems - 1;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      await loadJobsFromApi(targetPage, pageSize);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
+
+  // Map ExcelTable column-filter keys → API search params
+  const COLUMN_KEY_TO_API: Record<string, string> = {
+    jobCode: 'job_code',
+    project: 'project',
+    department: 'department',
+    jobTitle: 'job_title',
+    eeLevel: 'ee_level',
+    sites: 'site',
+    projectSegment: 'segment',
+    hiringManager: 'manager',
+    hrbp: 'partner',
+    note: 'note',
+  };
+
+  const [activeSearchParams, setActiveSearchParams] = useState<Record<string, any>>({});
+
+  const handleTableSearch = useCallback(
+    (colFilters: Record<string, string>, globalSearch: string) => {
+      const params: Record<string, any> = {};
+      if (globalSearch.trim()) params.search = globalSearch.trim();
+      Object.entries(colFilters).forEach(([key, val]) => {
+        if (val.trim() && COLUMN_KEY_TO_API[key]) {
+          params[COLUMN_KEY_TO_API[key]] = val.trim();
+        }
+      });
+      setActiveSearchParams(params);
+      loadJobsFromApi(1, pageSize, params);
+    },
+    [loadJobsFromApi, pageSize]
+  );
 
   const handleImportJob = async (parsedJob: any): Promise<{ success: boolean; message?: string }> => {
     const splitByIdExists = (items: any[]) => {
@@ -207,7 +222,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       titles: titles.ids,
       managers: managers.ids,
       employee_levels: employeeLevels.ids,
-      // Auto-create names
       new_partners: partners.names,
       new_managers: managers.names,
       new_departments: departments.names,
@@ -246,74 +260,43 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     }
   };
 
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    loadJobsFromApi(page, pageSize, activeSearchParams);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    loadJobsFromApi(1, newSize, activeSearchParams);
+  };
+
   const columns = useMemo(
     () => [
-      { key: 'jobCode', label: 'Job Code', width: 110, frozen: true },
-      { key: 'project', label: 'Project Name', width: 140, frozen: true },
-      { key: 'department', label: 'Dept', width: 80 },
-      { key: 'hcRequested', label: 'HC Req', width: 70, align: 'right' as const },
+      { key: 'jobCode', label: 'Job Code', width: 110 },
+      { key: 'project', label: 'Project Name', width: 150 },
+      { key: 'department', label: 'Dept', width: 90 },
+      { key: 'hcRequested', label: 'HC Req', width: 70, align: 'right' as const, disableFilter: true },
       { key: 'jobTitle', label: 'Job Title', width: 160 },
       { key: 'eeLevel', label: 'EE Level', width: 100 },
       { key: 'sites', label: 'Site', width: 80 },
-      { key: 'projectSegment', label: 'Segment', width: 115 },
+      { key: 'projectSegment', label: 'Segment', width: 120 },
       { key: 'hiringManager', label: 'Manager', width: 130 },
       { key: 'hrbp', label: 'HRBP / Partner', width: 135 },
-      { key: 'myhrRequestDate', label: 'Req Date', width: 95 },
-      {
-        key: 'cvSent',
-        label: 'CV Sent',
-        width: 70,
-        align: 'right' as const,
-        render: (_: any, v: any) => <span className="font-bold text-slate-800">{v}</span>,
-      },
-      {
-        key: 'interview',
-        label: 'Intvw',
-        width: 65,
-        align: 'right' as const,
-        render: (_: any, v: any) => <span className="font-bold text-slate-800">{v}</span>,
-      },
-      {
-        key: 'offered',
-        label: 'Offer',
-        width: 65,
-        align: 'right' as const,
-        render: (_: any, v: any) => <span className="font-bold text-slate-800">{v}</span>,
-      },
-      {
-        key: 'offerAccepted',
-        label: 'Accpt',
-        width: 65,
-        align: 'right' as const,
-        render: (_: any, v: any) => <span className="font-bold text-emerald-600">{v}</span>,
-      },
-      {
-        key: 'onboarded',
-        label: 'Onb',
-        width: 60,
-        align: 'right' as const,
-        render: (_: any, v: any) => <span className="font-bold text-emerald-600">{v}</span>,
-      },
-      {
-        key: 'offerRejected',
-        label: 'Rej',
-        width: 60,
-        align: 'right' as const,
-        render: (_: any, v: any) => <span className="font-bold text-red-500">{v}</span>,
-      },
+      { key: 'myhrRequestDate', label: 'Req Date', width: 100, disableFilter: true },
       {
         key: 'status',
         label: 'Status',
-        width: 100,
+        width: 110,
+        disableTruncate: true,
+        disableFilter: true,
         render: (_: any, val: any) => <span className={statusClass(val)}>{val || 'Searching'}</span>,
       },
-      { key: 'candidateName', label: 'Candidate Name', width: 160 },
-      { key: 'onboardDate', label: 'Onboard Date', width: 105, render: (_: any, v: any) => formatDate(v) },
-      { key: 'offerDate', label: 'Offer Date', width: 105, render: (_: any, v: any) => formatDate(v) },
       {
         key: 'file',
         label: 'JD File',
         width: 150,
+        disableTruncate: true,
+        disableFilter: true,
         render: (_: any, file: any) =>
           file ? (
             <FileBadge file={file} onClick={() => setPreviewFile(file)} />
@@ -334,11 +317,24 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         setEditingJob(row);
         setShowJobForm(true);
       },
+      // onBulkClick omitted → disabled for multi-select
     },
     {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => handleDeleteJob(row),
+      onBulkClick: async (selectedRows: any[]) => {
+        if (!confirm(`Delete ${selectedRows.length} selected jobs? This cannot be undone.`)) return;
+        for (const row of selectedRows) {
+          try {
+            await deleteJobApi(row.id);
+          } catch (err: any) {
+            toast.error(`Failed to delete ${row.jobCode}: ` + (err.response?.data?.message || err.message));
+          }
+        }
+        toast.success(`Deleted ${selectedRows.length} jobs.`);
+        await loadJobsFromApi(currentPage, pageSize, activeSearchParams);
+      },
     },
   ];
 
@@ -384,46 +380,35 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
 
   useHeader({
     title: '📊 Job Tracking Sheet',
-    subTitle: `Excel-like job tracking database. Total: ${jobs.length} job requests`,
+    subTitle: `Excel-like job tracking database. Total: ${totalItems} job requests`,
     actions: headerActions,
-  }, [jobs.length, headerActions]);
+  }, [totalItems, headerActions]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
-        {loading ? (
-          <div className="text-center py-20 text-slate-500 font-medium">Loading tracking data...</div>
-        ) : (
           <ExcelTable
             title="Active Job Openings"
-            rows={rows}
+            rows={jobs}
             columns={columns}
             actions={tableActions}
             selectedId={selectedJobCode}
             onSelectRow={(row: any) => setSelectedJobCode(row.jobCode === selectedJobCode ? '' : row.jobCode)}
-            defaultVisibleColumns={[
-              'jobCode',
-              'project',
-              'department',
-              'hcRequested',
-              'jobTitle',
-              'eeLevel',
-              'sites',
-              'projectSegment',
-              'cvSent',
-              'interview',
-              'offered',
-              'offerAccepted',
-              'onboarded',
-              'status',
-              'candidateName',
-              'onboardDate',
-              'file',
-            ]}
+            onSearch={handleTableSearch}
+            isLoading={loading}
           />
-        )}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={handlePageChange}
+            itemLabel="jobs"
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+          />
       </div>
 
       {/* Selected Job candidates details drawer */}
@@ -487,7 +472,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
           onImport={handleImportJob}
           onClose={() => {
             setShowExcelImport(false);
-            loadJobsFromApi();
+            loadJobsFromApi(currentPage, pageSize);
           }}
         />
       )}
