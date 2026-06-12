@@ -1,0 +1,163 @@
+import React, { useEffect, useState } from 'react';
+import { emptyJob, JobFormProps } from './types';
+import JobBasicInfoFields from './JobBasicInfoFields';
+import JobRelationFields from './JobRelationFields';
+import Modal from '../ui/Modal';
+import Button from '../common/Button';
+import { FilePreviewModal } from '../common/FilePreview';
+
+export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps) {
+  const [formData, setFormData] = useState(emptyJob);
+  const [previewFile, setPreviewFile] = useState<any | null>(null);
+  const [error, setError] = useState('');
+
+  const [selectedDepts, setSelectedDepts] = useState<any[]>([]);
+  const [selectedSegs, setSelectedSegs] = useState<any[]>([]);
+  const [selectedSites, setSelectedSites] = useState<any[]>([]);
+  const [selectedTitles, setSelectedTitles] = useState<any[]>([]);
+  const [selectedEmpLevels, setSelectedEmpLevels] = useState<any[]>([]);
+  const [selectedPartners, setSelectedPartners] = useState<any[]>([]);
+  const [selectedManagers, setSelectedManagers] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (job) {
+      setFormData({
+        jobCode: job.job_code || '',
+        project: job.project || '',
+        candidateRequired: job.candidate_required || 1,
+        note: job.note || '',
+        requestDate: job.request_date ? String(job.request_date).slice(0, 10) : '',
+        file: null,
+        departments: Array.isArray(job.departments)
+          ? job.departments.map((d: any) => (typeof d === 'object' ? d.department_id : d))
+          : [],
+        segments: Array.isArray(job.segments)
+          ? job.segments.map((s: any) => (typeof s === 'object' ? s.segment_id : s))
+          : [],
+        sites: Array.isArray(job.sitesData || job.sites)
+          ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])).map((s: any) => (typeof s === 'object' ? s.site_id : s))
+          : [],
+        titles: Array.isArray(job.titles)
+          ? job.titles.map((t: any) => (typeof t === 'object' ? t.level_id : t))
+          : [],
+        employeeLevels: Array.isArray(job.employee_levels)
+          ? job.employee_levels.map((el: any) => (typeof el === 'object' ? el.level_id : el))
+          : [],
+        partners: Array.isArray(job.partners)
+          ? job.partners.map((p: any) => (typeof p === 'object' ? p.user_id : p))
+          : [],
+        managers: Array.isArray(job.managers)
+          ? job.managers.map((m: any) => (typeof m === 'object' ? m.user_id : m))
+          : [],
+      });
+      setSelectedDepts(Array.isArray(job.departments) ? job.departments : []);
+      setSelectedSegs(Array.isArray(job.segments) ? job.segments : []);
+      setSelectedSites(Array.isArray(job.sitesData || job.sites) ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])) : []);
+      setSelectedTitles(Array.isArray(job.titles) ? job.titles : []);
+      setSelectedEmpLevels(Array.isArray(job.employee_levels) ? job.employee_levels : []);
+      setSelectedPartners(Array.isArray(job.partners) ? job.partners : []);
+      setSelectedManagers(Array.isArray(job.managers) ? job.managers : []);
+    } else {
+      setFormData(emptyJob);
+      setSelectedDepts([]);
+      setSelectedSegs([]);
+      setSelectedSites([]);
+      setSelectedTitles([]);
+      setSelectedEmpLevels([]);
+      setSelectedPartners([]);
+      setSelectedManagers([]);
+    }
+  }, [job]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'candidateRequired' ? Number(value) : value,
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setFormData((prev) => ({ ...prev, file }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!formData.jobCode.trim()) {
+      setError('Job Code is required.');
+      return;
+    }
+
+    if (!formData.project.trim()) {
+      setError('Project is required.');
+      return;
+    }
+
+    if (!formData.candidateRequired || formData.candidateRequired < 1) {
+      setError('Candidate Required must be at least 1.');
+      return;
+    }
+
+    onSubmit(formData);
+  };
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={job ? 'Edit Job Requisition' : 'Add Job Requisition'}
+      maxWidthClass="max-w-4xl"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} isLoading={saving}>
+            {saving ? 'Saving...' : job ? 'Save Job' : 'Create Job'}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 text-red-600 text-xs px-3.5 py-2 rounded-lg border border-red-200">
+            {error}
+          </div>
+        )}
+
+        <JobBasicInfoFields
+          formData={formData}
+          handleChange={handleChange}
+          handleFileChange={handleFileChange}
+          saving={saving}
+          job={job}
+          setPreviewFile={setPreviewFile}
+        />
+
+        <JobRelationFields
+          saving={saving}
+          setFormData={setFormData}
+          selectedDepts={selectedDepts}
+          setSelectedDepts={setSelectedDepts}
+          selectedSegs={selectedSegs}
+          setSelectedSegs={setSelectedSegs}
+          selectedSites={selectedSites}
+          setSelectedSites={setSelectedSites}
+          selectedTitles={selectedTitles}
+          setSelectedTitles={setSelectedTitles}
+          selectedEmpLevels={selectedEmpLevels}
+          setSelectedEmpLevels={setSelectedEmpLevels}
+          selectedPartners={selectedPartners}
+          setSelectedPartners={setSelectedPartners}
+          selectedManagers={selectedManagers}
+          setSelectedManagers={setSelectedManagers}
+        />
+      </form>
+      {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
+    </Modal>
+  );
+}
+export { JobForm };

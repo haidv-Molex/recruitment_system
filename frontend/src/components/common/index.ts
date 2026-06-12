@@ -30,9 +30,6 @@ export * from './JDUploadForm';
 export { default as JobExcelImport } from './JobExcelImport';
 export * from './JobExcelImport';
 
-export { default as JobForm } from './JobForm';
-export * from './JobForm';
-
 export { default as Layout } from './Layout';
 export * from './Layout';
 

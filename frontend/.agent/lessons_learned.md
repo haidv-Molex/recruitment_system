@@ -257,4 +257,18 @@ All filters use `ILIKE` (case-insensitive). Multiple filters are combined with `
 - **Token Refresh Mechanism:** The response interceptor automatically intercepts `401` status codes. It calls `/auth/token` via POST to exchange the HttpOnly cookie `refreshToken` for a new `accessToken`, stores it in localStorage under `authToken`, and queues/re-runs all concurrent failed requests. If refreshing itself fails or returns `401`, the user is logged out and redirected.
 - **Auto Token Refresh on Startup:** When the application starts up, `AuthContext.tsx` automatically calls `refreshTokenApi()` to verify and obtain a new `accessToken` using the persistent `refreshToken` cookie. If valid, the user enters the application directly without needing to log in again.
 
+---
+
+## 9. OutlookSearchSelect UI & Job Form Splitting
+
+- **OutlookSearchSelect Component:** Located in `src/components/ui/OutlookSearchSelect.tsx`. A premium component showing selected chips inside the input area and dynamically searching the database on 400ms debounce.
+  - Suggestion dropdown values display name details (e.g. `department_name`).
+  - Selected chips prioritize code details if available (e.g. `department_code`), falling back to name.
+- **Job Form Components:** Located in `src/components/job/`. The original massive `JobForm.tsx` file has been split:
+  - `types.ts` contains `emptyJob` initial state and common props.
+  - `JobBasicInfoFields.tsx` renders standard info text fields, dates, and files.
+  - `JobRelationFields.tsx` handles Outlook search components for all 7 relations.
+  - `JobForm.tsx` is the parent container.
+
+
 

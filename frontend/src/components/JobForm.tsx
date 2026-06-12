@@ -1,2 +1,2 @@
-export { default as JobForm } from './common/JobForm';
-export * from './common/JobForm';
+export { default as JobForm } from './job/JobForm';
+export * from './job/JobForm';

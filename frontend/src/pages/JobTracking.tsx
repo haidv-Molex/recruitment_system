@@ -3,7 +3,7 @@ import { Edit2, Trash2, Users, FileUp, Download, Plus } from 'lucide-react';
 import Pagination from '../components/ui/Pagination';
 import ExcelTable from '../components/common/ExcelTable';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import JobForm from '../components/common/JobForm';
+import JobForm from '../components/job/JobForm';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
 import {
