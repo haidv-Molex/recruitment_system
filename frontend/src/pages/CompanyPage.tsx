@@ -10,31 +10,35 @@ import Modal from '../components/ui/Modal';
 import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
 import { useHeader } from '../contexts/HeaderContext';
 
-const ITEMS_PER_PAGE = 10;
-
 export const CompanyPage = () => {
   const { toasts, removeToast, toast } = useToast();
   const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState<any | null>(null);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const loadCompanies = useCallback(async (page: number, search: string) => {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  const loadCompanies = useCallback(async (page: number, limit: number, search: string) => {
     setLoading(true);
     try {
       const result = await searchCompaniesApi({
         page,
-        limit: ITEMS_PER_PAGE,
+        limit,
         search,
       });
       setCompanies(result.data || []);
-      setPagination(result.pagination || null);
+      setTotalItems(result.pagination?.total_items || result.data?.length || 0);
+      setCurrentPage(page);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to load companies.');
     } finally {
@@ -43,8 +47,17 @@ export const CompanyPage = () => {
   }, []);
 
   useEffect(() => {
-    loadCompanies(currentPage, searchQuery);
-  }, [currentPage]);
+    loadCompanies(1, pageSize, searchQuery);
+  }, []);
+
+  const handlePageChange = (page: number) => {
+    loadCompanies(page, pageSize, searchQuery);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    loadCompanies(1, newSize, searchQuery);
+  };
 
   const openCreateForm = () => {
     setEditingCompany(null);
@@ -83,7 +96,7 @@ export const CompanyPage = () => {
         );
         toast.success('Company updated successfully.');
         closeForm();
-        loadCompanies(currentPage, searchQuery);
+        loadCompanies(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
@@ -95,7 +108,7 @@ export const CompanyPage = () => {
         );
         toast.success('Company created successfully.');
         closeForm();
-        loadCompanies(currentPage, searchQuery);
+        loadCompanies(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
@@ -112,13 +125,11 @@ export const CompanyPage = () => {
     try {
       await deleteCompanyApi(company.company_id);
       toast.success('Company deleted.');
-      loadCompanies(currentPage, searchQuery);
+      loadCompanies(currentPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
-
-  const totalPages = pagination?.total_pages || 1;
 
   const headerActions = useMemo(() => (
     <Button onClick={openCreateForm} icon={<Plus size={16} />}>
@@ -180,8 +191,7 @@ export const CompanyPage = () => {
 
   const handleExcelSearch = (_colFilters: Record<string, string>, globalSearch: string) => {
     setSearchQuery(globalSearch);
-    setCurrentPage(1);
-    loadCompanies(1, globalSearch);
+    loadCompanies(1, pageSize, globalSearch);
   };
 
   return (
@@ -204,9 +214,11 @@ export const CompanyPage = () => {
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={pagination?.total_items || companies.length}
-        onPageChange={setCurrentPage}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
         itemLabel="companies"
+        pageSize={pageSize}
+        onPageSizeChange={handlePageSizeChange}
       />
 
       {/* Modal Form */}

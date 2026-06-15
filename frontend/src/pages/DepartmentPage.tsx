@@ -1,41 +1,44 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
 import { searchDepartmentsApi, createDepartmentApi, deleteDepartmentApi, updateDepartmentApi } from '../services/departmentApi';
-import DepartmentTable from '../components/department/DepartmentTable';
 import DepartmentForm from '../components/department/DepartmentForm';
-import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
 import Pagination from '../components/ui/Pagination';
 import Modal from '../components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
 import { useHeader } from '../contexts/HeaderContext';
-
-const ITEMS_PER_PAGE = 10;
 
 export const DepartmentPage = () => {
   const { toasts, removeToast, toast } = useToast();
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState<any | null>(null);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
   const [editingDept, setEditingDept] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const loadDepartments = useCallback(async (page: number, search: string) => {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  const loadDepartments = useCallback(async (page: number, limit: number, search: string) => {
     setLoading(true);
     try {
       const result = await searchDepartmentsApi({
         page,
-        limit: ITEMS_PER_PAGE,
+        limit,
         search,
       });
       setDepartments(result.data || []);
-      setPagination(result.pagination || null);
+      setTotalItems(result.pagination?.total_items || result.data?.length || 0);
+      setCurrentPage(page);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to load departments.');
     } finally {
@@ -44,24 +47,16 @@ export const DepartmentPage = () => {
   }, []);
 
   useEffect(() => {
-    loadDepartments(currentPage, searchQuery);
-  }, [currentPage]);
+    loadDepartments(1, pageSize, searchQuery);
+  }, []);
 
-  const handleSearch = () => {
-    setCurrentPage(1);
-    loadDepartments(1, searchQuery);
+  const handlePageChange = (page: number) => {
+    loadDepartments(page, pageSize, searchQuery);
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setCurrentPage(1);
-    loadDepartments(1, '');
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    loadDepartments(1, newSize, searchQuery);
   };
 
   const openCreateForm = () => {
@@ -106,7 +101,7 @@ export const DepartmentPage = () => {
         );
         toast.success('Department updated successfully.');
         closeForm();
-        loadDepartments(currentPage, searchQuery);
+        loadDepartments(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
@@ -119,7 +114,7 @@ export const DepartmentPage = () => {
         );
         toast.success('Department created successfully.');
         closeForm();
-        loadDepartments(currentPage, searchQuery);
+        loadDepartments(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
@@ -136,13 +131,11 @@ export const DepartmentPage = () => {
     try {
       await deleteDepartmentApi(dept.department_id);
       toast.success('Department deleted.');
-      loadDepartments(currentPage, searchQuery);
+      loadDepartments(currentPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
-
-  const totalPages = pagination?.total_pages || 1;
 
   const headerActions = useMemo(() => (
     <Button onClick={openCreateForm} icon={<Plus size={16} />}>
@@ -156,46 +149,94 @@ export const DepartmentPage = () => {
     actions: headerActions,
   }, [headerActions]);
 
+  const columns = useMemo<ExcelColumn<any>[]>(
+    () => [
+      {
+        key: 'department_code',
+        label: 'Code',
+        width: 120,
+        disableFilter: true,
+        render: (_: any, val: any) => (
+          <span className="font-mono text-xs font-bold uppercase tracking-wide text-emerald-700">
+            {val || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'department_name',
+        label: 'Department Name',
+        width: 250,
+        disableFilter: true,
+      },
+      {
+        key: 'department_description',
+        label: 'Description',
+        width: 450,
+        disableFilter: true,
+        render: (_: any, val: any) => val || '—',
+      },
+    ],
+    []
+  );
+
+  const tableActions = [
+    {
+      label: 'Edit',
+      icon: <Edit2 size={14} />,
+      onClick: (row: any) => {
+        openEditForm(row);
+      },
+    },
+    {
+      label: 'Delete',
+      icon: <Trash2 size={14} className="text-red-500" />,
+      onClick: (row: any) => {
+        handleDelete(row);
+      },
+    },
+  ];
+
+  // Map rows for ExcelTable
+  const tableRows = useMemo(() => {
+    return departments.map((d) => ({
+      id: d.department_id,
+      department_id: d.department_id,
+      department_code: d.department_code,
+      department_name: d.department_name,
+      department_description: d.department_description,
+    }));
+  }, [departments]);
+
+  const handleExcelSearch = (_colFilters: Record<string, string>, globalSearch: string) => {
+    setSearchQuery(globalSearch);
+    loadDepartments(1, pageSize, globalSearch);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Toast notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex flex-col sm:flex-row gap-3 items-end">
-        <div className="flex-1 w-full">
-          <InputField
-            label="Search Departments"
-            placeholder="Search by name or code..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-          />
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="secondary" onClick={handleClearSearch} className="w-full sm:w-auto">
-            Clear
-          </Button>
-          <Button onClick={handleSearch} icon={<Search size={16} />} className="w-full sm:w-auto">
-            Search
-          </Button>
-        </div>
-      </div>
-
       {/* Table */}
-      <DepartmentTable
-        departments={departments}
-        onEdit={openEditForm}
-        onDelete={handleDelete}
-        loading={loading}
+      <ExcelTable
+        title="Department Records"
+        rows={tableRows}
+        columns={columns}
+        actions={tableActions}
+        isLoading={loading}
+        onSearch={handleExcelSearch}
+        emptyMessage="No departments found"
       />
 
       {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={pagination?.total_items || departments.length}
-        onPageChange={setCurrentPage}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
         itemLabel="departments"
+        pageSize={pageSize}
+        onPageSizeChange={handlePageSizeChange}
       />
 
       {/* Modal Form */}
