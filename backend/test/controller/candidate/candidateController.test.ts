@@ -218,7 +218,19 @@ describe("CandidateController API", () => {
       expected_onboard_date_from: undefined,
       expected_onboard_date_to: undefined,
       feedback_date_from: undefined,
-      feedback_date_to: undefined
+      feedback_date_to: undefined,
+      candidate_code: "",
+      candidate_name: "",
+      candidate_email: "",
+      candidate_phone: "",
+      agency: "",
+      note: "",
+      recruiter: "",
+      job_code: "",
+      project: "",
+      platform: "",
+      reference: "",
+      company: ""
     })).to.be.true;
   });
 
@@ -259,7 +271,19 @@ describe("CandidateController API", () => {
       expected_onboard_date_from: undefined,
       expected_onboard_date_to: undefined,
       feedback_date_from: undefined,
-      feedback_date_to: undefined
+      feedback_date_to: undefined,
+      candidate_code: "",
+      candidate_name: "",
+      candidate_email: "",
+      candidate_phone: "",
+      agency: "",
+      note: "",
+      recruiter: "",
+      job_code: "",
+      project: "",
+      platform: "",
+      reference: "",
+      company: ""
     })).to.be.true;
   });
 
@@ -377,6 +401,6 @@ describe("CandidateController API", () => {
         message: "Xóa ứng viên thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
   });
 });

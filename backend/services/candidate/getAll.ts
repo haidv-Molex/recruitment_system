@@ -15,6 +15,20 @@ export interface GetAllCandidatesOptions {
   expected_onboard_date_to?: Date;
   feedback_date_from?: Date;
   feedback_date_to?: Date;
+
+  // Specific advanced filters
+  candidate_code?: string;
+  candidate_name?: string;
+  candidate_email?: string;
+  candidate_phone?: string;
+  agency?: string;
+  note?: string;
+  recruiter?: string;
+  job_code?: string;
+  project?: string;
+  platform?: string;
+  reference?: string;
+  company?: string;
 }
 
 export async function getAll(
@@ -65,6 +79,28 @@ export async function getAll(
     values.push(options.status);
     placeholderIndex++;
   }
+
+  // Handle specific advanced filters
+  const addFilterCondition = (field: string, val: string | undefined) => {
+    if (val && val.trim()) {
+      conditions.push(`${field} ILIKE $${placeholderIndex}`);
+      values.push(`%${val.trim()}%`);
+      placeholderIndex++;
+    }
+  };
+
+  addFilterCondition("c.candidate_code", options.candidate_code);
+  addFilterCondition("c.candidate_name", options.candidate_name);
+  addFilterCondition("c.candidate_email", options.candidate_email);
+  addFilterCondition("c.candidate_phone", options.candidate_phone);
+  addFilterCondition("c.agency", options.agency);
+  addFilterCondition("c.note", options.note);
+  addFilterCondition("u.user_name", options.recruiter);
+  addFilterCondition("j.job_code", options.job_code);
+  addFilterCondition("j.project", options.project);
+  addFilterCondition("p.platform_name", options.platform);
+  addFilterCondition("ref.user_name", options.reference);
+  addFilterCondition("comp.company_name", options.company);
 
   const addDateCondition = (field: string, fromVal: Date | undefined, toVal: Date | undefined) => {
     if (fromVal && toVal) {

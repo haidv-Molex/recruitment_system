@@ -21,7 +21,7 @@ import { downloadFullWorkbookApi } from '../services/jobApi';
 import { useHeader } from '../contexts/HeaderContext';
 import DatabaseFilters from '../components/candidate-database/DatabaseFilters';
 import { useItem, setItem } from '../config/zustandStore';
-import { FileUp, Download, Plus, Upload } from 'lucide-react';
+import { FileUp, Download, Plus, Upload, Edit2, Trash2 } from 'lucide-react';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
@@ -78,7 +78,6 @@ export const CandidateDatabasePage = ({
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const savedColumns = useItem('visibleCandidateColumns');
   const defaultVisible = savedColumns || [
@@ -136,15 +135,8 @@ export const CandidateDatabasePage = ({
   }, [setCandidates, toast, pageSize]);
 
   useEffect(() => {
-    const params = { ...activeSearchParams };
-    if (searchQuery.trim()) {
-      params.search = searchQuery.trim();
-    } else {
-      delete params.search;
-    }
-    setActiveSearchParams(params);
-    loadCandidatesFromApi(1, pageSize, params);
-  }, [searchQuery, pageSize]);
+    loadCandidatesFromApi(1, pageSize, activeSearchParams);
+  }, [pageSize]);
 
   const handlePageChange = (page: number) => {
     loadCandidatesFromApi(page, pageSize, activeSearchParams);
@@ -160,38 +152,29 @@ export const CandidateDatabasePage = ({
 
     if (globalSearch.trim()) {
       params.search = globalSearch.trim();
-    } else if (searchQuery.trim()) {
-      params.search = searchQuery.trim();
     }
 
     if (colFilters.status) {
       params.status = colFilters.status;
     }
 
-    const filterKeys = Object.keys(colFilters).filter(k => k !== 'status' && colFilters[k].trim());
-    if (filterKeys.length > 0) {
-      const keyToSearchAt: Record<string, string> = {
-        candidateCode: 'code',
-        name: 'name',
-        email: 'email',
-        phone: 'phone',
-        recruiter: 'recruiter',
-        jobCode: 'job_code',
-        project: 'job_name',
-        source: 'platform',
-        headhuntAgency: 'agency',
-        targetedCompanyName: 'company',
-        referrerName: 'reference',
-        note: 'note',
-      };
-      const firstKey = filterKeys[0];
-      params.search = colFilters[firstKey].trim();
-      params.searchAt = keyToSearchAt[firstKey];
-    }
+    // Map other filters to exact candidate query parameters
+    if (colFilters.candidateCode) params.candidateCode = colFilters.candidateCode;
+    if (colFilters.name) params.candidateName = colFilters.name;
+    if (colFilters.email) params.candidateEmail = colFilters.email;
+    if (colFilters.phone) params.candidatePhone = colFilters.phone;
+    if (colFilters.recruiter) params.recruiter = colFilters.recruiter;
+    if (colFilters.jobCode) params.jobCode = colFilters.jobCode;
+    if (colFilters.project) params.project = colFilters.project;
+    if (colFilters.source) params.platform = colFilters.source;
+    if (colFilters.headhuntAgency) params.agency = colFilters.headhuntAgency;
+    if (colFilters.targetedCompanyName) params.company = colFilters.targetedCompanyName;
+    if (colFilters.referrerName) params.reference = colFilters.referrerName;
+    if (colFilters.note) params.note = colFilters.note;
 
     setActiveSearchParams(params);
     loadCandidatesFromApi(1, pageSize, params);
-  }, [loadCandidatesFromApi, pageSize, searchQuery]);
+  }, [loadCandidatesFromApi, pageSize]);
 
   const handleSaveCandidate = async (formData: any) => {
     setSaving(true);
@@ -216,12 +199,19 @@ export const CandidateDatabasePage = ({
     }
   };
 
-  const handleDeleteCandidate = async (candidate: any) => {
-    if (!confirm(`Delete candidate ${candidate.name}?`)) return;
+  const handleDeleteCandidates = async (selectedCandidates: any[]) => {
+    if (selectedCandidates.length === 0) return;
+    const names = selectedCandidates.map(c => c.name).join(', ');
+    const msg = selectedCandidates.length === 1
+      ? `Bạn có chắc chắn muốn xóa ứng viên ${selectedCandidates[0].name} không? Hành động này không thể hoàn tác.`
+      : `Bạn có chắc chắn muốn xóa ${selectedCandidates.length} ứng viên (${names}) đã chọn không? Hành động này không thể hoàn tác.`;
+
+    if (!confirm(msg)) return;
 
     try {
-      await deleteCandidateApi(candidate.id);
-      toast.success('Candidate deleted.');
+      const ids = selectedCandidates.map(c => c.id);
+      await deleteCandidateApi(ids);
+      toast.success(selectedCandidates.length === 1 ? 'Candidate deleted.' : 'Candidates deleted.');
       await loadCandidatesFromApi(currentPage, pageSize, activeSearchParams);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete candidate failed.');
@@ -366,6 +356,7 @@ export const CandidateDatabasePage = ({
   const tableActions = [
     {
       label: 'Edit',
+      icon: <Edit2 size={14} />,
       onClick: (candidate: any) => {
         setEditingCandidate(candidate);
         setShowForm(true);
@@ -373,7 +364,9 @@ export const CandidateDatabasePage = ({
     },
     {
       label: 'Delete',
-      onClick: (candidate: any) => handleDeleteCandidate(candidate),
+      icon: <Trash2 size={14} className="text-red-500" />,
+      onClick: (candidate: any) => handleDeleteCandidates([candidate]),
+      onBulkClick: (selectedRows: any[]) => handleDeleteCandidates(selectedRows),
     },
   ];
 
@@ -445,7 +438,7 @@ export const CandidateDatabasePage = ({
     <div className="space-y-6">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      <DatabaseFilters searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 space-y-4">
         <ExcelTable

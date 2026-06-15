@@ -50,6 +50,18 @@ export async function searchCandidatesApi({
   expectedOnboardDateTo = '',
   feedbackDateFrom = '',
   feedbackDateTo = '',
+  candidateCode = '',
+  candidateName = '',
+  candidateEmail = '',
+  candidatePhone = '',
+  agency = '',
+  note = '',
+  recruiter = '',
+  jobCode = '',
+  project = '',
+  platform = '',
+  reference = '',
+  company = '',
 }: {
   page?: number;
   limit?: number;
@@ -64,6 +76,18 @@ export async function searchCandidatesApi({
   expectedOnboardDateTo?: string;
   feedbackDateFrom?: string;
   feedbackDateTo?: string;
+  candidateCode?: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  candidatePhone?: string;
+  agency?: string;
+  note?: string;
+  recruiter?: string;
+  jobCode?: string;
+  project?: string;
+  platform?: string;
+  reference?: string;
+  company?: string;
 } = {}): Promise<{ data: candidateModel[]; pagination?: PaginationMetadata }> {
   const params: Record<string, any> = { page, limit };
 
@@ -80,6 +104,19 @@ export async function searchCandidatesApi({
   if (feedbackDateFrom) params.feedback_date_from = feedbackDateFrom;
   if (feedbackDateTo) params.feedback_date_to = feedbackDateTo;
 
+  if (candidateCode) params.candidate_code = candidateCode;
+  if (candidateName) params.candidate_name = candidateName;
+  if (candidateEmail) params.candidate_email = candidateEmail;
+  if (candidatePhone) params.candidate_phone = candidatePhone;
+  if (agency) params.agency = agency;
+  if (note) params.note = note;
+  if (recruiter) params.recruiter = recruiter;
+  if (jobCode) params.job_code = jobCode;
+  if (project) params.project = project;
+  if (platform) params.platform = platform;
+  if (reference) params.reference = reference;
+  if (company) params.company = company;
+
   const response = await axiosInstance.get('/candidate/search', { params });
   return {
     data: response.data.data || [],
@@ -92,8 +129,12 @@ export async function getCandidateApi(id: number): Promise<candidateModel> {
   return response.data.data!;
 }
 
-export async function deleteCandidateApi(id: number): Promise<void> {
-  await axiosInstance.delete('/candidate', { params: { id } });
+export async function deleteCandidateApi(id: number | number[]): Promise<void> {
+  if (Array.isArray(id)) {
+    await axiosInstance.delete('/candidate', { params: { ids: id.join(',') } });
+  } else {
+    await axiosInstance.delete('/candidate', { params: { id } });
+  }
 }
 
 export async function createCandidateExtendedApi(formData: any): Promise<candidateModel> {

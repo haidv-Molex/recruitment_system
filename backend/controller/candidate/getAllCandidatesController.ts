@@ -45,7 +45,21 @@ const querySchema = Joi.object({
   expected_onboard_date_from: Joi.date().iso().optional().messages({ "date.format": "expected_onboard_date_from phải đúng định dạng ngày (YYYY-MM-DD hoặc ISO)" }),
   expected_onboard_date_to: Joi.date().iso().optional().messages({ "date.format": "expected_onboard_date_to phải đúng định dạng ngày (YYYY-MM-DD hoặc ISO)" }),
   feedback_date_from: Joi.date().iso().optional().messages({ "date.format": "feedback_date_from phải đúng định dạng ngày (YYYY-MM-DD hoặc ISO)" }),
-  feedback_date_to: Joi.date().iso().optional().messages({ "date.format": "feedback_date_to phải đúng định dạng ngày (YYYY-MM-DD hoặc ISO)" })
+  feedback_date_to: Joi.date().iso().optional().messages({ "date.format": "feedback_date_to phải đúng định dạng ngày (YYYY-MM-DD hoặc ISO)" }),
+  
+  // Specific candidate filters
+  candidate_code: Joi.string().optional().allow(""),
+  candidate_name: Joi.string().optional().allow(""),
+  candidate_email: Joi.string().optional().allow(""),
+  candidate_phone: Joi.string().optional().allow(""),
+  agency: Joi.string().optional().allow(""),
+  note: Joi.string().optional().allow(""),
+  recruiter: Joi.string().optional().allow(""),
+  job_code: Joi.string().optional().allow(""),
+  project: Joi.string().optional().allow(""),
+  platform: Joi.string().optional().allow(""),
+  reference: Joi.string().optional().allow(""),
+  company: Joi.string().optional().allow("")
 });
 
 getAllCandidatesController.get("/",
@@ -56,7 +70,7 @@ getAllCandidatesController.get("/",
     const limit = parseInt(req.query.limit as string || "10", 10);
     const search = req.query.search as string || "";
     const status = req.query.status as string || "";
-    
+
     const rawSearchAt = req.query.search_at;
     const search_at = Array.isArray(rawSearchAt)
       ? rawSearchAt as string[]
@@ -72,13 +86,28 @@ getAllCandidatesController.get("/",
     const feedback_date_from = parseDateParam(req.query.feedback_date_from);
     const feedback_date_to = parseDateParam(req.query.feedback_date_to);
 
+    const candidate_code = req.query.candidate_code as string || "";
+    const candidate_name = req.query.candidate_name as string || "";
+    const candidate_email = req.query.candidate_email as string || "";
+    const candidate_phone = req.query.candidate_phone as string || "";
+    const agency = req.query.agency as string || "";
+    const note = req.query.note as string || "";
+    const recruiter = req.query.recruiter as string || "";
+    const job_code = req.query.job_code as string || "";
+    const project = req.query.project as string || "";
+    const platform = req.query.platform as string || "";
+    const reference = req.query.reference as string || "";
+    const company = req.query.company as string || "";
+
     const { items, total } = await withTransaction(async (pool) => {
       return await Candidate.getAll({
         page, limit, search, status, search_at,
         offer_date_from, offer_date_to,
         onboard_date_from, onboard_date_to,
         expected_onboard_date_from, expected_onboard_date_to,
-        feedback_date_from, feedback_date_to
+        feedback_date_from, feedback_date_to,
+        candidate_code, candidate_name, candidate_email, candidate_phone,
+        agency, note, recruiter, job_code, project, platform, reference, company
       }, pool);
     });
 
