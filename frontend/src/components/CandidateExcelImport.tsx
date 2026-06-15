@@ -1,2 +1,2 @@
-export { default as CandidateExcelImport } from './common/CandidateExcelImport';
-export * from './common/CandidateExcelImport';
+export { default as CandidateExcelImport } from './candidate/CandidateExcelImport';
+export * from './candidate/CandidateExcelImport';

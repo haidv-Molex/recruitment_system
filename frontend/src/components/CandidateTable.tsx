@@ -1,2 +1,2 @@
-export { default as CandidateTable } from './common/CandidateTable';
-export * from './common/CandidateTable';
+export { default as CandidateTable } from './candidate/CandidateTable';
+export * from './candidate/CandidateTable';

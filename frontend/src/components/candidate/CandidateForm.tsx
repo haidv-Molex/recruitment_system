@@ -3,12 +3,12 @@ import { searchJobsApi } from '../../services/jobApi';
 import { searchPlatformsApi } from '../../services/platformApi';
 import { searchCompaniesApi } from '../../services/companyApi';
 import { fetchUsersApi } from '../../services/userApi';
-import { FileLink, FilePreviewModal } from './FilePreview';
+import { FileLink, FilePreviewModal } from '../common/FilePreview';
 import { fetchAgenciesApi, fetchStatusesApi } from '../../services/candidateApi';
 import Modal from '../ui/Modal';
-import InputField from './InputField';
-import SelectField from './SelectField';
-import Button from './Button';
+import InputField from '../common/InputField';
+import SelectField from '../common/SelectField';
+import Button from '../common/Button';
 
 const emptyCandidate = {
   candidateCode: '',

@@ -3,6 +3,8 @@ import { X, Upload, FileSpreadsheet, Check, AlertTriangle, Loader2, ChevronDown,
 import { parseJobSheetApi } from '../../services/jobApi';
 import Modal from '../ui/Modal';
 import Button from '../common/Button';
+import ExcelImportTable from '../ui/ExcelImportTable';
+
 
 const STEPS = {
   UPLOAD: 'upload',
@@ -346,103 +348,75 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
             </div>
 
             {/* Excel Grid - Static Preview */}
-            <div className="overflow-auto border border-slate-200 rounded-lg bg-white flex-grow min-h-0">
-              <table className="w-full text-left text-xs text-slate-600 border-collapse table-fixed min-w-[1700px]">
-                <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 z-20">
-                  <tr>
-                    <th className="p-2.5 font-semibold text-slate-800 w-12 text-center sticky left-0 bg-slate-50 z-30 border-r border-slate-200">
-                      <input
-                        type="checkbox"
-                        checked={selectedIndices.size === parsedJobs.length && parsedJobs.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedIndices(new Set(parsedJobs.map((_, i) => i)));
-                          } else {
-                            setSelectedIndices(new Set());
-                          }
-                        }}
-                        className="w-4 h-4 rounded text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
-                      />
-                    </th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-12 text-center">#</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-32">Job Code</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-52">Project Name</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-40">Dept</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-24 text-center">HC Req</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-44">Job Title</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">EE Level</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Site</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-40">Segment</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-44">Manager</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-44">HRBP / Partner</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Req Date</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-56">Note</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {parsedJobs.map((job, i) => {
-                    return (
-                      <tr
-                        key={i}
-                        className={`hover:bg-slate-50/50 transition-colors group ${
-                          selectedIndices.has(i) ? 'bg-emerald-50/10' : ''
-                        }`}
-                      >
-                        <td className={`p-2.5 text-center sticky left-0 z-10 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] transition-colors ${
-                          selectedIndices.has(i) ? 'bg-emerald-50' : 'bg-white group-hover:bg-slate-50'
-                        }`}>
-                          <input
-                            type="checkbox"
-                            checked={selectedIndices.has(i)}
-                            onChange={() => {
-                              const next = new Set(selectedIndices);
-                              if (next.has(i)) {
-                                next.delete(i);
-                              } else {
-                                next.add(i);
-                              }
-                              setSelectedIndices(next);
-                            }}
-                            className="w-4 h-4 rounded text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
-                          />
-                        </td>
-                        <td className="p-2.5 text-center text-slate-400 font-semibold">{i + 1}</td>
-                        <td className="p-2.5 font-semibold text-slate-800">
-                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-600">
-                            {job.jobCode || '—'}
-                          </span>
-                        </td>
-                        <td className="p-2.5 font-medium text-slate-800 truncate" title={job.project}>{job.project || '—'}</td>
-                        <td className="p-2.5">
-                          {renderTags(job.departments, 'bg-blue-50 border border-blue-200 text-blue-600')}
-                        </td>
-                        <td className="p-2.5 text-center font-bold text-slate-800">{job.candidateRequired}</td>
-                        <td className="p-2.5">
-                          {renderTags(job.titles, 'bg-purple-50 border border-purple-200 text-purple-600')}
-                        </td>
-                        <td className="p-2.5">
-                          {renderTags(job.employeeLevels, 'bg-purple-50 border border-purple-200 text-purple-600')}
-                        </td>
-                        <td className="p-2.5">
-                          {renderTags(job.sites, 'bg-emerald-50 border border-emerald-200 text-emerald-600')}
-                        </td>
-                        <td className="p-2.5">
-                          {renderTags(job.segments, 'bg-amber-50 border border-amber-200 text-amber-600')}
-                        </td>
-                        <td className="p-2.5">
-                          {renderTags(job.managers, 'bg-red-50 border border-red-200 text-red-600')}
-                        </td>
-                        <td className="p-2.5">
-                          {renderTags(job.partners, 'bg-red-50 border border-red-200 text-red-600')}
-                        </td>
-                        <td className="p-2.5 text-slate-600">{job.requestDate || '—'}</td>
-                        <td className="p-2.5 text-slate-500 truncate" title={job.note}>{job.note || '—'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ExcelImportTable
+              minWidth="1700px"
+              rows={parsedJobs}
+              selectedIndices={selectedIndices}
+              onSelectRow={(i) => {
+                const next = new Set(selectedIndices);
+                if (next.has(i)) {
+                  next.delete(i);
+                } else {
+                  next.add(i);
+                }
+                setSelectedIndices(next);
+              }}
+              onSelectAll={(checked) => {
+                if (checked) {
+                  setSelectedIndices(new Set(parsedJobs.map((_, i) => i)));
+                } else {
+                  setSelectedIndices(new Set());
+                }
+              }}
+              headers={[
+                { label: 'Job Code', widthClass: 'w-32' },
+                { label: 'Project Name', widthClass: 'w-52' },
+                { label: 'Dept', widthClass: 'w-40' },
+                { label: 'HC Req', widthClass: 'w-24 text-center' },
+                { label: 'Job Title', widthClass: 'w-44' },
+                { label: 'EE Level', widthClass: 'w-36' },
+                { label: 'Site', widthClass: 'w-36' },
+                { label: 'Segment', widthClass: 'w-40' },
+                { label: 'Manager', widthClass: 'w-44' },
+                { label: 'HRBP / Partner', widthClass: 'w-44' },
+                { label: 'Req Date', widthClass: 'w-36' },
+                { label: 'Note', widthClass: 'w-56' },
+              ]}
+              renderRow={(job) => (
+                <>
+                  <td className="p-2.5 font-semibold text-slate-800">
+                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-600">
+                      {job.jobCode || '—'}
+                    </span>
+                  </td>
+                  <td className="p-2.5 font-medium text-slate-800 truncate" title={job.project}>{job.project || '—'}</td>
+                  <td className="p-2.5">
+                    {renderTags(job.departments, 'bg-blue-50 border border-blue-200 text-blue-600')}
+                  </td>
+                  <td className="p-2.5 text-center font-bold text-slate-800">{job.candidateRequired}</td>
+                  <td className="p-2.5">
+                    {renderTags(job.titles, 'bg-purple-50 border border-purple-200 text-purple-600')}
+                  </td>
+                  <td className="p-2.5">
+                    {renderTags(job.employeeLevels, 'bg-purple-50 border border-purple-200 text-purple-600')}
+                  </td>
+                  <td className="p-2.5">
+                    {renderTags(job.sites, 'bg-emerald-50 border border-emerald-200 text-emerald-600')}
+                  </td>
+                  <td className="p-2.5">
+                    {renderTags(job.segments, 'bg-amber-50 border border-amber-200 text-amber-600')}
+                  </td>
+                  <td className="p-2.5">
+                    {renderTags(job.managers, 'bg-red-50 border border-red-200 text-red-600')}
+                  </td>
+                  <td className="p-2.5">
+                    {renderTags(job.partners, 'bg-red-50 border border-red-200 text-red-600')}
+                  </td>
+                  <td className="p-2.5 text-slate-600">{job.requestDate || '—'}</td>
+                  <td className="p-2.5 text-slate-500 truncate" title={job.note}>{job.note || '—'}</td>
+                </>
+              )}
+            />
 
             {countNewEntities() > 0 && (
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200 flex-shrink-0">

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload, FileText, Trash2 } from 'lucide-react';
 import Modal from '../ui/Modal';
-import Button from './Button';
+import Button from '../common/Button';
 
 const SUPPORTED_TYPES = ['.pdf', '.docx', '.doc', '.txt', '.jpg', '.jpeg', '.png'];
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DashboardGrid } from '../components/common/StatCard';
-import { CandidateTable } from '../components/common/CandidateTable';
+import { CandidateTable } from '../components/candidate/CandidateTable';
 import DashboardSummary from '../components/dashboard/DashboardSummary';
 import { mockDashboardStats, mockCandidates } from '../services/mockData';
 import { useHeader } from '../contexts/HeaderContext';

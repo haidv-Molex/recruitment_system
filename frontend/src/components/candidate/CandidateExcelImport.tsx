@@ -3,6 +3,8 @@ import { X, Upload, FileSpreadsheet, Check, AlertTriangle, Loader2 } from 'lucid
 import { parseCandidateSheetApi, createCandidateExtendedApi } from '../../services/candidateApi';
 import Modal from '../ui/Modal';
 import Button from '../common/Button';
+import ExcelImportTable from '../ui/ExcelImportTable';
+
 
 const STEPS = {
   UPLOAD: 'upload',
@@ -331,102 +333,78 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
             </div>
 
             {/* Excel Grid */}
-            <div className="overflow-auto border border-slate-200 rounded-lg bg-white flex-grow min-h-0">
-              <table className="w-full text-left text-xs text-slate-600 border-collapse table-fixed min-w-[2000px]">
-                <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 z-20">
-                  <tr>
-                    <th className="p-2.5 font-semibold text-slate-800 w-12 text-center sticky left-0 bg-slate-50 z-30 border-r border-slate-200">
-                      <input
-                        type="checkbox"
-                        checked={selectedIndices.size === parsedCandidates.length && parsedCandidates.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedIndices(new Set(parsedCandidates.map((_, i) => i)));
-                          } else {
-                            setSelectedIndices(new Set());
-                          }
-                        }}
-                        className="w-4 h-4 rounded text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
-                      />
-                    </th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-10 text-center">#</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-44">Name</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-52">Email</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Phone</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-28">Job Code</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-40">Project</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Status</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-40">Recruiter</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Source</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-32">Input Date</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-32">Offer Date</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-32">Onboard Date</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Current Salary</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Expected Salary</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Agency</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Reference</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-36">Targeted Company</th>
-                    <th className="p-2.5 font-semibold text-slate-800 w-60">Note</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {parsedCandidates.map((c, i) => (
-                    <tr
-                      key={i}
-                      className={`hover:bg-slate-50/50 transition-colors group ${selectedIndices.has(i) ? 'bg-emerald-50/10' : ''
-                        }`}
-                    >
-                      <td className={`p-2.5 text-center sticky left-0 z-10 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] transition-colors ${selectedIndices.has(i) ? 'bg-emerald-50' : 'bg-white group-hover:bg-slate-50'
-                        }`}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIndices.has(i)}
-                          onChange={() => {
-                            const next = new Set(selectedIndices);
-                            if (next.has(i)) next.delete(i);
-                            else next.add(i);
-                            setSelectedIndices(next);
-                          }}
-                          className="w-4 h-4 rounded text-emerald-600 border-slate-300 focus:ring-emerald-500 cursor-pointer"
-                        />
-                      </td>
-                      <td className="p-2.5 text-center text-slate-400 font-semibold">{i + 1}</td>
-                      <td className="p-2.5 font-semibold text-slate-800 truncate" title={c.candidate_name}>
-                        {c.candidate_name || '—'}
-                      </td>
-                      <td className="p-2.5 text-slate-600 truncate" title={c.candidate_email}>
-                        {c.candidate_email || '—'}
-                      </td>
-                      <td className="p-2.5 text-slate-600">{c.candidate_phone || '—'}</td>
-                      <td className="p-2.5">
-                        {c.job_code
-                          ? <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-600">{c.job_code}</span>
-                          : <span className="text-slate-300">—</span>
-                        }
-                      </td>
-                      <td className="p-2.5 text-slate-600 truncate" title={c.project}>{c.project || '—'}</td>
-                      <td className="p-2.5">
-                        {c.status
-                          ? <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-700">{c.status}</span>
-                          : <span className="text-slate-300">—</span>
-                        }
-                      </td>
-                      <td className="p-2.5">{renderUserTag(c.recruiter, 'bg-violet-50 border border-violet-200 text-violet-700')}</td>
-                      <td className="p-2.5 text-slate-600">{c.source || '—'}</td>
-                      <td className="p-2.5 text-slate-500">{formatDate(c.input_date)}</td>
-                      <td className="p-2.5 text-slate-500">{formatDate(c.offer_date)}</td>
-                      <td className="p-2.5 text-slate-500">{formatDate(c.onboard_date)}</td>
-                      <td className="p-2.5 text-slate-600">{c.current_salary || '—'}</td>
-                      <td className="p-2.5 text-slate-600">{c.expected_salary || '—'}</td>
-                      <td className="p-2.5 text-slate-600 truncate" title={c.agency}>{c.agency || '—'}</td>
-                      <td className="p-2.5 text-slate-600">{c.reference_name || '—'}</td>
-                      <td className="p-2.5 text-slate-600 truncate" title={c.targeted_company_name}>{c.targeted_company_name || '—'}</td>
-                      <td className="p-2.5 text-slate-500 truncate" title={c.note}>{c.note || '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ExcelImportTable
+              minWidth="2000px"
+              rows={parsedCandidates}
+              selectedIndices={selectedIndices}
+              onSelectRow={(i) => {
+                const next = new Set(selectedIndices);
+                if (next.has(i)) next.delete(i);
+                else next.add(i);
+                setSelectedIndices(next);
+              }}
+              onSelectAll={(checked) => {
+                if (checked) {
+                  setSelectedIndices(new Set(parsedCandidates.map((_, i) => i)));
+                } else {
+                  setSelectedIndices(new Set());
+                }
+              }}
+              headers={[
+                { label: 'Name', widthClass: 'w-44' },
+                { label: 'Email', widthClass: 'w-52' },
+                { label: 'Phone', widthClass: 'w-36' },
+                { label: 'Job Code', widthClass: 'w-28' },
+                { label: 'Project', widthClass: 'w-40' },
+                { label: 'Status', widthClass: 'w-36' },
+                { label: 'Recruiter', widthClass: 'w-40' },
+                { label: 'Source', widthClass: 'w-36' },
+                { label: 'Input Date', widthClass: 'w-32' },
+                { label: 'Offer Date', widthClass: 'w-32' },
+                { label: 'Onboard Date', widthClass: 'w-32' },
+                { label: 'Current Salary', widthClass: 'w-36' },
+                { label: 'Expected Salary', widthClass: 'w-36' },
+                { label: 'Agency', widthClass: 'w-36' },
+                { label: 'Reference', widthClass: 'w-36' },
+                { label: 'Targeted Company', widthClass: 'w-36' },
+                { label: 'Note', widthClass: 'w-60' },
+              ]}
+              renderRow={(c) => (
+                <>
+                  <td className="p-2.5 font-semibold text-slate-800 truncate" title={c.candidate_name}>
+                    {c.candidate_name || '—'}
+                  </td>
+                  <td className="p-2.5 text-slate-600 truncate" title={c.candidate_email}>
+                    {c.candidate_email || '—'}
+                  </td>
+                  <td className="p-2.5 text-slate-600">{c.candidate_phone || '—'}</td>
+                  <td className="p-2.5">
+                    {c.job_code
+                      ? <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-600">{c.job_code}</span>
+                      : <span className="text-slate-300">—</span>
+                    }
+                  </td>
+                  <td className="p-2.5 text-slate-600 truncate" title={c.project}>{c.project || '—'}</td>
+                  <td className="p-2.5">
+                    {c.status
+                      ? <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-700">{c.status}</span>
+                      : <span className="text-slate-300">—</span>
+                    }
+                  </td>
+                  <td className="p-2.5">{renderUserTag(c.recruiter, 'bg-violet-50 border border-violet-200 text-violet-700')}</td>
+                  <td className="p-2.5 text-slate-600">{c.source || '—'}</td>
+                  <td className="p-2.5 text-slate-500">{formatDate(c.input_date)}</td>
+                  <td className="p-2.5 text-slate-500">{formatDate(c.offer_date)}</td>
+                  <td className="p-2.5 text-slate-500">{formatDate(c.onboard_date)}</td>
+                  <td className="p-2.5 text-slate-600">{c.current_salary || '—'}</td>
+                  <td className="p-2.5 text-slate-600">{c.expected_salary || '—'}</td>
+                  <td className="p-2.5 text-slate-600 truncate" title={c.agency}>{c.agency || '—'}</td>
+                  <td className="p-2.5 text-slate-600">{c.reference_name || '—'}</td>
+                  <td className="p-2.5 text-slate-600 truncate" title={c.targeted_company_name}>{c.targeted_company_name || '—'}</td>
+                  <td className="p-2.5 text-slate-500 truncate" title={c.note}>{c.note || '—'}</td>
+                </>
+              )}
+            />
 
             {countNewUsers() > 0 && (
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200 flex-shrink-0">

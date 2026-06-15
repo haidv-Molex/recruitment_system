@@ -7,18 +7,6 @@ export * from './InputField';
 export { default as SelectField } from './SelectField';
 export * from './SelectField';
 
-export { default as BulkCVUpload } from './BulkCVUpload';
-export * from './BulkCVUpload';
-
-export { default as CandidateExcelImport } from './CandidateExcelImport';
-export * from './CandidateExcelImport';
-
-export { default as CandidateForm } from './CandidateForm';
-export * from './CandidateForm';
-
-export { default as CandidateTable } from './CandidateTable';
-export * from './CandidateTable';
-
 export { default as ExcelTable } from './ExcelTable';
 export * from './ExcelTable';
 

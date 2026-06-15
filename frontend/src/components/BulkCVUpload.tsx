@@ -1,2 +1,2 @@
-export { default as BulkCVUpload } from './common/BulkCVUpload';
-export * from './common/BulkCVUpload';
+export { default as BulkCVUpload } from './candidate/BulkCVUpload';
+export * from './candidate/BulkCVUpload';

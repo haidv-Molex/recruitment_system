@@ -1,2 +1,2 @@
-export { default as CandidateForm } from './common/CandidateForm';
-export * from './common/CandidateForm';
+export { default as CandidateForm } from './candidate/CandidateForm';
+export * from './candidate/CandidateForm';

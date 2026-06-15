@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import CandidateForm from '../components/common/CandidateForm';
-import BulkCVUpload from '../components/common/BulkCVUpload';
+import CandidateForm from '../components/candidate/CandidateForm';
+import BulkCVUpload from '../components/candidate/BulkCVUpload';
 import ExcelTable, { formatDate } from '../components/common/ExcelTable';
 import Pagination from '../components/ui/Pagination';
 import { masterData } from '../services/mockData';

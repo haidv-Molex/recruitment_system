@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import CandidateTable from '../components/common/CandidateTable';
-import CandidateForm from '../components/common/CandidateForm';
+import CandidateTable from '../components/candidate/CandidateTable';
+import CandidateForm from '../components/candidate/CandidateForm';
 import { mockCandidates } from '../services/mockData';
 import InputField from '../components/common/InputField';
 import SelectField from '../components/common/SelectField';
