@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 export const useToast = () => {
   const [toasts, setToasts] = useState([]);
@@ -28,9 +28,16 @@ export const useToast = () => {
     addToast(message, 'info', duration);
   }, [addToast]);
 
+  const toast = useMemo(() => ({
+    success,
+    error,
+    warning,
+    info
+  }), [success, error, warning, info]);
+
   return {
     toasts,
     removeToast,
-    toast: { success, error, warning, info },
+    toast,
   };
 };

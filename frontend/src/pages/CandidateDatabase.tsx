@@ -289,7 +289,7 @@ export const CandidateDatabasePage = ({
   };
 
 
-  const handleDownloadTemplate = async () => {
+  const handleDownloadTemplate = useCallback(async () => {
     toast.info('Downloading template...');
     try {
       await downloadValidationSheetApi();
@@ -297,9 +297,9 @@ export const CandidateDatabasePage = ({
     } catch (err: any) {
       toast.error(err.message || 'Download failed.');
     }
-  };
+  }, [toast]);
 
-  const handleDownloadDatabase = async () => {
+  const handleDownloadDatabase = useCallback(async () => {
     toast.info('Downloading database sheet...');
     try {
       await downloadDatabaseSheetApi();
@@ -307,9 +307,9 @@ export const CandidateDatabasePage = ({
     } catch (err: any) {
       toast.error(err.message || 'Download failed.');
     }
-  };
+  }, [toast]);
 
-  const handleDownloadFullWorkbook = async () => {
+  const handleDownloadFullWorkbook = useCallback(async () => {
     toast.info('Downloading full workbook...');
     try {
       await downloadFullWorkbookApi();
@@ -317,7 +317,7 @@ export const CandidateDatabasePage = ({
     } catch (err: any) {
       toast.error(err.message || 'Download failed.');
     }
-  };
+  }, [toast]);
 
 
 

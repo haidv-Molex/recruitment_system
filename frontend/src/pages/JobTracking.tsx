@@ -50,7 +50,11 @@ const mapApiJobToRow = (j: any) => ({
   sites: (j.sites || []).map((s: any) => s.site_code || s.site_name || '').filter(Boolean).join(', '),
   projectSegment: (j.segments || []).map((sg: any) => sg.segment_name).join(', '),
   hiringManager: (j.managers || []).map((m: any) => m.user_name).join(', '),
-  hrbp: (j.partners || []).map((p: any) => p.user_name).join(', '),
+  hrbp: (j.departments || [])
+    .map((d: any) => d.user_name)
+    .filter(Boolean)
+    .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index)
+    .join(', '),
   recruiter: '',
   myhrRequestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
   status: 'Searching',
@@ -137,11 +141,15 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             return {
               department_id: Number(d.department_id),
               candidate_required: Number(d.candidate_required || 1),
+              user_id: d.user_id ? Number(d.user_id) : null,
+              partner_name: d.partner_name || null,
             };
           }
           return {
             department_id: Number(d),
             candidate_required: 1,
+            user_id: null,
+            partner_name: null,
           };
         }),
       segments: (formData.segments || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
@@ -159,11 +167,15 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             return {
               name: String(d.name || d.department_name),
               candidate_required: Number(d.candidate_required || 1),
+              user_id: d.user_id ? Number(d.user_id) : null,
+              partner_name: d.partner_name || null,
             };
           }
           return {
             name: String(d),
             candidate_required: 1,
+            user_id: null,
+            partner_name: null,
           };
         }),
       segments_name: (formData.segments || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
@@ -346,23 +358,23 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     }
   };
 
-  const handleExportIDL = async () => {
+  const handleExportIDL = useCallback(async () => {
     try {
       await downloadIdlTrackingSheetApi();
       toast.success('Downloaded IDL tracking sheet.');
     } catch (err: any) {
       toast.error('Download IDL sheet failed: ' + err.message);
     }
-  };
+  }, [toast]);
 
-  const handleExportWorkbook = async () => {
+  const handleExportWorkbook = useCallback(async () => {
     try {
       await downloadFullWorkbookApi();
       toast.success('Downloaded Full Workbook.');
     } catch (err: any) {
       toast.error('Download Full Workbook failed: ' + err.message);
     }
-  };
+  }, [toast]);
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;

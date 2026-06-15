@@ -6,4 +6,5 @@ export type departmentModel = {
   create_at: Date;
   update_at: Date;
   candidate_required?: number;
+  user_id?: number | null;
 }

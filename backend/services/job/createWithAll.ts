@@ -20,7 +20,7 @@ type CreateJobWithAllData = {
 
   // ID gốc (các record đã có sẵn)
   partners?: number[];
-  departments?: { department_id: number; candidate_required: number }[];
+  departments?: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
@@ -29,7 +29,7 @@ type CreateJobWithAllData = {
 
   // _name: tự động tạo record mới rồi lấy ID
   partners_name?: string[];
-  departments_name?: { name: string; candidate_required: number }[];
+  departments_name?: { name: string; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
   segments_name?: string[];
   sites_name?: string[];
   /**
@@ -82,13 +82,38 @@ async function createWithAll(
   }
 
   // 3. Tạo department mới cho departments_name (code = name.toUpperCase())
-  const newDepartments: { department_id: number; candidate_required: number }[] = [];
+  const resolvedDepartments = [];
+  for (const dept of departments) {
+    let uId = dept.user_id;
+    if (dept.partner_name) {
+      const user = await User.create({ username: dept.partner_name }, pool);
+      uId = user.user_id;
+    }
+    resolvedDepartments.push({
+      department_id: dept.department_id,
+      candidate_required: dept.candidate_required,
+      user_id: uId,
+    });
+  }
+
+  const newDepartments: { department_id: number; candidate_required: number; user_id?: number | null }[] = [];
   for (const item of departments_name) {
     const dept = await Department.create({
       department_code: item.name.toUpperCase(),
       department_name: item.name,
     }, pool);
-    newDepartments.push({ department_id: dept.department_id, candidate_required: item.candidate_required });
+
+    let resolvedUserId = item.user_id;
+    if (item.partner_name) {
+      const user = await User.create({ username: item.partner_name }, pool);
+      resolvedUserId = user.user_id;
+    }
+
+    newDepartments.push({
+      department_id: dept.department_id,
+      candidate_required: item.candidate_required,
+      user_id: resolvedUserId,
+    });
   }
 
   // 4. Tạo segment mới cho segments_name
@@ -124,7 +149,7 @@ async function createWithAll(
   // 7. Gộp ID mới vào danh sách ID gốc
   const mergedPartners = [...partners, ...newPartnerIds];
   const mergedManagers = [...managers, ...newManagerIds];
-  const mergedDepartments = [...departments, ...newDepartments];
+  const mergedDepartments = [...resolvedDepartments, ...newDepartments];
   const mergedSegments = [...segments, ...newSegmentIds];
   const mergedSites = [...sites, ...newSiteIds];
   const mergedTitles = [...titles, ...newLevelIds];

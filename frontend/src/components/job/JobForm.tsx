@@ -110,6 +110,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
         department_id: isExisting ? d.department_id : null,
         name: isExisting ? null : (d.department_name || d.department_id),
         candidate_required: d.candidate_required !== undefined ? d.candidate_required : 1,
+        user_id: d.user_id || null,
       };
     });
 

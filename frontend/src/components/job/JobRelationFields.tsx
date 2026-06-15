@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import OutlookSearchSelect from '../ui/OutlookSearchSelect';
+import SingleSearchSelect from '../ui/SingleSearchSelect';
 import { searchDepartmentsApi } from '../../services/departmentApi';
 import { searchSegmentsApi } from '../../services/segmentApi';
 import { searchSitesApi } from '../../services/siteApi';
@@ -51,6 +52,7 @@ export default function JobRelationFields({
   selectedManagers,
   setSelectedManagers,
 }: JobRelationFieldsProps) {
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
       <div className="flex flex-col gap-2.5">
@@ -77,11 +79,48 @@ export default function JobRelationFields({
               const name = dept.department_name || dept.department_code || 'Unnamed Department';
               const count = dept.candidate_required !== undefined ? dept.candidate_required : 1;
               return (
-                <div key={key} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm">
-                  <span className="text-xs font-semibold text-slate-700 truncate pr-2 max-w-[60%]" title={name}>
-                    {name}
-                  </span>
-                  <div className="flex items-center gap-2">
+                <div key={key} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm gap-2">
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="text-xs font-semibold text-slate-700 truncate" title={name}>
+                      {name}
+                    </span>
+                    <div className="mt-1">
+                      <SingleSearchSelect
+                        label=""
+                        placeholder="Search partner..."
+                        initialItem={dept.user_id ? { user_id: dept.user_id, user_name: dept.user_name || '' } : dept.partner_name ? { user_id: dept.partner_name, user_name: dept.partner_name } : null}
+                        searchApi={(search) => fetchUsersApi({ search })}
+                        displayFn={(u: any) => u.user_name || ''}
+                        keyProp="user_id"
+                        compact={true}
+                        allowCreation={true}
+                        disabled={saving}
+                        onChange={(selectedId, selectedItem) => {
+                          const updated = selectedDepts.map((d) => {
+                            if (d.department_id === key) {
+                              if (!selectedItem) {
+                                return { ...d, user_id: null, user_name: null, partner_name: null };
+                              }
+                              const isNew = typeof selectedId === 'string';
+                              return {
+                                ...d,
+                                user_id: isNew ? null : Number(selectedId),
+                                user_name: selectedItem.user_name,
+                                partner_name: isNew ? selectedItem.user_name : null,
+                              };
+                            }
+                            return d;
+                          });
+                          setSelectedDepts(updated);
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            departments: updated,
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex items-center border border-slate-300 rounded bg-slate-50 overflow-hidden h-7">
                       <button
                         type="button"
@@ -204,21 +243,6 @@ export default function JobRelationFields({
         onChange={(ids, items) => {
           setFormData((prev: any) => ({ ...prev, employeeLevels: ids }));
           setSelectedEmpLevels(items);
-        }}
-        disabled={saving}
-      />
-
-      <OutlookSearchSelect
-        label="👤 HRBP (Partners)"
-        placeholder="Search partners..."
-        initialItems={selectedPartners}
-        searchApi={(search) => fetchUsersApi({ search })}
-        displayFn={(u: any) => u.user_name || ''}
-        chipDisplayFn={(u: any) => u.user_name || ''}
-        keyProp="user_id"
-        onChange={(ids, items) => {
-          setFormData((prev: any) => ({ ...prev, partners: ids }));
-          setSelectedPartners(items);
         }}
         disabled={saving}
       />
