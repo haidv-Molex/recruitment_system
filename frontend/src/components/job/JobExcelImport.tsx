@@ -54,7 +54,7 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
         const mappedJobs = jobs.map((j: any) => ({
           jobCode: j.job_code || '',
           project: j.project || '',
-          candidateRequired: j.candidate_required !== undefined ? j.candidate_required : 0,
+          candidateRequired: (j.departments || []).reduce((sum: number, d: any) => sum + (d.candidate_required || 0), 0),
           note: j.note || '',
           requestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
           file: j.file || null,

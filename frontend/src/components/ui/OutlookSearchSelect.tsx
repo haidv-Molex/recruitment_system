@@ -11,6 +11,7 @@ interface OutlookSearchSelectProps<T> {
   keyProp: keyof T;
   onChange: (selectedIds: number[], selectedItems: T[]) => void;
   disabled?: boolean;
+  hideChips?: boolean;
 }
 
 export default function OutlookSearchSelect<T>({
@@ -23,6 +24,7 @@ export default function OutlookSearchSelect<T>({
   keyProp,
   onChange,
   disabled = false,
+  hideChips = false,
 }: OutlookSearchSelectProps<T>) {
   const [selectedItems, setSelectedItems] = useState<T[]>(initialItems);
   const [inputValue, setInputValue] = useState('');
@@ -122,7 +124,7 @@ export default function OutlookSearchSelect<T>({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !inputValue && selectedItems.length > 0) {
+    if (e.key === 'Backspace' && !inputValue && selectedItems.length > 0 && !hideChips) {
       handleRemove(selectedItems[selectedItems.length - 1]);
     } else if (e.key === 'ArrowDown' && suggestions.length > 0) {
       e.preventDefault();
@@ -171,7 +173,7 @@ export default function OutlookSearchSelect<T>({
           disabled ? 'bg-slate-50 opacity-60 pointer-events-none' : ''
         }`}
       >
-        {selectedItems.map((item) => (
+        {!hideChips && selectedItems.map((item) => (
           <span 
             key={item[keyProp] as any} 
             className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-md shadow-sm select-none max-w-full"

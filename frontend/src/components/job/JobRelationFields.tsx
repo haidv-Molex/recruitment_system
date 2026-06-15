@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 import OutlookSearchSelect from '../ui/OutlookSearchSelect';
 import { searchDepartmentsApi } from '../../services/departmentApi';
 import { searchSegmentsApi } from '../../services/segmentApi';
@@ -52,20 +53,100 @@ export default function JobRelationFields({
 }: JobRelationFieldsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-      <OutlookSearchSelect
-        label="🏬 Departments"
-        placeholder="Search departments..."
-        initialItems={selectedDepts}
-        searchApi={(search) => searchDepartmentsApi({ search })}
-        displayFn={(d: any) => d.department_name || ''}
-        chipDisplayFn={(d: any) => d.department_code || d.department_name || ''}
-        keyProp="department_id"
-        onChange={(ids, items) => {
-          setFormData((prev: any) => ({ ...prev, departments: ids }));
-          setSelectedDepts(items);
-        }}
-        disabled={saving}
-      />
+      <div className="flex flex-col gap-2.5">
+        <OutlookSearchSelect
+          label="🏬 Departments"
+          placeholder="Search departments..."
+          initialItems={selectedDepts}
+          searchApi={(search) => searchDepartmentsApi({ search })}
+          displayFn={(d: any) => d.department_name || ''}
+          chipDisplayFn={(d: any) => d.department_code || d.department_name || ''}
+          keyProp="department_id"
+          onChange={(ids, items) => {
+            setFormData((prev: any) => ({ ...prev, departments: ids }));
+            setSelectedDepts(items);
+          }}
+          disabled={saving}
+          hideChips={true}
+        />
+
+        {selectedDepts.length > 0 && (
+          <div className="border border-slate-200 rounded-lg p-2.5 bg-slate-50/50 space-y-2 max-h-[200px] overflow-y-auto">
+            {selectedDepts.map((dept) => {
+              const key = dept.department_id;
+              const name = dept.department_name || dept.department_code || 'Unnamed Department';
+              const count = dept.candidate_required !== undefined ? dept.candidate_required : 1;
+              return (
+                <div key={key} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm">
+                  <span className="text-xs font-semibold text-slate-700 truncate pr-2 max-w-[60%]" title={name}>
+                    {name}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center border border-slate-300 rounded bg-slate-50 overflow-hidden h-7">
+                      <button
+                        type="button"
+                        disabled={saving || count <= 1}
+                        onClick={() => {
+                          const val = Math.max(1, count - 1);
+                          const updated = selectedDepts.map((d) => 
+                            d.department_id === key ? { ...d, candidate_required: val } : d
+                          );
+                          setSelectedDepts(updated);
+                        }}
+                        className="px-2 text-slate-500 hover:bg-slate-200 hover:text-slate-700 disabled:opacity-40 transition-colors text-sm font-bold"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        value={count}
+                        disabled={saving}
+                        onChange={(e) => {
+                          const val = Math.max(1, Number(e.target.value));
+                          const updated = selectedDepts.map((d) => 
+                            d.department_id === key ? { ...d, candidate_required: val } : d
+                          );
+                          setSelectedDepts(updated);
+                        }}
+                        className="w-10 text-center text-xs font-bold text-slate-800 bg-transparent border-0 focus:ring-0 focus:outline-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => {
+                          const val = count + 1;
+                          const updated = selectedDepts.map((d) => 
+                            d.department_id === key ? { ...d, candidate_required: val } : d
+                          );
+                          setSelectedDepts(updated);
+                        }}
+                        className="px-2 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors text-sm font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = selectedDepts.filter((d) => d.department_id !== key);
+                        setSelectedDepts(updated);
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          departments: updated.map((d) => d.department_id),
+                        }));
+                      }}
+                      className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <OutlookSearchSelect
         label="📦 Segments"

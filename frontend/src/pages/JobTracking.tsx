@@ -44,7 +44,7 @@ const mapApiJobToRow = (j: any) => ({
   jobCode: j.job_code,
   project: j.project,
   department: (j.departments || []).map((d: any) => d.department_code || d.department_name || '').filter(Boolean).join(', '),
-  hcRequested: j.candidate_required,
+  hcRequested: (j.departments || []).reduce((sum: number, d: any) => sum + (d.candidate_required || 0), 0),
   jobTitle: (j.titles || []).map((t: any) => t.level_name).join(', '),
   eeLevel: (j.employee_levels || []).map((el: any) => el.level_name).join(', '),
   sites: (j.sites || []).map((s: any) => s.site_code || s.site_name || '').filter(Boolean).join(', '),
@@ -130,7 +130,20 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       file: formData.file,
       // Existing IDs
       partners: (formData.partners || []).filter((p: any) => typeof p === 'number' || !isNaN(Number(p))).map(Number),
-      departments: (formData.departments || []).filter((d: any) => typeof d === 'number' || !isNaN(Number(d))).map(Number),
+      departments: (formData.departments || [])
+        .filter((d: any) => d && (typeof d === 'object' ? d.department_id !== null && d.department_id !== undefined : !isNaN(Number(d))))
+        .map((d: any) => {
+          if (typeof d === 'object') {
+            return {
+              department_id: Number(d.department_id),
+              candidate_required: Number(d.candidate_required || 1),
+            };
+          }
+          return {
+            department_id: Number(d),
+            candidate_required: 1,
+          };
+        }),
       segments: (formData.segments || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
       sites: (formData.sites || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
       titles: (formData.titles || []).filter((t: any) => typeof t === 'number' || !isNaN(Number(t))).map(Number),
@@ -139,7 +152,20 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
 
       // New Names to auto-create on backend
       partners_name: (formData.partners || []).filter((p: any) => typeof p === 'string' && isNaN(Number(p))),
-      departments_name: (formData.departments || []).filter((d: any) => typeof d === 'string' && isNaN(Number(d))),
+      departments_name: (formData.departments || [])
+        .filter((d: any) => d && (typeof d === 'object' ? d.department_id === null || d.department_id === undefined : isNaN(Number(d))))
+        .map((d: any) => {
+          if (typeof d === 'object') {
+            return {
+              name: String(d.name || d.department_name),
+              candidate_required: Number(d.candidate_required || 1),
+            };
+          }
+          return {
+            name: String(d),
+            candidate_required: 1,
+          };
+        }),
       segments_name: (formData.segments || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
       sites_name: (formData.sites || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
       titles_name: (formData.titles || []).filter((t: any) => typeof t === 'string' && isNaN(Number(t))),
@@ -261,20 +287,31 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     const jobsPayload = parsedJobs.map((parsedJob) => {
       const partners = splitByIdExists(parsedJob.partners);
       const managers = splitByIdExists(parsedJob.managers);
-      const departments = splitByIdExists(parsedJob.departments);
       const segments = splitByIdExists(parsedJob.segments);
       const sites = splitByIdExists(parsedJob.sites);
       const titles = splitByIdExists(parsedJob.titles);
       const employeeLevels = splitByIdExists(parsedJob.employeeLevels);
+      const depts = (parsedJob.departments || [])
+        .filter((d: any) => d.department_id !== null && d.department_id !== undefined)
+        .map((d: any) => ({
+          department_id: Number(d.department_id),
+          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1)
+        }));
+
+      const depts_name = (parsedJob.departments || [])
+        .filter((d: any) => d.department_id === null || d.department_id === undefined)
+        .map((d: any) => ({
+          name: String(d.department_name || d.name),
+          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1)
+        }));
 
       return {
         job_code: parsedJob.jobCode,
         project: parsedJob.project,
-        candidate_required: parsedJob.candidateRequired,
         note: parsedJob.note || '',
         request_date: parsedJob.requestDate || '',
         partners: partners.ids,
-        departments: departments.ids,
+        departments: depts,
         segments: segments.ids,
         sites: sites.ids,
         titles: titles.ids,
@@ -282,7 +319,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         employee_levels: employeeLevels.ids,
         partners_name: partners.names,
         managers_name: managers.names,
-        departments_name: departments.names,
+        departments_name: depts_name,
         segments_name: segments.names,
         sites_name: sites.names,
         titles_name: titles.names,

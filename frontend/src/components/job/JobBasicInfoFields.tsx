@@ -22,7 +22,7 @@ export default function JobBasicInfoFields({
   return (
     <>
       {/* Basic Info */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <InputField
           label="Job Code *"
           name="jobCode"
@@ -37,15 +37,6 @@ export default function JobBasicInfoFields({
           value={formData.project}
           onChange={handleChange}
           placeholder="e.g. IDL Recruitment 2026"
-          disabled={saving}
-        />
-        <InputField
-          label="Candidate Required *"
-          type="number"
-          min="1"
-          name="candidateRequired"
-          value={formData.candidateRequired}
-          onChange={handleChange}
           disabled={saving}
         />
       </div>

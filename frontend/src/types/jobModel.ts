@@ -8,7 +8,7 @@ export type jobModel = {
   job_id: number;
   job_code: string;
   project: string;
-  candidate_required: number;
+  candidate_required?: number;
   note: string | null;
   request_date: Date | null;
   create_at: Date;

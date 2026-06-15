@@ -69,6 +69,14 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
     }
   }, [job]);
 
+  useEffect(() => {
+    const sum = selectedDepts.reduce((acc, d) => acc + (d.candidate_required !== undefined ? d.candidate_required : 1), 0);
+    setFormData((prev) => ({
+      ...prev,
+      candidateRequired: sum > 0 ? sum : 1,
+    }));
+  }, [selectedDepts]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -96,12 +104,26 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
       return;
     }
 
-    if (!formData.candidateRequired || formData.candidateRequired < 1) {
-      setError('Candidate Required must be at least 1.');
+    const updatedDepartments = selectedDepts.map((d) => {
+      const isExisting = typeof d.department_id === 'number';
+      return {
+        department_id: isExisting ? d.department_id : null,
+        name: isExisting ? null : (d.department_name || d.department_id),
+        candidate_required: d.candidate_required !== undefined ? d.candidate_required : 1,
+      };
+    });
+
+    const totalHC = updatedDepartments.reduce((sum, d) => sum + d.candidate_required, 0);
+    if (updatedDepartments.length > 0 && totalHC < 1) {
+      setError('Total headcounts must be at least 1.');
       return;
     }
 
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      departments: updatedDepartments,
+      candidateRequired: totalHC,
+    });
   };
 
   const fileToDisplay = formData.file || job?.file;

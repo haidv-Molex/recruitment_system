@@ -6,7 +6,6 @@ export async function createJobApi(formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
   fd.append('job_code', formData.job_code);
   fd.append('project', formData.project);
-  fd.append('candidate_required', String(formData.candidate_required));
 
   if (formData.note) {
     fd.append('note', formData.note);
@@ -17,27 +16,13 @@ export async function createJobApi(formData: any): Promise<jobOutputModel> {
   if (formData.file) {
     fd.append('file', formData.file);
   }
-  if (formData.partners?.length) {
-    formData.partners.forEach((id: number) => fd.append('partners', String(id)));
-  }
-  if (formData.departments?.length) {
-    formData.departments.forEach((id: number) => fd.append('departments', String(id)));
-  }
-  if (formData.segments?.length) {
-    formData.segments.forEach((id: number) => fd.append('segments', String(id)));
-  }
-  if (formData.sites?.length) {
-    formData.sites.forEach((id: number) => fd.append('sites', String(id)));
-  }
-  if (formData.titles?.length) {
-    formData.titles.forEach((id: number) => fd.append('titles', String(id)));
-  }
-  if (formData.managers?.length) {
-    formData.managers.forEach((id: number) => fd.append('managers', String(id)));
-  }
-  if (formData.employee_levels?.length) {
-    formData.employee_levels.forEach((id: number) => fd.append('employee_levels', String(id)));
-  }
+  if (formData.partners?.length) fd.append('partners', JSON.stringify(formData.partners));
+  if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
+  if (formData.segments?.length) fd.append('segments', JSON.stringify(formData.segments));
+  if (formData.sites?.length) fd.append('sites', JSON.stringify(formData.sites));
+  if (formData.titles?.length) fd.append('titles', JSON.stringify(formData.titles));
+  if (formData.managers?.length) fd.append('managers', JSON.stringify(formData.managers));
+  if (formData.employee_levels?.length) fd.append('employee_levels', JSON.stringify(formData.employee_levels));
 
   const response = await axiosInstance.post('/job', fd);
   return response.data.data!;
@@ -98,7 +83,6 @@ export async function updateJobApi(id: number, formData: any): Promise<jobOutput
   const fd = new FormData();
   fd.append('job_code', formData.job_code);
   fd.append('project', formData.project);
-  fd.append('candidate_required', String(formData.candidate_required));
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
@@ -136,7 +120,6 @@ export async function createJobExtendedApi(formData: any): Promise<jobOutputMode
   const fd = new FormData();
   fd.append('job_code', formData.job_code);
   fd.append('project', formData.project);
-  fd.append('candidate_required', String(formData.candidate_required));
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
@@ -150,13 +133,13 @@ export async function createJobExtendedApi(formData: any): Promise<jobOutputMode
   if (formData.managers?.length) fd.append('managers', JSON.stringify(formData.managers));
   if (formData.employee_levels?.length) fd.append('employee_levels', JSON.stringify(formData.employee_levels));
 
-  if (formData.partnersName?.length) fd.append('partners_name', JSON.stringify(formData.partnersName));
-  if (formData.managersName?.length) fd.append('managers_name', JSON.stringify(formData.managersName));
-  if (formData.departmentsName?.length) fd.append('departments_name', JSON.stringify(formData.departmentsName));
-  if (formData.segmentsName?.length) fd.append('segments_name', JSON.stringify(formData.segmentsName));
-  if (formData.sitesName?.length) fd.append('sites_name', JSON.stringify(formData.sitesName));
-  if (formData.titlesName?.length) fd.append('titles_name', JSON.stringify(formData.titlesName));
-  if (formData.employeeLevelsName?.length) fd.append('employee_levels_name', JSON.stringify(formData.employeeLevelsName));
+  if (formData.partners_name?.length) fd.append('partners_name', JSON.stringify(formData.partners_name));
+  if (formData.managers_name?.length) fd.append('managers_name', JSON.stringify(formData.managers_name));
+  if (formData.departments_name?.length) fd.append('departments_name', JSON.stringify(formData.departments_name));
+  if (formData.segments_name?.length) fd.append('segments_name', JSON.stringify(formData.segments_name));
+  if (formData.sites_name?.length) fd.append('sites_name', JSON.stringify(formData.sites_name));
+  if (formData.titles_name?.length) fd.append('titles_name', JSON.stringify(formData.titles_name));
+  if (formData.employee_levels_name?.length) fd.append('employee_levels_name', JSON.stringify(formData.employee_levels_name));
 
   const response = await axiosInstance.post('/job/extended', fd);
   return response.data.data!;
