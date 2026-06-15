@@ -9,3 +9,12 @@ export type ChartDataPoint = {
   label: string;
   value: number;
 };
+
+/** Thông tin theo dõi headcount của từng Job */
+export type JobHCTracking = {
+  job_id: number;
+  job_title: string;
+  candidate_required: number;
+  closed_count: number;
+  open_count: number;
+};
