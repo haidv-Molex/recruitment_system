@@ -591,3 +591,4 @@ DashboardController.use("/my-chart", myChartController); // → GET /dashboard/m
 | Endpoint | Service | Mô tả |
 |---|---|---|
 | `GET /dashboard/hc-by-department` | `hcRequestedByDepartment` | Tổng HC yêu cầu theo phòng ban (bar chart) |
+| `GET /dashboard/hc-by-status-month` | `hcByStatusAndExpectedOnboardMonth` | Số lượng HC theo status và expected onboard month (lọc status bắt buộc) |
