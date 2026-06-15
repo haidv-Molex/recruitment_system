@@ -1,41 +1,44 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
 import { searchSegmentsApi, createSegmentApi, deleteSegmentApi, updateSegmentApi } from '../services/segmentApi';
-import SegmentTable from '../components/segment/SegmentTable';
 import SegmentForm from '../components/segment/SegmentForm';
-import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
 import Pagination from '../components/ui/Pagination';
 import Modal from '../components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
 import { useHeader } from '../contexts/HeaderContext';
-
-const ITEMS_PER_PAGE = 10;
 
 export const SegmentPage = () => {
   const { toasts, removeToast, toast } = useToast();
   const [segments, setSegments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState<any | null>(null);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
   const [editingSegment, setEditingSegment] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const loadSegments = useCallback(async (page: number, search: string) => {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  const loadSegments = useCallback(async (page: number, limit: number, search: string) => {
     setLoading(true);
     try {
       const result = await searchSegmentsApi({
         page,
-        limit: ITEMS_PER_PAGE,
+        limit,
         search,
       });
       setSegments(result.data || []);
-      setPagination(result.pagination || null);
+      setTotalItems(result.pagination?.total_items || result.data?.length || 0);
+      setCurrentPage(page);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to load segments.');
     } finally {
@@ -44,24 +47,16 @@ export const SegmentPage = () => {
   }, []);
 
   useEffect(() => {
-    loadSegments(currentPage, searchQuery);
-  }, [currentPage]);
+    loadSegments(1, pageSize, searchQuery);
+  }, []);
 
-  const handleSearch = () => {
-    setCurrentPage(1);
-    loadSegments(1, searchQuery);
+  const handlePageChange = (page: number) => {
+    loadSegments(page, pageSize, searchQuery);
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setCurrentPage(1);
-    loadSegments(1, '');
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    loadSegments(1, newSize, searchQuery);
   };
 
   const openCreateForm = () => {
@@ -106,7 +101,7 @@ export const SegmentPage = () => {
         );
         toast.success('Segment updated successfully.');
         closeForm();
-        loadSegments(currentPage, searchQuery);
+        loadSegments(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
@@ -119,7 +114,7 @@ export const SegmentPage = () => {
         );
         toast.success('Segment created successfully.');
         closeForm();
-        loadSegments(currentPage, searchQuery);
+        loadSegments(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
@@ -136,13 +131,11 @@ export const SegmentPage = () => {
     try {
       await deleteSegmentApi(seg.segment_id);
       toast.success('Segment deleted.');
-      loadSegments(currentPage, searchQuery);
+      loadSegments(currentPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
-
-  const totalPages = pagination?.total_pages || 1;
 
   const headerActions = useMemo(() => (
     <Button onClick={openCreateForm} icon={<Plus size={16} />}>
@@ -156,46 +149,94 @@ export const SegmentPage = () => {
     actions: headerActions,
   }, [headerActions]);
 
+  const columns = useMemo<ExcelColumn<any>[]>(
+    () => [
+      {
+        key: 'segment_code',
+        label: 'Code',
+        width: 120,
+        disableFilter: true,
+        render: (_: any, val: any) => (
+          <span className="font-mono text-xs font-bold uppercase tracking-wide text-emerald-700">
+            {val || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'segment_name',
+        label: 'Segment Name',
+        width: 250,
+        disableFilter: true,
+      },
+      {
+        key: 'segment_description',
+        label: 'Description',
+        width: 450,
+        disableFilter: true,
+        render: (_: any, val: any) => val || '—',
+      },
+    ],
+    []
+  );
+
+  const tableActions = [
+    {
+      label: 'Edit',
+      icon: <Edit2 size={14} />,
+      onClick: (row: any) => {
+        openEditForm(row);
+      },
+    },
+    {
+      label: 'Delete',
+      icon: <Trash2 size={14} className="text-red-500" />,
+      onClick: (row: any) => {
+        handleDelete(row);
+      },
+    },
+  ];
+
+  // Map rows for ExcelTable
+  const tableRows = useMemo(() => {
+    return segments.map((s) => ({
+      id: s.segment_id,
+      segment_id: s.segment_id,
+      segment_code: s.segment_code,
+      segment_name: s.segment_name,
+      segment_description: s.segment_description,
+    }));
+  }, [segments]);
+
+  const handleExcelSearch = (_colFilters: Record<string, string>, globalSearch: string) => {
+    setSearchQuery(globalSearch);
+    loadSegments(1, pageSize, globalSearch);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Toast notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex flex-col sm:flex-row gap-3 items-end">
-        <div className="flex-1 w-full">
-          <InputField
-            label="Search Segments"
-            placeholder="Search by name or code..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-          />
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="secondary" onClick={handleClearSearch} className="w-full sm:w-auto">
-            Clear
-          </Button>
-          <Button onClick={handleSearch} icon={<Search size={16} />} className="w-full sm:w-auto">
-            Search
-          </Button>
-        </div>
-      </div>
-
       {/* Table */}
-      <SegmentTable
-        segments={segments}
-        onEdit={openEditForm}
-        onDelete={handleDelete}
-        loading={loading}
+      <ExcelTable
+        title="Segment Records"
+        rows={tableRows}
+        columns={columns}
+        actions={tableActions}
+        isLoading={loading}
+        onSearch={handleExcelSearch}
+        emptyMessage="No segments found"
       />
 
       {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={pagination?.total_items || segments.length}
-        onPageChange={setCurrentPage}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
         itemLabel="segments"
+        pageSize={pageSize}
+        onPageSizeChange={handlePageSizeChange}
       />
 
       {/* Modal Form */}

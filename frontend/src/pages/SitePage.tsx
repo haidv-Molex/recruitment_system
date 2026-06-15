@@ -1,41 +1,44 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
 import { searchSitesApi, createSiteApi, deleteSiteApi, updateSiteApi } from '../services/siteApi';
-import SiteTable from '../components/site/SiteTable';
 import SiteForm from '../components/site/SiteForm';
-import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
 import Pagination from '../components/ui/Pagination';
 import Modal from '../components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
 import { useHeader } from '../contexts/HeaderContext';
-
-const ITEMS_PER_PAGE = 10;
 
 export const SitePage = () => {
   const { toasts, removeToast, toast } = useToast();
   const [sites, setSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState<any | null>(null);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
   const [editingSite, setEditingSite] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const loadSites = useCallback(async (page: number, search: string) => {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  const loadSites = useCallback(async (page: number, limit: number, search: string) => {
     setLoading(true);
     try {
       const result = await searchSitesApi({
         page,
-        limit: ITEMS_PER_PAGE,
+        limit,
         search,
       });
       setSites(result.data || []);
-      setPagination(result.pagination || null);
+      setTotalItems(result.pagination?.total_items || result.data?.length || 0);
+      setCurrentPage(page);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Failed to load sites.');
     } finally {
@@ -44,24 +47,16 @@ export const SitePage = () => {
   }, []);
 
   useEffect(() => {
-    loadSites(currentPage, searchQuery);
-  }, [currentPage]);
+    loadSites(1, pageSize, searchQuery);
+  }, []);
 
-  const handleSearch = () => {
-    setCurrentPage(1);
-    loadSites(1, searchQuery);
+  const handlePageChange = (page: number) => {
+    loadSites(page, pageSize, searchQuery);
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setCurrentPage(1);
-    loadSites(1, '');
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    loadSites(1, newSize, searchQuery);
   };
 
   const openCreateForm = () => {
@@ -106,7 +101,7 @@ export const SitePage = () => {
         );
         toast.success('Site updated successfully.');
         closeForm();
-        loadSites(currentPage, searchQuery);
+        loadSites(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Update failed.');
       }
@@ -119,7 +114,7 @@ export const SitePage = () => {
         );
         toast.success('Site created successfully.');
         closeForm();
-        loadSites(currentPage, searchQuery);
+        loadSites(currentPage, pageSize, searchQuery);
       } catch (err: any) {
         toast.error(err.response?.data?.message || err.message || 'Create failed.');
       }
@@ -136,13 +131,11 @@ export const SitePage = () => {
     try {
       await deleteSiteApi(site.site_id);
       toast.success('Site deleted.');
-      loadSites(currentPage, searchQuery);
+      loadSites(currentPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
-
-  const totalPages = pagination?.total_pages || 1;
 
   const headerActions = useMemo(() => (
     <Button onClick={openCreateForm} icon={<Plus size={16} />}>
@@ -156,46 +149,94 @@ export const SitePage = () => {
     actions: headerActions,
   }, [headerActions]);
 
+  const columns = useMemo<ExcelColumn<any>[]>(
+    () => [
+      {
+        key: 'site_code',
+        label: 'Code',
+        width: 120,
+        disableFilter: true,
+        render: (_: any, val: any) => (
+          <span className="font-mono text-xs font-bold uppercase tracking-wide text-emerald-700">
+            {val || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'site_name',
+        label: 'Site Name',
+        width: 250,
+        disableFilter: true,
+      },
+      {
+        key: 'site_description',
+        label: 'Description',
+        width: 450,
+        disableFilter: true,
+        render: (_: any, val: any) => val || '—',
+      },
+    ],
+    []
+  );
+
+  const tableActions = [
+    {
+      label: 'Edit',
+      icon: <Edit2 size={14} />,
+      onClick: (row: any) => {
+        openEditForm(row);
+      },
+    },
+    {
+      label: 'Delete',
+      icon: <Trash2 size={14} className="text-red-500" />,
+      onClick: (row: any) => {
+        handleDelete(row);
+      },
+    },
+  ];
+
+  // Map rows for ExcelTable
+  const tableRows = useMemo(() => {
+    return sites.map((s) => ({
+      id: s.site_id,
+      site_id: s.site_id,
+      site_code: s.site_code,
+      site_name: s.site_name,
+      site_description: s.site_description,
+    }));
+  }, [sites]);
+
+  const handleExcelSearch = (_colFilters: Record<string, string>, globalSearch: string) => {
+    setSearchQuery(globalSearch);
+    loadSites(1, pageSize, globalSearch);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Toast notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex flex-col sm:flex-row gap-3 items-end">
-        <div className="flex-1 w-full">
-          <InputField
-            label="Search Sites"
-            placeholder="Search by name or code..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-          />
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="secondary" onClick={handleClearSearch} className="w-full sm:w-auto">
-            Clear
-          </Button>
-          <Button onClick={handleSearch} icon={<Search size={16} />} className="w-full sm:w-auto">
-            Search
-          </Button>
-        </div>
-      </div>
-
       {/* Table */}
-      <SiteTable
-        sites={sites}
-        onEdit={openEditForm}
-        onDelete={handleDelete}
-        loading={loading}
+      <ExcelTable
+        title="Site Records"
+        rows={tableRows}
+        columns={columns}
+        actions={tableActions}
+        isLoading={loading}
+        onSearch={handleExcelSearch}
+        emptyMessage="No sites found"
       />
 
       {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={pagination?.total_items || sites.length}
-        onPageChange={setCurrentPage}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
         itemLabel="sites"
+        pageSize={pageSize}
+        onPageSizeChange={handlePageSizeChange}
       />
 
       {/* Modal Form */}
