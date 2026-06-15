@@ -48,6 +48,12 @@ export async function updateCompanyApi(id: number, name: string, description: st
   return response.data.data!;
 }
 
-export async function deleteCompanyApi(id: number): Promise<void> {
-  await axiosInstance.delete('/company', { params: { id } });
+export async function deleteCompanyApi(idOrIds: number | number[]): Promise<void> {
+  const params: Record<string, any> = {};
+  if (Array.isArray(idOrIds)) {
+    params.ids = idOrIds.join(',');
+  } else {
+    params.id = idOrIds;
+  }
+  await axiosInstance.delete('/company', { params });
 }

@@ -233,6 +233,6 @@ describe("LevelController API", () => {
         message: "Xóa cấp bậc thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
   });
 });

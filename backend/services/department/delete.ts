@@ -2,11 +2,14 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 
 async function deleteDepartment(
-  id: number,
+  idOrIds: number | number[],
   pool: PoolClient
 ): Promise<void> {
-  const checkQuery = `SELECT department_id FROM department WHERE department_id = $1`;
-  const checkResult = await pool.query(checkQuery, [id]);
+  const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+  if (ids.length === 0) return;
+
+  const checkQuery = `SELECT department_id FROM department WHERE department_id = ANY($1::int[])`;
+  const checkResult = await pool.query(checkQuery, [ids]);
   if (checkResult.rows.length === 0) {
     throw new AppError("Không tìm thấy phòng ban để xóa", 404);
   }
@@ -16,9 +19,9 @@ async function deleteDepartment(
   // Letting the query fail is standard and secure.
   const query = `
     DELETE FROM department
-    WHERE department_id = $1
+    WHERE department_id = ANY($1::int[])
   `;
-  await pool.query(query, [id]);
+  await pool.query(query, [ids]);
 }
 
 export default deleteDepartment;

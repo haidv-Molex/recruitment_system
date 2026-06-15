@@ -123,15 +123,20 @@ export const SitePage = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (site: any) => {
-    if (!confirm(`Are you sure you want to delete "${site.site_name}"?`)) {
+  const handleDelete = async (idOrIds: number | number[], message: string) => {
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      await deleteSiteApi(site.site_id);
-      toast.success('Site deleted.');
-      loadSites(currentPage, pageSize, searchQuery);
+      await deleteSiteApi(idOrIds);
+      const isArray = Array.isArray(idOrIds);
+      const count = isArray ? idOrIds.length : 1;
+      toast.success(count === 1 ? 'Site deleted.' : `Successfully deleted ${count} sites.`);
+      const newTotal = totalItems - count;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      loadSites(targetPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
@@ -191,7 +196,13 @@ export const SitePage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row);
+        handleDelete(row.site_id, `Bạn có chắc chắn muốn xóa địa điểm "${row.site_name}" không?`);
+      },
+      onBulkClick: (selectedRows: any[]) => {
+        handleDelete(
+          selectedRows.map((r) => r.site_id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} địa điểm đã chọn không?`
+        );
       },
     },
   ];

@@ -48,6 +48,12 @@ export async function updatePlatformApi(id: number, name: string, description: s
   return response.data.data!;
 }
 
-export async function deletePlatformApi(id: number): Promise<void> {
-  await axiosInstance.delete('/platform', { params: { id } });
+export async function deletePlatformApi(idOrIds: number | number[]): Promise<void> {
+  const params: Record<string, any> = {};
+  if (Array.isArray(idOrIds)) {
+    params.ids = idOrIds.join(',');
+  } else {
+    params.id = idOrIds;
+  }
+  await axiosInstance.delete('/platform', { params });
 }

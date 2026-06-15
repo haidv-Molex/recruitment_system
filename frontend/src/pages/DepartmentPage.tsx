@@ -123,15 +123,20 @@ export const DepartmentPage = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (dept: any) => {
-    if (!confirm(`Are you sure you want to delete "${dept.department_name}"?`)) {
+  const handleDelete = async (idOrIds: number | number[], message: string) => {
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      await deleteDepartmentApi(dept.department_id);
-      toast.success('Department deleted.');
-      loadDepartments(currentPage, pageSize, searchQuery);
+      await deleteDepartmentApi(idOrIds);
+      const isArray = Array.isArray(idOrIds);
+      const count = isArray ? idOrIds.length : 1;
+      toast.success(count === 1 ? 'Department deleted.' : `Successfully deleted ${count} departments.`);
+      const newTotal = totalItems - count;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      loadDepartments(targetPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
@@ -191,7 +196,13 @@ export const DepartmentPage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row);
+        handleDelete(row.department_id, `Bạn có chắc chắn muốn xóa phòng ban "${row.department_name}" không?`);
+      },
+      onBulkClick: (selectedRows: any[]) => {
+        handleDelete(
+          selectedRows.map((r) => r.department_id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} phòng ban đã chọn không?`
+        );
       },
     },
   ];

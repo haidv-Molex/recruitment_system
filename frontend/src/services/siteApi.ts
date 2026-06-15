@@ -55,6 +55,12 @@ export async function updateSiteApi(
   return response.data.data!;
 }
 
-export async function deleteSiteApi(id: number): Promise<void> {
-  await axiosInstance.delete('/site', { params: { id } });
+export async function deleteSiteApi(idOrIds: number | number[]): Promise<void> {
+  const params: Record<string, any> = {};
+  if (Array.isArray(idOrIds)) {
+    params.ids = idOrIds.join(',');
+  } else {
+    params.id = idOrIds;
+  }
+  await axiosInstance.delete('/site', { params });
 }

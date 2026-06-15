@@ -55,6 +55,12 @@ export async function updateDepartmentApi(
   return response.data.data!;
 }
 
-export async function deleteDepartmentApi(id: number): Promise<void> {
-  await axiosInstance.delete('/department', { params: { id } });
+export async function deleteDepartmentApi(idOrIds: number | number[]): Promise<void> {
+  const params: Record<string, any> = {};
+  if (Array.isArray(idOrIds)) {
+    params.ids = idOrIds.join(',');
+  } else {
+    params.id = idOrIds;
+  }
+  await axiosInstance.delete('/department', { params });
 }

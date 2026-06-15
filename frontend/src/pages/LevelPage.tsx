@@ -123,15 +123,20 @@ export const LevelPage = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (lvl: any) => {
-    if (!confirm(`Are you sure you want to delete "${lvl.level_name}"?`)) {
+  const handleDelete = async (idOrIds: number | number[], message: string) => {
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      await deleteLevelApi(lvl.level_id);
-      toast.success('Level deleted.');
-      loadLevels(currentPage, pageSize, searchQuery);
+      await deleteLevelApi(idOrIds);
+      const isArray = Array.isArray(idOrIds);
+      const count = isArray ? idOrIds.length : 1;
+      toast.success(count === 1 ? 'Level deleted.' : `Successfully deleted ${count} levels.`);
+      const newTotal = totalItems - count;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      loadLevels(targetPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
@@ -191,7 +196,13 @@ export const LevelPage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row);
+        handleDelete(row.level_id, `Bạn có chắc chắn muốn xóa level "${row.level_name}" không?`);
+      },
+      onBulkClick: (selectedRows: any[]) => {
+        handleDelete(
+          selectedRows.map((r) => r.level_id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} level đã chọn không?`
+        );
       },
     },
   ];

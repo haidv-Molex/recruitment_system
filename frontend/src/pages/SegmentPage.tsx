@@ -123,15 +123,20 @@ export const SegmentPage = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (seg: any) => {
-    if (!confirm(`Are you sure you want to delete "${seg.segment_name}"?`)) {
+  const handleDelete = async (idOrIds: number | number[], message: string) => {
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      await deleteSegmentApi(seg.segment_id);
-      toast.success('Segment deleted.');
-      loadSegments(currentPage, pageSize, searchQuery);
+      await deleteSegmentApi(idOrIds);
+      const isArray = Array.isArray(idOrIds);
+      const count = isArray ? idOrIds.length : 1;
+      toast.success(count === 1 ? 'Segment deleted.' : `Successfully deleted ${count} segments.`);
+      const newTotal = totalItems - count;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      loadSegments(targetPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
@@ -191,7 +196,13 @@ export const SegmentPage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row);
+        handleDelete(row.segment_id, `Bạn có chắc chắn muốn xóa phân khúc "${row.segment_name}" không?`);
+      },
+      onBulkClick: (selectedRows: any[]) => {
+        handleDelete(
+          selectedRows.map((r) => r.segment_id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} phân khúc đã chọn không?`
+        );
       },
     },
   ];

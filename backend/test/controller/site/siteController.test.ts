@@ -233,6 +233,6 @@ describe("SiteController API", () => {
         message: "Xóa địa điểm thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
   });
 });

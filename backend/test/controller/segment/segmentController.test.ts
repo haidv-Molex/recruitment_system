@@ -233,6 +233,6 @@ describe("SegmentController API", () => {
         message: "Xóa phân khúc thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
   });
 });

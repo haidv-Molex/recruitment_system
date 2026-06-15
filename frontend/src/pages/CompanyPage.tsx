@@ -117,15 +117,20 @@ export const CompanyPage = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (company: any) => {
-    if (!confirm(`Are you sure you want to delete "${company.company_name}"?`)) {
+  const handleDelete = async (idOrIds: number | number[], message: string) => {
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      await deleteCompanyApi(company.company_id);
-      toast.success('Company deleted.');
-      loadCompanies(currentPage, pageSize, searchQuery);
+      await deleteCompanyApi(idOrIds);
+      const isArray = Array.isArray(idOrIds);
+      const count = isArray ? idOrIds.length : 1;
+      toast.success(count === 1 ? 'Company deleted.' : `Successfully deleted ${count} companies.`);
+      const newTotal = totalItems - count;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      loadCompanies(targetPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
@@ -174,7 +179,13 @@ export const CompanyPage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row);
+        handleDelete(row.company_id, `Bạn có chắc chắn muốn xóa công ty "${row.company_name}" không?`);
+      },
+      onBulkClick: (selectedRows: any[]) => {
+        handleDelete(
+          selectedRows.map((r) => r.company_id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} công ty đã chọn không?`
+        );
       },
     },
   ];

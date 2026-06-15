@@ -55,6 +55,12 @@ export async function updateLevelApi(
   return response.data.data!;
 }
 
-export async function deleteLevelApi(id: number): Promise<void> {
-  await axiosInstance.delete('/level', { params: { id } });
+export async function deleteLevelApi(idOrIds: number | number[]): Promise<void> {
+  const params: Record<string, any> = {};
+  if (Array.isArray(idOrIds)) {
+    params.ids = idOrIds.join(',');
+  } else {
+    params.id = idOrIds;
+  }
+  await axiosInstance.delete('/level', { params });
 }

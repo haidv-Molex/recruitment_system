@@ -233,6 +233,6 @@ describe("DepartmentController API", () => {
         message: "Xóa phòng ban thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
   });
 });

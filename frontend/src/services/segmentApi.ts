@@ -55,6 +55,12 @@ export async function updateSegmentApi(
   return response.data.data!;
 }
 
-export async function deleteSegmentApi(id: number): Promise<void> {
-  await axiosInstance.delete('/segment', { params: { id } });
+export async function deleteSegmentApi(idOrIds: number | number[]): Promise<void> {
+  const params: Record<string, any> = {};
+  if (Array.isArray(idOrIds)) {
+    params.ids = idOrIds.join(',');
+  } else {
+    params.id = idOrIds;
+  }
+  await axiosInstance.delete('/segment', { params });
 }

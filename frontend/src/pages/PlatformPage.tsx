@@ -117,15 +117,20 @@ export const PlatformPage = () => {
     setSaving(false);
   };
 
-  const handleDelete = async (platform: any) => {
-    if (!confirm(`Are you sure you want to delete "${platform.platform_name}"?`)) {
+  const handleDelete = async (idOrIds: number | number[], message: string) => {
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      await deletePlatformApi(platform.platform_id);
-      toast.success('Platform deleted.');
-      loadPlatforms(currentPage, pageSize, searchQuery);
+      await deletePlatformApi(idOrIds);
+      const isArray = Array.isArray(idOrIds);
+      const count = isArray ? idOrIds.length : 1;
+      toast.success(count === 1 ? 'Platform deleted.' : `Successfully deleted ${count} platforms.`);
+      const newTotal = totalItems - count;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      loadPlatforms(targetPage, pageSize, searchQuery);
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
@@ -174,7 +179,13 @@ export const PlatformPage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row);
+        handleDelete(row.platform_id, `Bạn có chắc chắn muốn xóa kênh tuyển dụng "${row.platform_name}" không?`);
+      },
+      onBulkClick: (selectedRows: any[]) => {
+        handleDelete(
+          selectedRows.map((r) => r.platform_id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} kênh tuyển dụng đã chọn không?`
+        );
       },
     },
   ];
