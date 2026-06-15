@@ -9,8 +9,10 @@ import Pagination from '@/components/ui/Pagination';
 import Modal from '@/components/ui/Modal';
 import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
 import { useHeader } from '@/contexts/HeaderContext';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 export const SegmentPage = () => {
+  const confirm = useConfirm();
   const { toasts, removeToast, toast } = useToast();
   const [segments, setSegments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,8 @@ export const SegmentPage = () => {
   };
 
   const handleDelete = async (idOrIds: number | number[], message: string) => {
-    if (!confirm(message)) {
+    const isConfirmed = await confirm(message);
+    if (!isConfirmed) {
       return;
     }
 
@@ -196,7 +199,7 @@ export const SegmentPage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row.segment_id, `Bạn có chắc chắn muốn xóa phân khúc "${row.segment_name}" không?`);
+        handleDelete(row.segment_id, `Bạn có chắc chắn muốn xóa 1 phân khúc không?`);
       },
       onBulkClick: (selectedRows: any[]) => {
         handleDelete(

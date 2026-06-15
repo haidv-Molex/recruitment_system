@@ -16,6 +16,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { mockCandidates, mockJobs } from './services/mockData';
 import { HeaderProvider } from './contexts/HeaderContext';
+import { ConfirmProvider } from '@/components/ui/ConfirmModal';
 import './styles/index.css';
 
 function App() {
@@ -23,48 +24,50 @@ function App() {
   const [candidates, setCandidates] = useState(mockCandidates);
 
   return (
-    <AuthProvider>
-      <HeaderProvider>
-        <Router>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
+    <ConfirmProvider>
+      <AuthProvider>
+        <HeaderProvider>
+          <Router>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
 
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<JobTrackingPage jobs={jobs} setJobs={setJobs} candidates={candidates} />} />
-                    <Route path="/candidates" element={<CandidateDatabasePage candidates={candidates} setCandidates={setCandidates} jobs={jobs} />} />
-                    <Route path="/companies" element={<CompanyPage />} />
-                    <Route path="/departments" element={<DepartmentPage />} />
-                    <Route path="/platforms" element={<PlatformPage />} />
-                    <Route path="/segments" element={<SegmentPage />} />
-                    <Route path="/sites" element={<SitePage />} />
-                    <Route path="/levels" element={<LevelPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<JobTrackingPage jobs={jobs} setJobs={setJobs} candidates={candidates} />} />
+                      <Route path="/candidates" element={<CandidateDatabasePage candidates={candidates} setCandidates={setCandidates} jobs={jobs} />} />
+                      <Route path="/companies" element={<CompanyPage />} />
+                      <Route path="/departments" element={<DepartmentPage />} />
+                      <Route path="/platforms" element={<PlatformPage />} />
+                      <Route path="/segments" element={<SegmentPage />} />
+                      <Route path="/sites" element={<SitePage />} />
+                      <Route path="/levels" element={<LevelPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
 
-                    {/* Admin route: requires admin role to access */}
-                    <Route
-                      path="/admin"
-                      element={
-                        <ProtectedRoute requireAdmin>
-                          <AdminPage />
-                        </ProtectedRoute>
-                      }
-                    />
+                      {/* Admin route: requires admin role to access */}
+                      <Route
+                        path="/admin"
+                        element={
+                          <ProtectedRoute requireAdmin>
+                            <AdminPage />
+                          </ProtectedRoute>
+                        }
+                      />
 
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
-      </HeaderProvider>
-    </AuthProvider>
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Router>
+        </HeaderProvider>
+      </AuthProvider>
+    </ConfirmProvider>
   );
 }
 

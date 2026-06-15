@@ -22,6 +22,7 @@ import { useHeader } from '@/contexts/HeaderContext';
 import DatabaseFilters from '@/components/candidate-database/DatabaseFilters';
 import { useItem, setItem } from '@/config/zustandStore';
 import { FileUp, Download, Plus, Upload, Edit2, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
@@ -70,6 +71,7 @@ export const CandidateDatabasePage = ({
   setCandidates,
   jobs,
 }: CandidateDatabasePageProps) => {
+  const confirm = useConfirm();
   const { toasts, removeToast, toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<any | null>(null);
@@ -193,12 +195,12 @@ export const CandidateDatabasePage = ({
 
   const handleDeleteCandidates = async (selectedCandidates: any[]) => {
     if (selectedCandidates.length === 0) return;
-    const names = selectedCandidates.map(c => c.name).join(', ');
     const msg = selectedCandidates.length === 1
-      ? `Bạn có chắc chắn muốn xóa ứng viên ${selectedCandidates[0].name} không? Hành động này không thể hoàn tác.`
-      : `Bạn có chắc chắn muốn xóa ${selectedCandidates.length} ứng viên (${names}) đã chọn không? Hành động này không thể hoàn tác.`;
+      ? `Bạn có chắc chắn muốn xóa 1 ứng viên không? Hành động này không thể hoàn tác.`
+      : `Bạn có chắc chắn muốn xóa ${selectedCandidates.length} ứng viên đã chọn không? Hành động này không thể hoàn tác.`;
 
-    if (!confirm(msg)) return;
+    const isConfirmed = await confirm(msg);
+    if (!isConfirmed) return;
 
     try {
       const ids = selectedCandidates.map(c => c.id);

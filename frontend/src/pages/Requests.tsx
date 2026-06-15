@@ -5,8 +5,10 @@ import RequestsTable from '../components/requests/RequestsTable';
 import SelectField from '../components/common/SelectField';
 import Button from '../components/common/Button';
 import { useHeader } from '../contexts/HeaderContext';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 export const RequestsPage = () => {
+  const confirm = useConfirm();
   const [requests, setRequests] = useState<any[]>(mockRequests);
   const [filterStatus, setFilterStatus] = useState('');
 
@@ -14,8 +16,9 @@ export const RequestsPage = () => {
     ? requests.filter((r) => r.status === filterStatus)
     : requests;
 
-  const handleDelete = (id: string | number) => {
-    if (confirm('Are you sure you want to delete this request?')) {
+  const handleDelete = async (id: string | number) => {
+    const isConfirmed = await confirm('Bạn có chắc chắn muốn xóa 1 yêu cầu không?');
+    if (isConfirmed) {
       setRequests(requests.filter((r) => r.id !== id));
     }
   };

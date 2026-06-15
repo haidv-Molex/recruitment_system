@@ -142,3 +142,63 @@ export default function ConfirmModal({
     </div>
   );
 }
+
+export interface ConfirmOptions {
+  title?: string;
+  message: React.ReactNode;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: 'danger' | 'warning' | 'info';
+}
+
+const ConfirmContext = React.createContext<(options: ConfirmOptions | string) => Promise<boolean>>(() => Promise.resolve(false));
+
+export const useConfirm = () => React.useContext(ConfirmContext);
+
+export const ConfirmProvider = ({ children }: { children: React.ReactNode }) => {
+  const [state, setState] = React.useState<{
+    isOpen: boolean;
+    options: ConfirmOptions;
+    resolve: (value: boolean) => void;
+  } | null>(null);
+
+  const confirm = (options: ConfirmOptions | string) => {
+    return new Promise<boolean>((resolve) => {
+      const parsedOptions = typeof options === 'string' ? { message: options } : options;
+      setState({
+        isOpen: true,
+        options: parsedOptions,
+        resolve,
+      });
+    });
+  };
+
+  const handleConfirm = () => {
+    state?.resolve(true);
+    setState(null);
+  };
+
+  const handleCancel = () => {
+    state?.resolve(false);
+    setState(null);
+  };
+
+  return (
+    <ConfirmContext.Provider value={confirm}>
+      {children}
+      {state && (
+        <ConfirmModal
+          isOpen={state.isOpen}
+          title={state.options.title || 'Xác nhận xóa'}
+          message={state.options.message}
+          confirmLabel={state.options.confirmLabel || 'Xóa'}
+          cancelLabel={state.options.cancelLabel || 'Hủy'}
+          variant={state.options.variant || 'danger'}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
+      )}
+    </ConfirmContext.Provider>
+  );
+};
+

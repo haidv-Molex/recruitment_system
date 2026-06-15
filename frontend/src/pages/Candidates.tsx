@@ -7,8 +7,10 @@ import SelectField from '../components/common/SelectField';
 import Button from '../components/common/Button';
 import { Plus } from 'lucide-react';
 import { useHeader } from '../contexts/HeaderContext';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 export const CandidatesPage = () => {
+  const confirm = useConfirm();
   const [candidates, setCandidates] = useState<any[]>(mockCandidates);
   const [filteredCandidates, setFilteredCandidates] = useState<any[]>(mockCandidates);
   const [showForm, setShowForm] = useState(false);
@@ -80,8 +82,9 @@ export const CandidatesPage = () => {
     }
   };
 
-  const handleDeleteCandidate = (id: string | number) => {
-    if (confirm('Are you sure you want to delete this candidate?')) {
+  const handleDeleteCandidate = async (id: string | number) => {
+    const isConfirmed = await confirm('Bạn có chắc chắn muốn xóa 1 ứng viên không?');
+    if (isConfirmed) {
       setCandidates(candidates.filter((c) => c.id !== id));
     }
   };

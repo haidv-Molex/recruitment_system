@@ -9,8 +9,10 @@ import Pagination from '@/components/ui/Pagination';
 import Modal from '@/components/ui/Modal';
 import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
 import { useHeader } from '@/contexts/HeaderContext';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 export const DepartmentPage = () => {
+  const confirm = useConfirm();
   const { toasts, removeToast, toast } = useToast();
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,8 @@ export const DepartmentPage = () => {
   };
 
   const handleDelete = async (idOrIds: number | number[], message: string) => {
-    if (!confirm(message)) {
+    const isConfirmed = await confirm(message);
+    if (!isConfirmed) {
       return;
     }
 
@@ -196,7 +199,7 @@ export const DepartmentPage = () => {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (row: any) => {
-        handleDelete(row.department_id, `Bạn có chắc chắn muốn xóa phòng ban "${row.department_name}" không?`);
+        handleDelete(row.department_id, `Bạn có chắc chắn muốn xóa 1 phòng ban không?`);
       },
       onBulkClick: (selectedRows: any[]) => {
         handleDelete(

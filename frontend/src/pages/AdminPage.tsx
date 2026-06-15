@@ -9,6 +9,7 @@ import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
 import { useHeader } from '@/contexts/HeaderContext';
 import { useAuth } from '@/contexts/AuthContext';
 import UserForm from '@/components/common/UserForm';
+import { useConfirm } from '@/components/ui/ConfirmModal';
 
 
 const roleColors: Record<string, string> = {
@@ -24,6 +25,7 @@ const getRoleIcon = (role: string) => {
 };
 
 export const AdminPage = () => {
+  const confirm = useConfirm();
   const { user: currentUser } = useAuth();
   const { toasts, removeToast, toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
@@ -118,7 +120,8 @@ export const AdminPage = () => {
   };
 
   const handleDeleteUser = async (idOrIds: number | number[], message: string) => {
-    if (!confirm(message)) return;
+    const isConfirmed = await confirm(message);
+    if (!isConfirmed) return;
 
     const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
 
@@ -231,7 +234,7 @@ export const AdminPage = () => {
       onClick: (row: any) => {
         handleDeleteUser(
           row.user_id,
-          `Bạn có chắc chắn muốn xóa tài khoản "${row.user_name}"?`
+          `Bạn có chắc chắn muốn xóa 1 tài khoản không?`
         );
       },
       onBulkClick: (selectedRows: any[]) => {
