@@ -592,3 +592,4 @@ DashboardController.use("/my-chart", myChartController); // → GET /dashboard/m
 |---|---|---|
 | `GET /dashboard/hc-by-department` | `hcRequestedByDepartment` | Tổng HC yêu cầu theo phòng ban (bar chart) |
 | `GET /dashboard/hc-by-status-month` | `hcByStatusAndExpectedOnboardMonth` | Số lượng HC theo status và expected onboard month (lọc status bắt buộc) |
+| `GET /dashboard/hc-by-recruiter` | `hcByRecruiter` | Số lượng candidate tuyển được theo từng recruiter (lọc job_id, department_id tùy chọn) |
