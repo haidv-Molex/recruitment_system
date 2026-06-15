@@ -75,7 +75,6 @@ src/
 │   │   ├── Button.tsx
 │   │   ├── InputField.tsx
 │   │   ├── SelectField.tsx
-│   │   ├── StatCard.tsx
 │   │   ├── Toast.tsx
 │   │   ├── Layout.tsx             # Sidebar + Header
 │   │   ├── ProtectedRoute.tsx     # Route guard phân quyền
@@ -111,7 +110,6 @@ src/
 │
 ├── pages/
 │   ├── LoginPage.tsx
-│   ├── Dashboard.tsx              # Tổng quan KPI & ứng viên gần đây
 │   ├── JobTracking.tsx            # Theo dõi yêu cầu tuyển dụng
 │   ├── CandidateDatabase.tsx      # Cơ sở dữ liệu ứng viên
 │   ├── CompanyPage.tsx
@@ -134,8 +132,7 @@ src/
 | Path | Trang | Quyền |
 |---|---|---|
 | `/login` | LoginPage | Public |
-| `/` | Dashboard | Đã đăng nhập |
-| `/jobs` | JobTrackingPage | Đã đăng nhập |
+| `/` | JobTrackingPage | Đã đăng nhập |
 | `/candidates` | CandidateDatabasePage | Đã đăng nhập |
 | `/companies` | CompanyPage | Đã đăng nhập |
 | `/departments` | DepartmentPage | Đã đăng nhập |

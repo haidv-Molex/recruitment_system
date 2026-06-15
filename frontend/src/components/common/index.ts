@@ -20,8 +20,6 @@ export * from './Layout';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export * from './ProtectedRoute';
 
-export * from './StatCard';
-
 export { default as ToastContainer } from './Toast';
 export * from './Toast';
 

@@ -401,13 +401,6 @@ export const hasDuplicateCandidate = (candidate: Partial<MockCandidate>, candida
   });
 };
 
-export const mockDashboardStats = {
-  totalCandidates: 124,
-  totalRequests: 42,
-  openPositions: 15,
-  filledPositions: 27,
-};
-
 export const mockRequests = [
   {
     id: 1,

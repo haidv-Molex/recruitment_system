@@ -30,7 +30,6 @@ src/
 │   │   ├── Button.tsx         # Button dùng chung
 │   │   ├── InputField.tsx     # Input field dùng chung
 │   │   ├── SelectField.tsx    # Select field dùng chung
-│   │   ├── StatCard.tsx       # Card thống kê
 │   │   ├── Toast.tsx          # Toast notification
 │   │   ├── Layout.tsx         # Giao diện khung (Sidebar, Header)
 │   │   ├── ProtectedRoute.tsx # Route guard bảo vệ phân quyền
