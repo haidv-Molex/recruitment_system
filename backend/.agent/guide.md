@@ -43,7 +43,8 @@ recruitment_system/backend/
 │   ├── level/                  # APIs quản lý cấp bậc vị trí
 │   ├── platform/               # APIs quản lý nền tảng tuyển dụng
 │   ├── segment/                # APIs quản lý phân khúc/bộ phận tuyển dụng
-│   └── site/                   # APIs quản lý địa điểm làm việc (Site)
+│   ├── site/                   # APIs quản lý địa điểm làm việc (Site)
+│   └── dashboard/              # APIs Dashboard — chỉ dùng để trả dữ liệu chart
 │
 ├── services/                   # Tầng Business Logic (Không chứa Express request/response)
 │   ├── _ClassName.ts           # Facade class tổng hợp tất cả methods của domain (ví dụ: _User.ts)
@@ -56,7 +57,8 @@ recruitment_system/backend/
 │   ├── platform/               # Logic cho nền tảng
 │   ├── segment/                # Logic cho phân khúc
 │   ├── site/                   # Logic cho địa điểm
-│   └── user/                   # Logic quản lý tài khoản & phân quyền
+│   ├── user/                   # Logic quản lý tài khoản & phân quyền
+│   └── dashboard/              # Logic tổng hợp dữ liệu chart cho Dashboard
 │
 ├── model/                      # Định nghĩa TypeScript Types & SQL Schema files
 │   ├── candidate/              # Types & Schema cho ứng viên
@@ -101,7 +103,11 @@ recruitment_system/backend/
 │   └── validateEnv.ts          # Ràng buộc kiểm tra biến môi trường khi start
 │
 ├── types/
-│   └── express.d.ts            # Mở rộng Express.Request (req.user, req.file, req.io, v.v.)
+│   ├── express.d.ts            # Mở rộng Express.Request (req.user, req.file, req.io, v.v.)
+│   └── chart.d.ts              # Types dùng chung cho Dashboard APIs:
+│                               #   ChartDateRange { from, to }
+│                               #   ChartDataPoint { label, value }
+│                               #   ChartResponse  { title, from, to, total, data[] }
 │
 └── test/                       # Thư mục chứa các file kiểm thử tự động (Mocha + Chai)
 ```
@@ -490,3 +496,98 @@ AI Agent **bắt buộc** phải đọc tài liệu hướng dẫn viết test t
 - ❌ Không ép kiểu bằng `as Type` cho kết quả truy vấn từ DB → Dùng ánh xạ tường minh và `satisfies`.
 - ❌ Không trả về kiểu `userModel` (chứa password/account) ra client → Luôn dùng `userOutputModel`.
 - ❌ Không dùng `SELECT *` hoặc `RETURNING *` khi truy cập bảng `user` → Liệt kê chi tiết cột public.
+
+---
+
+## 12. Dashboard APIs — Quy tắc & Mẫu thiết kế
+
+### 12.1 Nguyên tắc chung
+
+- **Input bắt buộc**: Mọi Dashboard API đều nhận `from` và `to` (query string dạng ISO date `YYYY-MM-DD`) làm khoảng thời gian lọc dữ liệu.
+- **`from` & `to` là tuỳ chọn**: Nếu không truyền → không lọc theo ngày, trả toàn bộ dữ liệu. Nếu có → lọc theo khoảng thời gian đó.
+- **Output chuẩn**: Service trả về `ChartDataPoint[]` — **chỉ `{ label, value }`**. Không có `title`, `total`, `from`, `to` trong data. FE tự tính toán và render.
+- **Mount point**: Tất cả Dashboard API được mount tại `/dashboard` trong `index.ts`.
+- **Auth**: Tất cả Dashboard API đều yêu cầu JWT (`passport.authenticate('jwt', { session: false })`).
+
+### 12.2 Cấu trúc types (`types/chart.d.ts`)
+
+```typescript
+/** Khoảng thời gian đầu vào — cả hai đều optional. Không truyền = không lọc theo ngày */
+export type ChartDateRange = { from?: Date; to?: Date; };
+
+/** Dữ liệu chart — BE chỉ trả { label, value }[], FE tự tính total và render */
+export type ChartDataPoint = { label: string; value: number; };
+```
+
+> **Quy tắc:**
+> - Không thêm field `color`, `total`, `title`, `from`, `to` hay bất kỳ thông tin giao diện nào vào service.
+> - Không định nghĩa `ChartResponse` hay bất kỳ wrapper type nào — service luôn trả `ChartDataPoint[]` thẳng.
+
+### 12.3 Quy trình thêm Dashboard API mới
+
+**Bước 1 — Tạo service** tại `services/dashboard/<chartName>.ts`:
+```typescript
+import { PoolClient } from "pg";
+import type { ChartDateRange, ChartDataPoint } from "@type/chart.d";
+
+async function myChartService(range: ChartDateRange, pool: PoolClient): Promise<ChartDataPoint[]> {
+  const hasDateFilter = range.from !== undefined && range.to !== undefined;
+  const query = hasDateFilter
+    ? `SELECT ... AS label, ... AS value FROM ... WHERE date >= $1 AND date <= $2 ORDER BY value DESC`
+    : `SELECT ... AS label, ... AS value FROM ... ORDER BY value DESC`;
+  const params = hasDateFilter ? [range.from, range.to] : [];
+  const result = await pool.query(query, params);
+  return result.rows.map(row => ({ label: row.label as string, value: row.value as number }));
+}
+export default myChartService;
+```
+
+**Bước 2 — Đăng ký vào Facade** tại `services/dashboard/_Dashboard.ts`:
+```typescript
+import myChartService from "./myChartService";
+class Dashboard {
+  static hcRequestedByDepartment = hcRequestedByDepartment;
+  static myChart = myChartService; // ← thêm vào đây
+}
+export default Dashboard;
+```
+
+**Bước 3 — Tạo controller** tại `controller/dashboard/<chartName>Controller.ts`:
+```typescript
+import express from "express";
+import Joi from "joi";
+import joiValidate from "@middlewares/joiValidate";
+import passport from "@middlewares/passport";
+import Dashboard from "@services/dashboard/_Dashboard";
+import { withTransaction } from "@middlewares/withTransaction";
+
+const router = express.Router();
+const joiQuery = Joi.object({
+  from: Joi.date().iso().optional(),
+  to: Joi.date().iso().min(Joi.ref("from")).optional(),
+});
+
+router.get("",
+  passport.authenticate("jwt", { session: false }),
+  joiValidate(joiQuery, "query"),
+  async (req, res) => {
+    const from = req.query.from ? new Date(req.query.from as string) : undefined;
+    const to   = req.query.to   ? new Date(req.query.to   as string) : undefined;
+    const data = await withTransaction(pool => Dashboard.myChart({ from, to }, pool));
+    res.status(200).json({ result: true, message: "Thành công", data });
+  }
+);
+export default router;
+```
+
+**Bước 4 — Mount vào Facade Controller** tại `controller/dashboard/_DashboardController.ts`:
+```typescript
+import myChartController from "./myChartController";
+DashboardController.use("/my-chart", myChartController); // → GET /dashboard/my-chart
+```
+
+### 12.4 Danh sách Dashboard APIs hiện có
+
+| Endpoint | Service | Mô tả |
+|---|---|---|
+| `GET /dashboard/hc-by-department` | `hcRequestedByDepartment` | Tổng HC yêu cầu theo phòng ban (bar chart) |
