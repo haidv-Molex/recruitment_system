@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { Layout } from './components/Layout';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import Layout from '@/components/common/Layout';
 import { CandidateDatabasePage } from './pages/CandidateDatabase';
 import { JobTrackingPage } from './pages/JobTracking';
 import { JDLibraryPage } from './pages/JDLibraryPage';
