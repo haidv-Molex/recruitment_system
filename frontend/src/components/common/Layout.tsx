@@ -57,7 +57,6 @@ export default function Layout({ children }: LayoutProps) {
   const mainTabs = [
     { path: '/', label: 'Job Tracking', icon: Table2 },
     { path: '/candidates', label: 'Candidate Database', icon: Database },
-    { path: '/jd-library', label: 'JD Library', icon: FolderOpen },
   ];
 
   const configTabs = [

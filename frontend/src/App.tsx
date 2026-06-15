@@ -5,7 +5,6 @@ import ProtectedRoute from '@/components/common/ProtectedRoute';
 import Layout from '@/components/common/Layout';
 import { CandidateDatabasePage } from './pages/CandidateDatabase';
 import { JobTrackingPage } from './pages/JobTracking';
-import { JDLibraryPage } from './pages/JDLibraryPage';
 import { CompanyPage } from './pages/CompanyPage';
 import { DepartmentPage } from './pages/DepartmentPage';
 import { PlatformPage } from './pages/PlatformPage';
@@ -38,7 +37,6 @@ function App() {
                   <Routes>
                     <Route path="/" element={<JobTrackingPage jobs={jobs} setJobs={setJobs} candidates={candidates} />} />
                     <Route path="/candidates" element={<CandidateDatabasePage candidates={candidates} setCandidates={setCandidates} jobs={jobs} />} />
-                    <Route path="/jd-library" element={<JDLibraryPage jobs={jobs} />} />
                     <Route path="/companies" element={<CompanyPage />} />
                     <Route path="/departments" element={<DepartmentPage />} />
                     <Route path="/platforms" element={<PlatformPage />} />
