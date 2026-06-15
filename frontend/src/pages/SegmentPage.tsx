@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
-import { searchSegmentsApi, createSegmentApi, deleteSegmentApi, updateSegmentApi } from '../services/segmentApi';
-import SegmentForm from '../components/segment/SegmentForm';
-import Button from '../components/common/Button';
-import Pagination from '../components/ui/Pagination';
-import Modal from '../components/ui/Modal';
-import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
-import { useHeader } from '../contexts/HeaderContext';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
+import { searchSegmentsApi, createSegmentApi, deleteSegmentApi, updateSegmentApi } from '@/services/segmentApi';
+import MasterDataForm from '@/components/ui/MasterDataForm';
+import Button from '@/components/common/Button';
+import Pagination from '@/components/ui/Pagination';
+import Modal from '@/components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
+import { useHeader } from '@/contexts/HeaderContext';
 
 export const SegmentPage = () => {
   const { toasts, removeToast, toast } = useToast();
@@ -257,7 +257,10 @@ export const SegmentPage = () => {
           onClose={closeForm}
           title={editingSegment ? '✏️ Edit Segment' : '📊 Create Segment'}
         >
-          <SegmentForm
+          <MasterDataForm
+            entityLabel="Segment"
+            codeLabel="Segment Code"
+            codePlaceholder="e.g. S1, S2, Seg-A..."
             onSubmit={handleSubmit}
             onCancel={closeForm}
             initialData={

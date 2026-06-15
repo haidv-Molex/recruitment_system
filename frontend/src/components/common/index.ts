@@ -7,8 +7,7 @@ export * from './InputField';
 export { default as SelectField } from './SelectField';
 export * from './SelectField';
 
-export { default as ExcelTable } from './ExcelTable';
-export * from './ExcelTable';
+// ExcelTable thuộc về components/ui/ — import trực tiếp từ @/components/ui/ExcelTable
 
 export * from './FilePreview';
 

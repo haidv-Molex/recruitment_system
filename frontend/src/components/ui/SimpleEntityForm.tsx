@@ -1,22 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import InputField from '../common/InputField';
-import Button from '../common/Button';
+import InputField from '@/components/common/InputField';
+import Button from '@/components/common/Button';
 
-export interface PlatformFormProps {
-  onSubmit: (data: { name: string; description: string }) => void;
+export interface SimpleEntityFormData {
+  name: string;
+  description: string;
+}
+
+export interface SimpleEntityFormProps {
+  /** Tên thực thể, ví dụ: "Company", "Platform" */
+  entityLabel: string;
+  /** Placeholder tuỳ chỉnh cho trường name */
+  namePlaceholder?: string;
+  onSubmit: (data: SimpleEntityFormData) => void;
   onCancel: () => void;
-  initialData?: { name: string; description: string };
+  initialData?: SimpleEntityFormData;
   isLoading?: boolean;
   error?: string;
 }
 
-export default function PlatformForm({
+/**
+ * Form dùng chung cho entity có 2 trường: name + description (không có code).
+ * Dùng cho: Company, Platform.
+ */
+export default function SimpleEntityForm({
+  entityLabel,
+  namePlaceholder,
   onSubmit,
   onCancel,
   initialData,
   isLoading,
   error,
-}: PlatformFormProps) {
+}: SimpleEntityFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
@@ -35,6 +50,8 @@ export default function PlatformForm({
     onSubmit({ name, description });
   };
 
+  const resolvedNamePlaceholder = namePlaceholder ?? `Enter ${entityLabel.toLowerCase()} name...`;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
@@ -44,9 +61,9 @@ export default function PlatformForm({
       )}
 
       <InputField
-        label="Platform Name"
+        label={`${entityLabel} Name`}
         type="text"
-        placeholder="Enter recruitment channel (e.g. LinkedIn, JobStreet...)"
+        placeholder={resolvedNamePlaceholder}
         value={name}
         onChange={(e) => setName(e.target.value)}
         disabled={isLoading}
@@ -59,7 +76,7 @@ export default function PlatformForm({
           Description
         </label>
         <textarea
-          placeholder="Enter platform details (optional)..."
+          placeholder={`Enter ${entityLabel.toLowerCase()} description (optional)...`}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={isLoading}
@@ -73,7 +90,7 @@ export default function PlatformForm({
           Cancel
         </Button>
         <Button type="submit" isLoading={isLoading}>
-          {initialData ? 'Save Changes' : 'Create Platform'}
+          {initialData ? 'Save Changes' : `Create ${entityLabel}`}
         </Button>
       </div>
     </form>

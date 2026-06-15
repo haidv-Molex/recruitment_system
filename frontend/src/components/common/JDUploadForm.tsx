@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { Upload, FileText } from 'lucide-react';
-import { sitesList, fileToBase64 } from '../../services/jdData';
-import { masterData } from '../../services/mockData';
-import Modal from '../ui/Modal';
-import InputField from './InputField';
-import SelectField from './SelectField';
-import Button from './Button';
+import { sitesList, fileToBase64 } from '@/services/jdData';
+import { masterData } from '@/services/mockData';
+import Modal from '@/components/ui/Modal';
+import InputField from '@/components/common/InputField';
+import SelectField from '@/components/common/SelectField';
+import Button from '@/components/common/Button';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.doc'];
 

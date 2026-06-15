@@ -23,12 +23,31 @@
 
 ```
 src/
-├── App.jsx                    # Root component (đăng ký routes & wrap Provider)
-├── main.jsx                   # Entry point
-├── components/                # Shared UI components
-│   ├── ProtectedRoute.jsx     # Route guard bảo vệ phân quyền
-│   ├── Layout.jsx             # Giao diện khung (Sidebar, Header)
-│   └── ui/                    # UI elements dùng chung
+├── App.tsx                    # Root component (đăng ký routes & wrap Provider)
+├── main.tsx                   # Entry point
+├── components/
+│   ├── common/                # Shared UI components có logic/state nội bộ
+│   │   ├── Button.tsx         # Button dùng chung
+│   │   ├── InputField.tsx     # Input field dùng chung
+│   │   ├── SelectField.tsx    # Select field dùng chung
+│   │   ├── StatCard.tsx       # Card thống kê
+│   │   ├── Toast.tsx          # Toast notification
+│   │   ├── Layout.tsx         # Giao diện khung (Sidebar, Header)
+│   │   ├── ProtectedRoute.tsx # Route guard bảo vệ phân quyền
+│   │   ├── FilePreview.tsx    # Preview file (pdf, docx, image...)
+│   │   ├── JDUploadForm.tsx   # Form upload JD
+│   │   ├── UserForm.tsx       # Form quản lý user
+│   │   └── index.ts           # Barrel export cho common/
+│   └── ui/                    # Primitive UI elements — không có domain logic
+│       ├── ExcelTable.tsx     # Bảng dữ liệu dạng Excel
+│       ├── Modal.tsx          # Modal dialog
+│       ├── Pagination.tsx     # Phân trang
+│       ├── ConfirmModal.tsx   # Modal xác nhận
+│       ├── CustomSkeleton.tsx # Loading skeleton
+│       ├── MasterDataForm.tsx # Form dùng chung: code + name + description
+│       ├── SimpleEntityForm.tsx # Form dùng chung: name + description
+│       ├── OutlookSearchSelect.tsx
+│       └── SingleSearchSelect.tsx
 ├── config/                    # Cấu hình core hệ thống
 │   ├── axiosInstance.ts       # Axios instance có interceptors
 │   ├── zustandStore.ts        # Zustand global store với TTL/expiry support
@@ -154,11 +173,37 @@ Tài liệu ghi chú chi tiết về cấu trúc dữ liệu của `Candidate`, 
 
 ---
 
-## 10. Path Aliases
+## 10. Path Aliases & Import Rules
 
 | Alias | Trỏ đến   |
 | ----- | --------- |
 | `@/`  | `src/`    |
+
+### ⚠️ Quy tắc bắt buộc về import
+
+- **Luôn dùng `@/`** thay cho relative paths (`../../`, `../`) trong mọi file.
+- **Không dùng** `import X from '../ui/Y'` hay `import X from '../../config/Y'`.
+
+```ts
+// ✅ ĐÚNG
+import Button from '@/components/common/Button'
+import ExcelTable from '@/components/ui/ExcelTable'
+import axiosInstance from '@/config/axiosInstance'
+import { useAuth } from '@/contexts/AuthContext'
+
+// ❌ SAI
+import Button from '../common/Button'
+import ExcelTable from '../../components/ui/ExcelTable'
+```
+
+### Phân biệt `components/ui/` vs `components/common/`
+
+| Thư mục | Nội dung | Ví dụ |
+|---------|----------|-------|
+| `components/ui/` | Primitive components — không chứa domain/business logic | `ExcelTable`, `Modal`, `Pagination`, `MasterDataForm`, `SimpleEntityForm` |
+| `components/common/` | Shared components có thể chứa logic nội bộ, dùng bởi nhiều page | `Button`, `InputField`, `Layout`, `ProtectedRoute`, `FilePreview` |
+
+> ❌ **Không tạo file trong `common/` chỉ để re-export từ `ui/`** — hãy import trực tiếp từ source.
 
 ---
 
@@ -170,3 +215,48 @@ npm run build        # Build bản production
 npm run preview      # Xem trước bản build production
 npx vitest run       # Chạy toàn bộ unit tests
 ```
+
+---
+
+## 12. Shared UI Forms (components/ui/)
+
+Thay vì tạo form mới cho mỗi entity cấu hình, hãy dùng 2 form dùng chung:
+
+### `MasterDataForm` — entity có `code + name + description`
+
+Dùng cho: **Department, Segment, Site, Level** (và bất kỳ entity tương tự).
+
+```tsx
+import MasterDataForm from '@/components/ui/MasterDataForm'
+
+<MasterDataForm
+  entityLabel="Department"
+  codeLabel="Department Code"       // tuỳ chọn, mặc định: "Department Code"
+  codePlaceholder="e.g. HR, IT..." // tuỳ chọn
+  onSubmit={handleSubmit}
+  onCancel={closeForm}
+  initialData={editingItem ? { code, name, description } : undefined}
+  isLoading={saving}
+  error={formError}
+/>
+```
+
+### `SimpleEntityForm` — entity có `name + description` (không có code)
+
+Dùng cho: **Company, Platform** (và bất kỳ entity tương tự).
+
+```tsx
+import SimpleEntityForm from '@/components/ui/SimpleEntityForm'
+
+<SimpleEntityForm
+  entityLabel="Company"
+  namePlaceholder="Enter company name..."  // tuỳ chọn
+  onSubmit={handleSubmit}
+  onCancel={closeForm}
+  initialData={editingItem ? { name, description } : undefined}
+  isLoading={saving}
+  error={formError}
+/>
+```
+
+> ❌ **Không tạo thêm** `CompanyForm`, `PlatformForm`, `DepartmentForm`... — dùng 2 form trên.

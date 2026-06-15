@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
-import { searchPlatformsApi, createPlatformApi, deletePlatformApi, updatePlatformApi } from '../services/platformApi';
-import PlatformForm from '../components/platform/PlatformForm';
-import Button from '../components/common/Button';
-import Pagination from '../components/ui/Pagination';
-import Modal from '../components/ui/Modal';
-import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
-import { useHeader } from '../contexts/HeaderContext';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
+import { searchPlatformsApi, createPlatformApi, deletePlatformApi, updatePlatformApi } from '@/services/platformApi';
+import SimpleEntityForm from '@/components/ui/SimpleEntityForm';
+import Button from '@/components/common/Button';
+import Pagination from '@/components/ui/Pagination';
+import Modal from '@/components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
+import { useHeader } from '@/contexts/HeaderContext';
+
 
 export const PlatformPage = () => {
   const { toasts, removeToast, toast } = useToast();
@@ -239,7 +240,9 @@ export const PlatformPage = () => {
           onClose={closeForm}
           title={editingPlatform ? '✏️ Edit Platform' : '🌎 Create Platform'}
         >
-          <PlatformForm
+          <SimpleEntityForm
+            entityLabel="Platform"
+            namePlaceholder="Enter recruitment channel (e.g. LinkedIn, JobStreet...)"
             onSubmit={handleSubmit}
             onCancel={closeForm}
             initialData={

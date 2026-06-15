@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Download, FileText, FileSpreadsheet, File, Image as ImageIcon, Loader2, Maximize2, Minimize2 } from 'lucide-react';
-import axiosInstance from '../../config/axiosInstance';
-import Modal from '../ui/Modal';
-import Button from './Button';
+import axiosInstance from '@/config/axiosInstance';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/common/Button';
 
 // Get file extension from filename
 export const getExtension = (filename: string) => {

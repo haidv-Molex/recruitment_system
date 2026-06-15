@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import CandidateForm from '../components/candidate/CandidateForm';
-import BulkCVUpload from '../components/candidate/BulkCVUpload';
-import ExcelTable, { formatDate } from '../components/common/ExcelTable';
-import Pagination from '../components/ui/Pagination';
-import { masterData } from '../services/mockData';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
+import CandidateForm from '@/components/candidate/CandidateForm';
+import BulkCVUpload from '@/components/candidate/BulkCVUpload';
+import ExcelTable, { formatDate } from '@/components/ui/ExcelTable';
+import Pagination from '@/components/ui/Pagination';
+import { masterData } from '@/services/mockData';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
 import {
   createCandidateApi,
   searchCandidatesApi,
@@ -14,13 +14,13 @@ import {
   downloadValidationSheetApi,
   downloadDatabaseSheetApi,
   batchImportCandidatesApi,
-} from '../services/candidateApi';
-import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
-import CandidateExcelImport from '../components/candidate/CandidateExcelImport';
-import { downloadFullWorkbookApi } from '../services/jobApi';
-import { useHeader } from '../contexts/HeaderContext';
-import DatabaseFilters from '../components/candidate-database/DatabaseFilters';
-import { useItem, setItem } from '../config/zustandStore';
+} from '@/services/candidateApi';
+import { FileBadge, FilePreviewModal } from '@/components/common/FilePreview';
+import CandidateExcelImport from '@/components/candidate/CandidateExcelImport';
+import { downloadFullWorkbookApi } from '@/services/jobApi';
+import { useHeader } from '@/contexts/HeaderContext';
+import DatabaseFilters from '@/components/candidate-database/DatabaseFilters';
+import { useItem, setItem } from '@/config/zustandStore';
 import { FileUp, Download, Plus, Upload, Edit2, Trash2 } from 'lucide-react';
 
 const statusClass = (status: string) =>

@@ -1,22 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import InputField from '../common/InputField';
-import Button from '../common/Button';
+import InputField from '@/components/common/InputField';
+import Button from '@/components/common/Button';
 
-export interface SiteFormProps {
-  onSubmit: (data: { code: string; name: string; description: string }) => void;
+export interface MasterDataFormData {
+  code: string;
+  name: string;
+  description: string;
+}
+
+export interface MasterDataFormProps {
+  /** Tên thực thể, ví dụ: "Department", "Segment", "Site", "Level" */
+  entityLabel: string;
+  /** Label tuỳ chỉnh cho trường code, mặc định: `${entityLabel} Code` */
+  codeLabel?: string;
+  /** Placeholder tuỳ chỉnh cho trường code */
+  codePlaceholder?: string;
+  onSubmit: (data: MasterDataFormData) => void;
   onCancel: () => void;
-  initialData?: { code: string; name: string; description: string };
+  initialData?: MasterDataFormData;
   isLoading?: boolean;
   error?: string;
 }
 
-export default function SiteForm({
+/**
+ * Form dùng chung cho entity có 3 trường: code + name + description.
+ * Dùng cho: Department, Segment, Site, Level.
+ */
+export default function MasterDataForm({
+  entityLabel,
+  codeLabel,
+  codePlaceholder,
   onSubmit,
   onCancel,
   initialData,
   isLoading,
   error,
-}: SiteFormProps) {
+}: MasterDataFormProps) {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -38,6 +57,9 @@ export default function SiteForm({
     onSubmit({ code, name, description });
   };
 
+  const resolvedCodeLabel = codeLabel ?? `${entityLabel} Code`;
+  const resolvedCodePlaceholder = codePlaceholder ?? `Enter ${entityLabel.toLowerCase()} code...`;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
@@ -47,9 +69,9 @@ export default function SiteForm({
       )}
 
       <InputField
-        label="Site Code"
+        label={resolvedCodeLabel}
         type="text"
-        placeholder="e.g. S1, S2, Site-A..."
+        placeholder={resolvedCodePlaceholder}
         value={code}
         onChange={(e) => setCode(e.target.value)}
         disabled={isLoading}
@@ -58,9 +80,9 @@ export default function SiteForm({
       />
 
       <InputField
-        label="Site Name"
+        label={`${entityLabel} Name`}
         type="text"
-        placeholder="Enter site name..."
+        placeholder={`Enter ${entityLabel.toLowerCase()} name...`}
         value={name}
         onChange={(e) => setName(e.target.value)}
         disabled={isLoading}
@@ -72,7 +94,7 @@ export default function SiteForm({
           Description
         </label>
         <textarea
-          placeholder="Enter site description (optional)..."
+          placeholder={`Enter ${entityLabel.toLowerCase()} description (optional)...`}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           disabled={isLoading}
@@ -86,7 +108,7 @@ export default function SiteForm({
           Cancel
         </Button>
         <Button type="submit" isLoading={isLoading}>
-          {initialData ? 'Save Changes' : 'Create Site'}
+          {initialData ? 'Save Changes' : `Create ${entityLabel}`}
         </Button>
       </div>
     </form>

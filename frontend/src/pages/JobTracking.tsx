@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Edit2, Trash2, Users, FileUp, Download, Plus } from 'lucide-react';
-import Pagination from '../components/ui/Pagination';
-import ExcelTable from '../components/common/ExcelTable';
-import JobForm from '../components/job/JobForm';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
+import Pagination from '@/components/ui/Pagination';
+import ExcelTable from '@/components/ui/ExcelTable';
+import JobForm from '@/components/job/JobForm';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
 import {
   createJobApi,
   createJobExtendedApi,
@@ -15,12 +15,12 @@ import {
   downloadFullWorkbookApi,
   getJobApi,
   batchImportJobsApi,
-} from '../services/jobApi';
-import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
-import JobExcelImport from '../components/job/JobExcelImport';
-import JobConfirmDeleteModal from '../components/job/JobConfirmDeleteModal';
-import { useHeader } from '../contexts/HeaderContext';
-import { useItem, setItem } from '../config/zustandStore';
+} from '@/services/jobApi';
+import { FileBadge, FilePreviewModal } from '@/components/common/FilePreview';
+import JobExcelImport from '@/components/job/JobExcelImport';
+import JobConfirmDeleteModal from '@/components/job/JobConfirmDeleteModal';
+import { useHeader } from '@/contexts/HeaderContext';
+import { useItem, setItem } from '@/config/zustandStore';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
-import { searchCompaniesApi, createCompanyApi, deleteCompanyApi, updateCompanyApi } from '../services/companyApi';
-import CompanyForm from '../components/company/CompanyForm';
-import Button from '../components/common/Button';
-import Pagination from '../components/ui/Pagination';
-import Modal from '../components/ui/Modal';
-import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
-import { useHeader } from '../contexts/HeaderContext';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
+import { searchCompaniesApi, createCompanyApi, deleteCompanyApi, updateCompanyApi } from '@/services/companyApi';
+import SimpleEntityForm from '@/components/ui/SimpleEntityForm';
+import Button from '@/components/common/Button';
+import Pagination from '@/components/ui/Pagination';
+import Modal from '@/components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
+import { useHeader } from '@/contexts/HeaderContext';
+
 
 export const CompanyPage = () => {
   const { toasts, removeToast, toast } = useToast();
@@ -239,7 +240,8 @@ export const CompanyPage = () => {
           onClose={closeForm}
           title={editingCompany ? '✏️ Edit Company' : '🏢 Create Company'}
         >
-          <CompanyForm
+          <SimpleEntityForm
+            entityLabel="Company"
             onSubmit={handleSubmit}
             onCancel={closeForm}
             initialData={

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
-import { searchDepartmentsApi, createDepartmentApi, deleteDepartmentApi, updateDepartmentApi } from '../services/departmentApi';
-import DepartmentForm from '../components/department/DepartmentForm';
-import Button from '../components/common/Button';
-import Pagination from '../components/ui/Pagination';
-import Modal from '../components/ui/Modal';
-import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
-import { useHeader } from '../contexts/HeaderContext';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
+import { searchDepartmentsApi, createDepartmentApi, deleteDepartmentApi, updateDepartmentApi } from '@/services/departmentApi';
+import MasterDataForm from '@/components/ui/MasterDataForm';
+import Button from '@/components/common/Button';
+import Pagination from '@/components/ui/Pagination';
+import Modal from '@/components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
+import { useHeader } from '@/contexts/HeaderContext';
 
 export const DepartmentPage = () => {
   const { toasts, removeToast, toast } = useToast();
@@ -257,7 +257,10 @@ export const DepartmentPage = () => {
           onClose={closeForm}
           title={editingDept ? '✏️ Edit Department' : '🏢 Create Department'}
         >
-          <DepartmentForm
+          <MasterDataForm
+            entityLabel="Department"
+            codeLabel="Department Code"
+            codePlaceholder="e.g. HR, IT, R&D..."
             onSubmit={handleSubmit}
             onCancel={closeForm}
             initialData={

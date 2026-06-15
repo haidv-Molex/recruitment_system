@@ -17,8 +17,8 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import HeaderContext from '../../contexts/HeaderContext';
+import { useAuth } from '@/contexts/AuthContext';
+import HeaderContext from '@/contexts/HeaderContext';
 import { useContext } from 'react';
 
 export interface LayoutProps {

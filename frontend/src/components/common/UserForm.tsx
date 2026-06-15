@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import Modal from '../ui/Modal';
-import InputField from './InputField';
-import Button from './Button';
+import Modal from '@/components/ui/Modal';
+import InputField from '@/components/common/InputField';
+import Button from '@/components/common/Button';
 
 const emptyUser = {
   username: '',

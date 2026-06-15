@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
-import { searchSitesApi, createSiteApi, deleteSiteApi, updateSiteApi } from '../services/siteApi';
-import SiteForm from '../components/site/SiteForm';
-import Button from '../components/common/Button';
-import Pagination from '../components/ui/Pagination';
-import Modal from '../components/ui/Modal';
-import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
-import { useHeader } from '../contexts/HeaderContext';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
+import { searchSitesApi, createSiteApi, deleteSiteApi, updateSiteApi } from '@/services/siteApi';
+import MasterDataForm from '@/components/ui/MasterDataForm';
+import Button from '@/components/common/Button';
+import Pagination from '@/components/ui/Pagination';
+import Modal from '@/components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
+import { useHeader } from '@/contexts/HeaderContext';
 
 export const SitePage = () => {
   const { toasts, removeToast, toast } = useToast();
@@ -257,7 +257,10 @@ export const SitePage = () => {
           onClose={closeForm}
           title={editingSite ? '✏️ Edit Site' : '📍 Create Site'}
         >
-          <SiteForm
+          <MasterDataForm
+            entityLabel="Site"
+            codeLabel="Site Code"
+            codePlaceholder="e.g. S1, S2, Site-A..."
             onSubmit={handleSubmit}
             onCancel={closeForm}
             initialData={

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import ToastContainer from '../components/common/Toast';
-import { useToast } from '../hooks/useToast';
-import { searchLevelsApi, createLevelApi, deleteLevelApi, updateLevelApi } from '../services/levelApi';
-import LevelForm from '../components/level/LevelForm';
-import Button from '../components/common/Button';
-import Pagination from '../components/ui/Pagination';
-import Modal from '../components/ui/Modal';
-import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
-import { useHeader } from '../contexts/HeaderContext';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
+import { searchLevelsApi, createLevelApi, deleteLevelApi, updateLevelApi } from '@/services/levelApi';
+import MasterDataForm from '@/components/ui/MasterDataForm';
+import Button from '@/components/common/Button';
+import Pagination from '@/components/ui/Pagination';
+import Modal from '@/components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
+import { useHeader } from '@/contexts/HeaderContext';
 
 export const LevelPage = () => {
   const { toasts, removeToast, toast } = useToast();
@@ -257,7 +257,10 @@ export const LevelPage = () => {
           onClose={closeForm}
           title={editingLevel ? '✏️ Edit Level' : '🏷️ Create Level'}
         >
-          <ModalForm
+          <MasterDataForm
+            entityLabel="Level"
+            codeLabel="Level Code"
+            codePlaceholder="e.g. L1, L2, L3, Senior, Principal..."
             onSubmit={handleSubmit}
             onCancel={closeForm}
             initialData={
@@ -277,8 +280,5 @@ export const LevelPage = () => {
     </div>
   );
 };
-
-// Wrapper/Alias for LevelForm to preserve initial import names if any or use directly
-const ModalForm = LevelForm;
 
 export default LevelPage;
