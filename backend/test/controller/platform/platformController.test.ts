@@ -215,6 +215,6 @@ describe("PlatformController API", () => {
         message: "Xóa nền tảng thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
   });
 });
