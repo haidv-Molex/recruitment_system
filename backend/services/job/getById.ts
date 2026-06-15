@@ -8,7 +8,7 @@ async function getById(
   pool: PoolClient
 ): Promise<jobOutputModel> {
   const query = `
-    SELECT j.job_id, j.job_code, j.project, j.candidate_required, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
+    SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
            f.file_path
     FROM job j
     LEFT JOIN file f ON j.file_id = f.file_id
@@ -29,7 +29,6 @@ async function getById(
     job_id: row.job_id,
     job_code: row.job_code,
     project: row.project,
-    candidate_required: row.candidate_required,
     note: row.note,
     request_date: row.request_date,
     create_at: row.create_at,

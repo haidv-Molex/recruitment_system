@@ -1,7 +1,7 @@
 import express from "express";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
-import { numberArray, stringArray } from "@utilities/joiTypes";
+import { numberArray, stringArray, departmentArray, departmentNameArray } from "@utilities/joiTypes";
 import Job from "@services/job/_Job";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -17,15 +17,12 @@ const jobItemSchema = Joi.object({
     "any.required": "Dự án là bắt buộc",
     "string.empty": "Dự án không được để trống",
   }),
-  candidate_required: Joi.number().integer().min(1).required().messages({
-    "any.required": "Số lượng ứng viên là bắt buộc",
-  }),
   note: Joi.string().max(5000).allow("", null).optional(),
   request_date: Joi.date().iso().empty(["", "null"]).allow(null).default(null),
 
   // ID gốc
   partners: numberArray().optional(),
-  departments: numberArray().optional(),
+  departments: departmentArray().optional(),
   segments: numberArray().optional(),
   sites: numberArray().optional(),
   titles: numberArray().optional(),
@@ -34,7 +31,7 @@ const jobItemSchema = Joi.object({
 
   // _name tự động tạo mới
   partners_name: stringArray().optional(),
-  departments_name: stringArray().optional(),
+  departments_name: departmentNameArray().optional(),
   segments_name: stringArray().optional(),
   sites_name: stringArray().optional(),
   titles_name: stringArray().optional(),

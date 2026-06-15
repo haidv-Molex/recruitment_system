@@ -14,7 +14,6 @@ import Level from "@services/level/_Level";
 type UpdateJobData = {
   job_code?: string;
   project?: string;
-  candidate_required?: number;
   note?: string | null;
   request_date?: string | Date | null;
   file?: {
@@ -22,7 +21,7 @@ type UpdateJobData = {
     buffer: Buffer;
   } | null;
   partners?: number[];
-  departments?: number[];
+  departments?: { department_id: number; candidate_required: number }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
@@ -30,7 +29,7 @@ type UpdateJobData = {
   employee_levels?: number[];
 
   partners_name?: string[];
-  departments_name?: string[];
+  departments_name?: { name: string; candidate_required: number }[];
   segments_name?: string[];
   sites_name?: string[];
   titles_name?: string[];
@@ -75,10 +74,6 @@ async function update(
     if (data.project !== undefined) {
       fields.push(`project = $${index++}`);
       values.push(data.project);
-    }
-    if (data.candidate_required !== undefined) {
-      fields.push(`candidate_required = $${index++}`);
-      values.push(data.candidate_required);
     }
     if (data.note !== undefined) {
       fields.push(`note = $${index++}`);
@@ -134,27 +129,29 @@ async function update(
     // departments
     if (data.departments !== undefined || data.departments_name !== undefined) {
       const deptsList = data.departments || [];
-      const newDeptIds: number[] = [];
+      const newDepts: { department_id: number; candidate_required: number }[] = [];
       if (data.departments_name) {
-        for (const name of data.departments_name) {
+        for (const item of data.departments_name) {
           const dept = await Department.create({
-            department_code: name.toUpperCase(),
-            department_name: name,
+            department_code: item.name.toUpperCase(),
+            department_name: item.name,
           }, pool);
-          newDeptIds.push(dept.department_id);
+          newDepts.push({ department_id: dept.department_id, candidate_required: item.candidate_required });
         }
       }
-      const merged = [...deptsList, ...newDeptIds];
+      const merged = [...deptsList, ...newDepts];
 
       await pool.query(`DELETE FROM job_department WHERE job_id = $1`, [id]);
-      for (const departmentId of merged) {
+      for (const item of merged) {
+        const departmentId = item.department_id;
+        const candidateRequired = item.candidate_required;
         const depCheck = await pool.query(`SELECT department_id FROM department WHERE department_id = $1`, [departmentId]);
         if (depCheck.rows.length === 0) {
           throw new AppError(`Phòng ban (department_id = ${departmentId}) không tồn tại`, 400);
         }
         await pool.query(
-          `INSERT INTO job_department (job_id, department_id) VALUES ($1, $2)`,
-          [id, departmentId]
+          `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
+          [id, departmentId, candidateRequired]
         );
       }
     }
@@ -286,7 +283,7 @@ async function update(
 
     // 4. Retrieve complete job output info
     const query = `
-      SELECT j.job_id, j.job_code, j.project, j.candidate_required, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
+      SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
              f.file_path
       FROM job j
       LEFT JOIN file f ON j.file_id = f.file_id
@@ -302,7 +299,6 @@ async function update(
       job_id: row.job_id,
       job_code: row.job_code,
       project: row.project,
-      candidate_required: row.candidate_required,
       note: row.note,
       request_date: row.request_date,
       create_at: row.create_at,

@@ -31,7 +31,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-BASE-001",
         project: "Project Alpha",
-        candidate_required: 2,
       },
       client
     );
@@ -39,7 +38,6 @@ describe("createWithAll job service", () => {
     expect(result).to.have.property("job_id").that.is.a("number");
     expect(result.job_code).to.equal("JOB-BASE-001");
     expect(result.project).to.equal("Project Alpha");
-    expect(result.candidate_required).to.equal(2);
     expect(result.partners).to.be.an("array").that.is.empty;
     expect(result.departments).to.be.an("array").that.is.empty;
   });
@@ -50,7 +48,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-PARTNER-001",
         project: "Project Beta",
-        candidate_required: 1,
         partners_name: ["Alice Nguyen", "Bob Tran"],
       },
       client
@@ -68,7 +65,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-MGR-001",
         project: "Project Gamma",
-        candidate_required: 1,
         managers_name: ["Manager One"],
       },
       client
@@ -84,8 +80,7 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-DEPT-001",
         project: "Project Delta",
-        candidate_required: 1,
-        departments_name: ["engineering"],
+        departments_name: [{ name: "engineering", candidate_required: 1 }],
       },
       client
     );
@@ -107,7 +102,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-SEG-001",
         project: "Project Epsilon",
-        candidate_required: 1,
         segments_name: ["Enterprise"],
       },
       client
@@ -123,7 +117,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-SITE-001",
         project: "Project Zeta",
-        candidate_required: 1,
         sites_name: ["Hanoi Office"],
       },
       client
@@ -139,7 +132,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-LVL-001",
         project: "Project Eta",
-        candidate_required: 1,
         titles_name: ["Senior", "junior"],
         employee_levels_name: ["JUNIOR", "Lead"], // "junior" trùng với "junior" ở trên
       },
@@ -170,7 +162,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-MERGE-001",
         project: "Project Theta",
-        candidate_required: 1,
         partners: [existingPartnerId],
         partners_name: ["New Partner"],
       },
@@ -189,7 +180,6 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-EMPTY-001",
         project: "Project Iota",
-        candidate_required: 3,
         partners_name: [],
         managers_name: [],
         departments_name: [],
@@ -212,7 +202,6 @@ describe("createWithAll job service", () => {
         {
           job_code: "",
           project: "Project Kappa",
-          candidate_required: 1,
         },
         client
       );

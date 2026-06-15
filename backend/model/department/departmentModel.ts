@@ -5,4 +5,5 @@ export type departmentModel = {
   department_description: string | null;
   create_at: Date;
   update_at: Date;
+  candidate_required?: number;
 }

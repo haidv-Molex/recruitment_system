@@ -38,8 +38,8 @@ describe("Candidate create service", () => {
 
     // 3. Seed job
     const jobRes = await client.query(
-      `INSERT INTO job (job_code, project, candidate_required) VALUES ($1, $2, $3) RETURNING job_id`,
-      ["J001", "Project X", 1]
+      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
+      ["J001", "Project X"]
     );
     const jobId = jobRes.rows[0].job_id;
 

@@ -24,8 +24,8 @@ describe("Candidate batchImport service", () => {
   it("should successfully batch import candidates, auto-creating related entities case-insensitively", async () => {
     // Seed a job for job_code mapping
     await client.query(
-      `INSERT INTO job (job_code, project, candidate_required) VALUES ($1, $2, $3)`,
-      ["J100", "Project Import", 2]
+      `INSERT INTO job (job_code, project) VALUES ($1, $2)`,
+      ["J100", "Project Import"]
     );
 
     // Let's import two candidates

@@ -93,11 +93,10 @@ describe("parseJobSheetController API", () => {
       {
         job_code: "J001",
         project: "DSS Talent Connector",
-        candidate_required: 1,
         note: null,
         file: null,
         partners: [],
-        departments: [],
+        departments: [{ department_id: null, department_name: "AS", candidate_required: 1 }],
         segments: [],
         sites: [],
         titles: [],

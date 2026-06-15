@@ -21,7 +21,7 @@ import express from "express";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
 import multer from "multer";
-import { numberArray, stringArray } from "@utilities/joiTypes";
+import { numberArray, stringArray, departmentArray, departmentNameArray } from "@utilities/joiTypes";
 import Job from "@services/job/_Job";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
@@ -57,18 +57,13 @@ const bodySchema = Joi.object({
     "string.empty": "Dự án không được để trống",
     "string.max": "Dự án không được vượt quá 255 ký tự",
   }),
-  candidate_required: Joi.number().integer().min(1).optional().messages({
-    "number.base": "Số lượng ứng viên phải là số",
-    "number.integer": "Số lượng ứng viên phải là số nguyên",
-    "number.min": "Số lượng ứng viên phải lớn hơn 0",
-  }),
   note: Joi.string().max(5000).allow("", null).optional(),
   request_date: Joi.date().iso().empty(["", "null"]).allow(null).optional().messages({
     "date.format": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)",
     "date.base": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"
   }),
   partners: numberArray().optional(),
-  departments: numberArray().optional(),
+  departments: departmentArray().optional(),
   segments: numberArray().optional(),
   sites: numberArray().optional(),
   titles: numberArray().optional(),
@@ -76,7 +71,7 @@ const bodySchema = Joi.object({
   employee_levels: numberArray().optional(),
 
   partners_name: stringArray().optional(),
-  departments_name: stringArray().optional(),
+  departments_name: departmentNameArray().optional(),
   segments_name: stringArray().optional(),
   sites_name: stringArray().optional(),
   titles_name: stringArray().optional(),
@@ -99,7 +94,6 @@ updateJobController.put(
     const keys = [
       "job_code",
       "project",
-      "candidate_required",
       "note",
       "request_date",
       "partners",

@@ -89,3 +89,62 @@ export const stringArray = () =>
     }
     return helpers.error("any.invalid");
   });
+
+/**
+ * Custom Joi type: parse array of { department_id: number, candidate_required: number }
+ */
+export const departmentArray = () =>
+  Joi.custom((value, helpers) => {
+    if (value === undefined || value === null || value === "") return [];
+    
+    let parsed: any = value;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed === "") return [];
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch (_) {
+        return helpers.error("any.invalid");
+      }
+    }
+    
+    if (Array.isArray(parsed)) {
+      for (const item of parsed) {
+        if (!item || typeof item !== "object") return helpers.error("any.invalid");
+        if (!Number.isInteger(item.department_id) || item.department_id <= 0) return helpers.error("any.invalid");
+        if (!Number.isInteger(item.candidate_required) || item.candidate_required <= 0) return helpers.error("any.invalid");
+      }
+      return parsed;
+    }
+    return helpers.error("any.invalid");
+  });
+
+/**
+ * Custom Joi type: parse array of { name: string, candidate_required: number }
+ */
+export const departmentNameArray = () =>
+  Joi.custom((value, helpers) => {
+    if (value === undefined || value === null || value === "") return [];
+    
+    let parsed: any = value;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed === "") return [];
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch (_) {
+        return helpers.error("any.invalid");
+      }
+    }
+    
+    if (Array.isArray(parsed)) {
+      for (const item of parsed) {
+        if (!item || typeof item !== "object") return helpers.error("any.invalid");
+        if (typeof item.name !== "string" || item.name.trim() === "") return helpers.error("any.invalid");
+        item.name = item.name.trim();
+        if (!Number.isInteger(item.candidate_required) || item.candidate_required <= 0) return helpers.error("any.invalid");
+      }
+      return parsed;
+    }
+    return helpers.error("any.invalid");
+  });

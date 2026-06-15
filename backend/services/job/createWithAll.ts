@@ -11,7 +11,6 @@ type CreateJobWithAllData = {
   // Dữ liệu Job gốc
   job_code: string;
   project: string;
-  candidate_required: number;
   note?: string | null;
   request_date?: string | Date | null;
   file?: {
@@ -21,7 +20,7 @@ type CreateJobWithAllData = {
 
   // ID gốc (các record đã có sẵn)
   partners?: number[];
-  departments?: number[];
+  departments?: { department_id: number; candidate_required: number }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
@@ -30,7 +29,7 @@ type CreateJobWithAllData = {
 
   // _name: tự động tạo record mới rồi lấy ID
   partners_name?: string[];
-  departments_name?: string[];
+  departments_name?: { name: string; candidate_required: number }[];
   segments_name?: string[];
   sites_name?: string[];
   /**
@@ -50,7 +49,6 @@ async function createWithAll(
   const {
     job_code,
     project,
-    candidate_required,
     note = null,
     file = null,
     partners = [],
@@ -84,13 +82,13 @@ async function createWithAll(
   }
 
   // 3. Tạo department mới cho departments_name (code = name.toUpperCase())
-  const newDepartmentIds: number[] = [];
-  for (const name of departments_name) {
+  const newDepartments: { department_id: number; candidate_required: number }[] = [];
+  for (const item of departments_name) {
     const dept = await Department.create({
-      department_code: name.toUpperCase(),
-      department_name: name,
+      department_code: item.name.toUpperCase(),
+      department_name: item.name,
     }, pool);
-    newDepartmentIds.push(dept.department_id);
+    newDepartments.push({ department_id: dept.department_id, candidate_required: item.candidate_required });
   }
 
   // 4. Tạo segment mới cho segments_name
@@ -126,7 +124,7 @@ async function createWithAll(
   // 7. Gộp ID mới vào danh sách ID gốc
   const mergedPartners = [...partners, ...newPartnerIds];
   const mergedManagers = [...managers, ...newManagerIds];
-  const mergedDepartments = [...departments, ...newDepartmentIds];
+  const mergedDepartments = [...departments, ...newDepartments];
   const mergedSegments = [...segments, ...newSegmentIds];
   const mergedSites = [...sites, ...newSiteIds];
   const mergedTitles = [...titles, ...newLevelIds];
@@ -137,7 +135,6 @@ async function createWithAll(
     {
       job_code,
       project,
-      candidate_required,
       note,
       file,
       request_date: data.request_date,

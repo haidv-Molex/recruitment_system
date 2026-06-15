@@ -11,18 +11,17 @@ import { AppError } from "@middlewares/AppError";
 export type JobImportItem = {
   job_code: string;
   project: string;
-  candidate_required: number;
   note?: string | null;
   request_date?: string | Date | null;
   partners?: number[];
-  departments?: number[];
+  departments?: { department_id: number; candidate_required: number }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
   managers?: number[];
   employee_levels?: number[];
   partners_name?: string[];
-  departments_name?: string[];
+  departments_name?: { name: string; candidate_required: number }[];
   segments_name?: string[];
   sites_name?: string[];
   titles_name?: string[];
@@ -51,7 +50,7 @@ async function batchImport(
   for (const job of jobs) {
     (job.partners_name || []).forEach(n => { if (n?.trim()) partnerNames.add(n.trim()); });
     (job.managers_name || []).forEach(n => { if (n?.trim()) managerNames.add(n.trim()); });
-    (job.departments_name || []).forEach(n => { if (n?.trim()) deptNames.add(n.trim()); });
+    (job.departments_name || []).forEach(item => { if (item.name?.trim()) deptNames.add(item.name.trim()); });
     (job.segments_name || []).forEach(n => { if (n?.trim()) segmentNames.add(n.trim()); });
     (job.sites_name || []).forEach(n => { if (n?.trim()) siteNames.add(n.trim()); });
     (job.titles_name || []).forEach(n => { if (n?.trim()) levelNames.add(n.trim()); });
@@ -207,10 +206,18 @@ async function batchImport(
         ...(job.managers || []),
         ...(job.managers_name || []).map(n => managerMap.get(n.trim().toLowerCase())).filter(Boolean) as number[]
       ];
-      const mergedDepartments = [
+      const mergedDepartments: { department_id: number; candidate_required: number }[] = [
         ...(job.departments || []),
-        ...(job.departments_name || []).map(n => deptMap.get(n.trim().toLowerCase())).filter(Boolean) as number[]
       ];
+      if (job.departments_name) {
+        for (const item of job.departments_name) {
+          const did = deptMap.get(item.name.trim().toLowerCase());
+          if (did) {
+            mergedDepartments.push({ department_id: did, candidate_required: item.candidate_required });
+          }
+        }
+      }
+      
       const mergedSegments = [
         ...(job.segments || []),
         ...(job.segments_name || []).map(n => segmentMap.get(n.trim().toLowerCase())).filter(Boolean) as number[]
@@ -235,12 +242,11 @@ async function batchImport(
         {
           job_code: job.job_code,
           project: job.project,
-          candidate_required: job.candidate_required,
           note: job.note || null,
           request_date: job.request_date || null,
           file: null,
           partners: Array.from(new Set(mergedPartners)),
-          departments: Array.from(new Set(mergedDepartments)),
+          departments: mergedDepartments,
           segments: Array.from(new Set(mergedSegments)),
           sites: Array.from(new Set(mergedSites)),
           titles: Array.from(new Set(mergedTitles)),

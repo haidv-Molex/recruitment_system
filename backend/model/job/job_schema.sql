@@ -2,7 +2,6 @@ CREATE TABLE job (
     job_id SERIAL PRIMARY KEY,
     job_code VARCHAR(255) NOT NULL,
     project VARCHAR(255) NOT NULL,
-    candidate_required INT NOT NULL,
     note TEXT,
     request_date DATE,
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

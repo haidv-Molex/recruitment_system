@@ -148,8 +148,9 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       department_name: name,
       department_description: null,
       create_at: null,
-      update_at: null
-    } as any));
+      update_at: null,
+      candidate_required: candidate_required
+    } as any)).map(d => ({ ...d, candidate_required }));
 
     const segments = resolveRelationWithPlaceholder(row["Project Segment"], segmentMap, (name) => ({
       segment_id: null,
@@ -218,7 +219,6 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     formattedJobs.push({
       job_code,
       project,
-      candidate_required,
       note,
       request_date,
       file: null,

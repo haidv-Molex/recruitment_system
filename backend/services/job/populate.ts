@@ -8,7 +8,7 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     WHERE jbp.job_id = $1
   `;
   const departmentsQuery = `
-    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at
+    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, jd.candidate_required
     FROM job_department jd
     JOIN department d ON jd.department_id = d.department_id
     WHERE jd.job_id = $1

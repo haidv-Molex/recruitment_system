@@ -43,8 +43,8 @@ describe("Candidate update service", () => {
     const recruiterId = recruiterRes.rows[0].user_id;
 
     const jobRes = await client.query(
-      `INSERT INTO job (job_code, project, candidate_required) VALUES ($1, $2, $3) RETURNING job_id`,
-      ["J002", "Project Y", 2]
+      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
+      ["J002", "Project Y"]
     );
     const jobId = jobRes.rows[0].job_id;
 

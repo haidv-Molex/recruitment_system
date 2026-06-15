@@ -95,7 +95,6 @@ describe("parseJobSheet service", () => {
 
     expect(job.job_code).to.equal("J001");
     expect(job.project).to.equal("DSS Talent Connector");
-    expect(job.candidate_required).to.equal(1);
     expect(job.note).to.equal("This is a note");
     expect(job.file).to.be.null;
 
@@ -103,6 +102,7 @@ describe("parseJobSheet service", () => {
     expect(job.departments).to.be.an("array").with.lengthOf(1);
     expect(job.departments[0].department_id).to.equal(seededDeptId);
     expect(job.departments[0].department_name).to.equal("AS");
+    expect(job.departments[0].candidate_required).to.equal(1);
 
     expect(job.segments).to.be.an("array").with.lengthOf(1);
     expect(job.segments[0].segment_id).to.equal(seededSegmentId);
@@ -153,12 +153,12 @@ describe("parseJobSheet service", () => {
 
     expect(job.job_code).to.equal("J999");
     expect(job.project).to.equal("Unknown Project");
-    expect(job.candidate_required).to.equal(0);
     expect(job.note).to.be.null;
 
     expect(job.departments).to.be.an("array").with.lengthOf(1);
     expect(job.departments[0].department_id).to.be.null;
     expect(job.departments[0].department_name).to.equal("Unknown Dept");
+    expect(job.departments[0].candidate_required).to.equal(0);
 
     expect(job.segments).to.be.an("array").with.lengthOf(1);
     expect(job.segments[0].segment_id).to.be.null;

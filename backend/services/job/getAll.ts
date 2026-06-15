@@ -17,8 +17,9 @@ type GetAllJobsParams = PaginationQueryMetadata & {
   note?: string;
   request_date_from?: string;
   request_date_to?: string;
-  sort_by?: string;
+  sort_by?: "job_id" | "candidate_required";
   sort_order?: "asc" | "desc";
+
 };
 
 type GetAllJobsResult = {
@@ -116,23 +117,23 @@ async function getAll(
 
   const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
 
-  const sort_by = params.sort_by || "job_id";
-  const sort_order = params.sort_order || "desc";
-  const validSortFields: Record<string, string> = {
-    job_id: "j.job_id",
-    candidate_required: "j.candidate_required"
-  };
-  const orderByField = validSortFields[sort_by] || "j.job_id";
-  const orderByDirection = sort_order === "asc" ? "ASC" : "DESC";
+  const sortBy = params.sort_by || "job_id";
+  const sortOrder = params.sort_order === "asc" ? "ASC" : "DESC";
+  const needsGroupBy = sortBy === "candidate_required";
+  const orderByClause = needsGroupBy
+    ? `COALESCE(SUM(jd_sort.candidate_required), 0) ${sortOrder}, j.job_id DESC`
+    : `j.job_id ${sortOrder}`;
 
   const countQuery = `SELECT COUNT(*) AS total FROM job j${whereClause}`;
   const dataQuery = `
-    SELECT j.job_id, j.job_code, j.project, j.candidate_required, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
+    SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
            f.file_path
     FROM job j
     LEFT JOIN file f ON j.file_id = f.file_id
+    ${needsGroupBy ? "LEFT JOIN job_department jd_sort ON jd_sort.job_id = j.job_id" : ""}
     ${whereClause}
-    ORDER BY ${orderByField} ${orderByDirection}
+    ${needsGroupBy ? "GROUP BY j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id, f.file_path" : ""}
+    ORDER BY ${orderByClause}
   `;
 
   // Count total matching records
@@ -156,7 +157,6 @@ async function getAll(
       job_id: row.job_id,
       job_code: row.job_code,
       project: row.project,
-      candidate_required: row.candidate_required,
       note: row.note,
       request_date: row.request_date,
       create_at: row.create_at,

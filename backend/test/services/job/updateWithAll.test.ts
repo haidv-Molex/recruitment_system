@@ -25,7 +25,6 @@ describe("update job service with auto-creation names", () => {
       {
         job_code: "SEED-JOB-001",
         project: "Seed Project",
-        candidate_required: 1,
       },
       client
     );
@@ -42,13 +41,13 @@ describe("update job service with auto-creation names", () => {
       sampleJobId,
       {
         project: "Updated Seed Project",
-        candidate_required: 5,
       },
       client
     );
 
     expect(result.project).to.equal("Updated Seed Project");
-    expect(result.candidate_required).to.equal(5);
+    // candidate_required is now per-department (in departments[].candidate_required)
+    // so it's no longer a top-level field on the job output
   });
 
   it("should auto-create related entities by name on update", async () => {
@@ -56,7 +55,7 @@ describe("update job service with auto-creation names", () => {
       sampleJobId,
       {
         partners_name: ["Update Partner A", "Update Partner B"],
-        departments_name: ["Update Dept X"],
+        departments_name: [{ name: "Update Dept X", candidate_required: 3 }],
         segments_name: ["Update Seg Y"],
         sites_name: ["Update Site Z"],
         titles_name: ["Update Title L1"],

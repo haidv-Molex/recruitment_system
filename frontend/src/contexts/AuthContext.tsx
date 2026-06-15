@@ -46,6 +46,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        const savedUser = localStorage.getItem(USER_KEY);
+        const savedToken = localStorage.getItem('authToken');
+
+        if (savedUser && savedToken) {
+          setUser(JSON.parse(savedUser));
+          setIsLoading(false);
+          return;
+        }
+
         const token = await refreshTokenApi();
         if (token) {
           const saved = localStorage.getItem(USER_KEY);
@@ -56,8 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (decoded && decoded.user_id) {
               const basicUser: AuthUser = {
                 user_id: decoded.user_id,
-                user_name: decoded.name || 'User',
-                user_role: 'user',
+                user_name: decoded.name || decoded.user_name || 'User',
+                user_role: decoded.role || decoded.user_role || 'user',
               };
               setUser(basicUser);
               localStorage.setItem(USER_KEY, JSON.stringify(basicUser));
@@ -113,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...user,
         user_name: updatedUser.user_name,
         user_description: updatedUser.user_description,
-        department_id: updatedUser.department_id,
+        department_id: updatedUser.department?.department_id,
       } as AuthUser;
       setUser(newUserData);
       localStorage.setItem(USER_KEY, JSON.stringify(newUserData));

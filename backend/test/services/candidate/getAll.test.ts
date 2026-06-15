@@ -30,8 +30,8 @@ describe("Candidate getAll service", () => {
     const platformId = platformRes.rows[0].platform_id;
 
     const jobRes = await client.query(
-      `INSERT INTO job (job_code, project, candidate_required) VALUES ($1, $2, $3) RETURNING job_id`,
-      ["UniqueJobCodeX", "DSS Talent Connector Unique", 1]
+      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
+      ["UniqueJobCodeX", "DSS Talent Connector Unique"]
     );
     const jobId = jobRes.rows[0].job_id;
 

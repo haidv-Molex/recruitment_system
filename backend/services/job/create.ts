@@ -8,7 +8,6 @@ import path from "path";
 type CreateJobData = {
   job_code: string;
   project: string;
-  candidate_required: number;
   note?: string | null;
   request_date?: string | Date | null;
   file?: {
@@ -16,7 +15,7 @@ type CreateJobData = {
     buffer: Buffer;
   } | null;
   partners?: number[];
-  departments?: number[];
+  departments?: { department_id: number; candidate_required: number }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
@@ -31,7 +30,6 @@ async function create(
   const {
     job_code,
     project,
-    candidate_required,
     note = null,
     request_date = null,
     file = null,
@@ -61,11 +59,11 @@ async function create(
 
     // 2. Insert Job record
     const query = `
-      INSERT INTO job (job_code, project, candidate_required, note, file_id, request_date)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING job_id, job_code, project, candidate_required, note, request_date, create_at, update_at, file_id
+      INSERT INTO job (job_code, project, note, file_id, request_date)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING job_id, job_code, project, note, request_date, create_at, update_at, file_id
     `;
-    const result = await pool.query(query, [job_code, project, candidate_required, note, file_id, request_date]);
+    const result = await pool.query(query, [job_code, project, note, file_id, request_date]);
 
     if (result.rows.length === 0) {
       throw new AppError("Lỗi khi tạo công việc mới", 500);
@@ -94,7 +92,9 @@ async function create(
 
     // departments -> job_department (job_id, department_id)
     const departmentsList = [];
-    for (const departmentId of departments) {
+    for (const dept of departments) {
+      const departmentId = dept.department_id;
+      const candidateRequired = dept.candidate_required;
       const depCheck = await pool.query(
         `SELECT department_id, department_code, department_name, department_description, create_at, update_at 
          FROM department WHERE department_id = $1`, [departmentId]
@@ -102,10 +102,11 @@ async function create(
       if (depCheck.rows.length === 0) {
         throw new AppError(`Phòng ban (department_id = ${departmentId}) không tồn tại`, 400);
       }
-      departmentsList.push(depCheck.rows[0]);
+      const deptData = { ...depCheck.rows[0], candidate_required: candidateRequired };
+      departmentsList.push(deptData);
       await pool.query(
-        `INSERT INTO job_department (job_id, department_id) VALUES ($1, $2)`,
-        [jobId, departmentId]
+        `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
+        [jobId, departmentId, candidateRequired]
       );
     }
 
@@ -209,7 +210,6 @@ async function create(
       job_id: jobId,
       job_code: jobRow.job_code,
       project: jobRow.project,
-      candidate_required: jobRow.candidate_required,
       note: jobRow.note,
       request_date: jobRow.request_date,
       create_at: jobRow.create_at,

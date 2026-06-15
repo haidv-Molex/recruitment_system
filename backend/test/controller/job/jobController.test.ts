@@ -98,7 +98,6 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001",
       project: "Project X",
-      candidate_required: 5,
       note: "Urgent",
       request_date: new Date("2026-06-11"),
       create_at: new Date(),
@@ -120,11 +119,10 @@ describe("JobController API", () => {
       .withMultiPartFormData({
         job_code: "JOB001",
         project: "Project X",
-        candidate_required: "5",
         note: "Urgent",
         request_date: "2026-06-11",
         partners: "[1, 2]",
-        departments: "3,4"
+        departments: '[{"department_id":3,"candidate_required":5},{"department_id":4,"candidate_required":2}]'
       })
       .withMultiPartFormData("file", Buffer.from("dummy pdf content"), {
         filename: "jd.pdf",
@@ -146,10 +144,9 @@ describe("JobController API", () => {
     const args = createStub.firstCall.args[0];
     expectLocal(args.job_code).to.equal("JOB001");
     expectLocal(args.project).to.equal("Project X");
-    expectLocal(args.candidate_required).to.equal(5);
     expectLocal(args.request_date.toISOString().slice(0, 10)).to.equal("2026-06-11");
     expectLocal(args.partners).to.deep.equal([1, 2]);
-    expectLocal(args.departments).to.deep.equal([3, 4]);
+    expectLocal(args.departments).to.deep.equal([{ department_id: 3, candidate_required: 5 }, { department_id: 4, candidate_required: 2 }]);
     expectLocal(args.file).to.not.be.null;
     expectLocal(args.file.originalname).to.equal("jd.pdf");
   });
@@ -159,7 +156,6 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001",
       project: "Project X",
-      candidate_required: 5,
       note: "Urgent",
       create_at: new Date(),
       update_at: new Date(),
@@ -203,7 +199,6 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001",
       project: "Project X",
-      candidate_required: 5,
       note: "Urgent",
       create_at: new Date(),
       update_at: new Date(),
@@ -241,7 +236,6 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001_NEW",
       project: "Project X",
-      candidate_required: 5,
       note: "Urgent",
       request_date: new Date("2026-06-12"),
       create_at: new Date(),

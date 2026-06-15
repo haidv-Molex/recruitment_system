@@ -33,7 +33,7 @@ describe("createDatabaseSheet Service", () => {
   // ─── Helper: seed a minimal job ──────────────────────────────────────────
   async function seedJob(jobCode: string, project: string): Promise<number> {
     const res = await client.query<{ job_id: number }>(
-      `INSERT INTO job (job_code, project, candidate_required) VALUES ($1, $2, 1) RETURNING job_id`,
+      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
       [jobCode, project]
     );
     return res.rows[0].job_id;
@@ -191,7 +191,7 @@ describe("createDatabaseSheet Service", () => {
     // Seed job and link relations
     const jobCode = "JOB-JD-" + ts;
     const jobId = await seedJob(jobCode, "Project JD " + ts);
-    await client.query(`INSERT INTO job_department (job_id, department_id) VALUES ($1, $2)`, [jobId, deptId]);
+    await client.query(`INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`, [jobId, deptId, 1]);
     await client.query(`INSERT INTO job_title (job_id, level_id) VALUES ($1, $2)`, [jobId, levelId]);
     await client.query(`INSERT INTO employee_level (job_id, level_id) VALUES ($1, $2)`, [jobId, levelId]); // Job level
 
