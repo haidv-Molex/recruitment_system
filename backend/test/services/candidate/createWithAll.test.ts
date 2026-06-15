@@ -205,4 +205,38 @@ describe("candidate/createWithAll service", () => {
     expect(levelNames).to.include("middle");
     expect(levelNames).to.include("fresher");
   });
+
+  // ─── Auto-create job từ job_code và project ──────────────────────────────────
+
+  it("should auto-create a new job from job_code and project when job_id is missing", async () => {
+    const result = await createWithAll(
+      {
+        candidate_name: "Nguyễn Văn Job",
+        status: "CV Sent",
+        job_code: "JOB-NEW-999",
+        project: "Auto Job Project Name",
+      },
+      client
+    );
+
+    expect(result.job).to.not.be.null;
+    expect(result.job.job_code).to.equal("JOB-NEW-999");
+    expect(result.job.project).to.equal("Auto Job Project Name");
+    expect(result.job.job_id).to.be.a("number");
+
+    // Repeat creation to verify it uses the existing job instead of duplicating it
+    const result2 = await createWithAll(
+      {
+        candidate_name: "Lê Thị Job",
+        status: "CV Sent",
+        job_code: "JOB-NEW-999",
+        project: "Different Project Name But Same Code",
+      },
+      client
+    );
+
+    expect(result2.job).to.not.be.null;
+    expect(result2.job.job_id).to.equal(result.job.job_id);
+    expect(result2.job.job_code).to.equal("JOB-NEW-999");
+  });
 });

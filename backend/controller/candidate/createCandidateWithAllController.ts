@@ -82,6 +82,12 @@ const bodySchema = Joi.object({
     "number.base": "Job ID phải là số nguyên",
     "number.integer": "Job ID phải là số nguyên",
   }),
+  job_code: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
+    "string.max": "Mã job không được vượt quá 255 ký tự",
+  }),
+  project: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
+    "string.max": "Project không được vượt quá 255 ký tự",
+  }),
 
   // --- FK bằng ID gốc ---
   recruiter: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
@@ -147,6 +153,8 @@ createCandidateWithAllController.post(
           expected_salary: body.expected_salary,
           note: body.note,
           job_id: body.job_id,
+          job_code: body.job_code,
+          project: body.project,
           file,
 
           // FK bằng ID gốc

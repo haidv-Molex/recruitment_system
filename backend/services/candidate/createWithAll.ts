@@ -3,6 +3,7 @@ import User from "@services/user/_User";
 import Platform from "@services/platform/_Platform";
 import Company from "@services/company/_Company";
 import Level from "@services/level/_Level";
+import Job from "@services/job/_Job";
 import { create, CreateCandidateInput } from "@services/candidate/create";
 
 /**
@@ -51,6 +52,8 @@ export interface CreateCandidateWithAllInput {
   targeted_company_name?: string | null;
   reference_name?: string | null;
   candidate_levels_name?: string[];
+  job_code?: string | null;
+  project?: string | null;
 }
 
 export async function createWithAll(
@@ -86,6 +89,26 @@ export async function createWithAll(
     targetedCompanyId = company.company_id;
   }
 
+  let jobId: number | null = data.job_id ?? null;
+  // 4.5. Nếu không có job_id → tìm hoặc tạo job mới bằng job_code và project
+  if (!jobId && data.job_code) {
+    const jobCodeTrimmed = data.job_code.trim();
+    const jobCheck = await pool.query(
+      `SELECT job_id FROM job WHERE LOWER(job_code) = LOWER($1) LIMIT 1`,
+      [jobCodeTrimmed]
+    );
+    if (jobCheck.rows.length > 0) {
+      jobId = jobCheck.rows[0].job_id;
+    } else {
+      const projectVal = data.project && data.project.trim() ? data.project.trim() : jobCodeTrimmed;
+      const newJob = await Job.create({
+        job_code: jobCodeTrimmed,
+        project: projectVal,
+      }, pool);
+      jobId = newJob.job_id;
+    }
+  }
+
   // 5. Giải quyết candidate_levels_name thành IDs và gộp với candidate_levels
   const newLevelIds: number[] = [];
   if (data.candidate_levels_name && data.candidate_levels_name.length > 0) {
@@ -115,7 +138,7 @@ export async function createWithAll(
     expected_salary: data.expected_salary ?? null,
     status: data.status,
     note: data.note ?? null,
-    job_id: data.job_id ?? null,
+    job_id: jobId,
     file: data.file ?? null,
     recruiter: recruiterId,
     platform_id: platformId,

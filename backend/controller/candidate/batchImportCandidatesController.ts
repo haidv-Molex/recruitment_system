@@ -44,6 +44,7 @@ const candidateItemSchema = Joi.object({
   targeted_company_name: Joi.string().max(255).allow("", null).optional(),
   candidate_levels_name: stringArray().optional(),
   job_code: Joi.string().max(255).allow("", null).optional(),
+  project: Joi.string().max(255).allow("", null).optional(),
 });
 
 const bodySchema = Joi.object({

@@ -120,4 +120,45 @@ describe("Candidate batchImport service", () => {
     );
     expect(candidatesRes.rows).to.have.lengthOf(1);
   });
+
+  it("should auto-create missing jobs during batch import based on job_code and project", async () => {
+    const importItems = [
+      {
+        candidate_name: "Candidate Job Create A",
+        status: "Applied",
+        job_code: "BATCH-JOB-999",
+        project: "Batch Job Project Name",
+      },
+      {
+        candidate_name: "Candidate Job Create B",
+        status: "Interviewing",
+        job_code: "BATCH-JOB-999",
+        project: "Another Project Name But Same Code", // should reuse
+      }
+    ];
+
+    const result = await batchImport(importItems, client);
+
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(2);
+    expect(result.errors).to.have.lengthOf(0);
+
+    // Verify candidates were inserted
+    const candidatesRes = await client.query(
+      "SELECT * FROM candidate WHERE candidate_name IN ($1, $2)",
+      ["Candidate Job Create A", "Candidate Job Create B"]
+    );
+    expect(candidatesRes.rows).to.have.lengthOf(2);
+
+    const candA = candidatesRes.rows.find(r => r.candidate_name === "Candidate Job Create A")!;
+    const candB = candidatesRes.rows.find(r => r.candidate_name === "Candidate Job Create B")!;
+
+    expect(candA.job_id).to.not.be.null;
+    expect(candA.job_id).to.equal(candB.job_id);
+
+    // Verify the auto-created job details
+    const jobRes = await client.query("SELECT * FROM job WHERE job_id = $1", [candA.job_id]);
+    expect(jobRes.rows[0].job_code).to.equal("BATCH-JOB-999");
+    expect(jobRes.rows[0].project).to.equal("Batch Job Project Name");
+  });
 });

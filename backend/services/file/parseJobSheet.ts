@@ -142,15 +142,24 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     const note = row["Note"] !== undefined && row["Note"] !== null ? String(row["Note"]).trim() : null;
 
     // Resolve relation objects by name
-    const departments = resolveRelationWithPlaceholder(row["Dept."], deptMap, (name) => ({
+    const resolvedDepts = resolveRelationWithPlaceholder(row["Dept."], deptMap, (name) => ({
       department_id: null,
       department_code: null,
       department_name: name,
       department_description: null,
       create_at: null,
       update_at: null,
-      candidate_required: candidate_required
-    } as any)).map(d => ({ ...d, candidate_required }));
+      candidate_required: 0
+    } as any));
+
+    const deptsCount = resolvedDepts.length;
+    const baseRequired = deptsCount > 0 ? Math.floor(candidate_required / deptsCount) : 0;
+    const remainderRequired = deptsCount > 0 ? candidate_required % deptsCount : 0;
+
+    const departments = resolvedDepts.map((d, index) => ({
+      ...d,
+      candidate_required: baseRequired + (index < remainderRequired ? 1 : 0)
+    }));
 
     const segments = resolveRelationWithPlaceholder(row["Project Segment"], segmentMap, (name) => ({
       segment_id: null,

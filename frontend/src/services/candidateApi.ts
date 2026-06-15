@@ -28,6 +28,8 @@ export async function createCandidateApi(formData: any): Promise<candidateModel>
   if (formData.jobId) fd.append('job_id', String(formData.jobId));
   if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
   if (formData.referenceId) fd.append('reference', String(formData.referenceId));
+  if (formData.jobCode) fd.append('job_code', formData.jobCode);
+  if (formData.project) fd.append('project', formData.project);
 
   // File upload
   if (formData.file) fd.append('file', formData.file);
@@ -169,6 +171,8 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
   if (formData.recruiterName) fd.append('recruiter_name', formData.recruiterName);
   if (formData.targetedCompanyName) fd.append('targeted_company_name', formData.targetedCompanyName);
   if (formData.referenceName) fd.append('reference_name', formData.referenceName);
+  if (formData.jobCode) fd.append('job_code', formData.jobCode);
+  if (formData.project) fd.append('project', formData.project);
 
   // File upload
   if (formData.file) fd.append('file', formData.file);

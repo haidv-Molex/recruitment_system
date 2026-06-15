@@ -151,6 +151,7 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
           targetedCompanyName: c.targeted_company === 'Yes' ? (c.targeted_company_name || '') : '',
           referenceName: c.reference_name || '',
           jobCode: c.job_code || '',
+          project: c.project || '',
         };
 
         try {

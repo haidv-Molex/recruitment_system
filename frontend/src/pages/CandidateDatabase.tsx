@@ -263,6 +263,7 @@ export const CandidateDatabasePage = ({
         targeted_company_name: targetedCompanyName,
         reference_name: c.reference_name || '',
         job_code: c.job_code || '',
+        project: c.project || '',
       };
     });
 

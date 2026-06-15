@@ -3,6 +3,7 @@ import User from "@services/user/_User";
 import Platform from "@services/platform/_Platform";
 import Company from "@services/company/_Company";
 import Level from "@services/level/_Level";
+import Job from "@services/job/_Job";
 import { create } from "@services/candidate/create";
 
 export type CandidateImportItem = {
@@ -33,6 +34,7 @@ export type CandidateImportItem = {
   targeted_company_name?: string | null;
   candidate_levels_name?: string[];
   job_code?: string | null;
+  project?: string | null;
 };
 
 export type BatchImportResult = {
@@ -180,7 +182,7 @@ export async function batchImport(
     }
   );
 
-  // Resolve Job Codes to Job IDs (no creation)
+  // Resolve Job Codes to Job IDs (auto-create if missing)
   const jobMap = new Map<string, number>();
   if (jobCodes.size > 0) {
     const uniqueJobCodes = Array.from(jobCodes).map((jc) => jc.toLowerCase());
@@ -190,6 +192,21 @@ export async function batchImport(
     );
     for (const row of jobRes.rows) {
       jobMap.set(row.lower_code, Number(row.job_id));
+    }
+
+    // Auto-create missing jobs
+    for (const jc of jobCodes) {
+      const lower = jc.trim().toLowerCase();
+      if (!jobMap.has(lower)) {
+        const matchingCand = candidates.find(c => c.job_code?.trim().toLowerCase() === lower);
+        const projectVal = matchingCand?.project?.trim() || jc.trim();
+
+        const newJob = await Job.create({
+          job_code: jc.trim(),
+          project: projectVal,
+        }, pool);
+        jobMap.set(lower, newJob.job_id);
+      }
     }
   }
 
