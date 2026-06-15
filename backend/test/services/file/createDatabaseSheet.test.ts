@@ -130,10 +130,21 @@ describe("createDatabaseSheet Service", () => {
     const workbook = await createDatabaseSheet(client);
     const sheet = workbook.getWorksheet("Database")!;
 
-    const nameVal = getCellByHeader(sheet, "Name", 2);
-    const jobCodeVal = getCellByHeader(sheet, "Job code", 2);
-    const sourceVal = getCellByHeader(sheet, "Source", 2);
-    const statusVal = getCellByHeader(sheet, "Status", 2);
+    // Find the row that has our candidate
+    let targetRow = -1;
+    for (let r = 2; r <= sheet.rowCount; r++) {
+      const val = getCellByHeader(sheet, "Name", r);
+      if (String(val ?? "").includes(candidateName)) {
+        targetRow = r;
+        break;
+      }
+    }
+    expect(targetRow).to.be.greaterThan(1);
+
+    const nameVal = getCellByHeader(sheet, "Name", targetRow);
+    const jobCodeVal = getCellByHeader(sheet, "Job code", targetRow);
+    const sourceVal = getCellByHeader(sheet, "Source", targetRow);
+    const statusVal = getCellByHeader(sheet, "Status", targetRow);
 
     expect(String(nameVal)).to.include(candidateName);
     expect(String(jobCodeVal)).to.include(jobCode);
@@ -239,6 +250,10 @@ describe("createDatabaseSheet Service", () => {
   });
 
   it("should return a header-only 'Database' sheet when no candidates exist", async () => {
+    // Delete all existing candidates in this transaction to ensure 0 candidates
+    await client.query("DELETE FROM candidate_level");
+    await client.query("DELETE FROM candidate");
+
     // Seed a job but NO candidates
     await seedJob("JOB-EMPTY-" + Date.now(), "Empty Project");
 

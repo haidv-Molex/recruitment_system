@@ -12,6 +12,7 @@ const STEPS = {
 };
 
 export interface CandidateExcelImportProps {
+  onImportBatch?: (candidates: any[]) => Promise<{ success: boolean; importedCount: number; errors: any[] }>;
   onClose: () => void;
 }
 
@@ -26,7 +27,7 @@ function formatDate(val: any): string {
   }
 }
 
-export default function CandidateExcelImport({ onClose }: CandidateExcelImportProps) {
+export default function CandidateExcelImport({ onImportBatch, onClose }: CandidateExcelImportProps) {
   const [step, setStep] = useState(STEPS.UPLOAD);
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -81,67 +82,88 @@ export default function CandidateExcelImport({ onClose }: CandidateExcelImportPr
     setStep(STEPS.IMPORTING);
     setImportProgress({ current: 0, total: indicesToImport.length, errors: [] });
 
-    const errors: any[] = [];
+    const selectedCandidates = indicesToImport.map(idx => parsedCandidates[idx]);
 
-    for (let pos = 0; pos < indicesToImport.length; pos++) {
-      const idx = indicesToImport[pos];
-      const c = parsedCandidates[idx];
-      setImportProgress((prev) => ({ ...prev, current: pos + 1 }));
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const validEmail = c.candidate_email && emailRegex.test(c.candidate_email) ? c.candidate_email : '';
-
-      const formatApiDate = (val: any) => {
-        if (!val) return '';
-        try {
-          const d = new Date(val);
-          if (isNaN(d.getTime())) return '';
-          return d.toISOString().slice(0, 10);
-        } catch {
-          return '';
-        }
-      };
-
-      const formData = {
-        candidateCode: c.employee_code || '',
-        candidateName: c.candidate_name || '',
-        candidateEmail: validEmail,
-        candidatePhone: c.candidate_phone || '',
-        agency: c.agency || '',
-        offerDate: formatApiDate(c.offer_date),
-        onboardDate: formatApiDate(c.onboard_date),
-        expectedOnboardDate: '',
-        feedbackDate: formatApiDate(c.feedback_date),
-        currentSalary: c.current_salary || '',
-        expectedSalary: c.expected_salary || '',
-        status: c.status || '',
-        note: c.note || '',
-        file: null,
-        platformId: '',
-        recruiterId: c.recruiter?.user_id || '',
-        jobId: '',
-        targetedCompanyId: '',
-        referenceId: '',
-        // By-name fallbacks for new entities
-        platformName: c.source || '',
-        recruiterName: c.recruiter?.user_id === null ? (c.recruiter?.user_name || '') : '',
-        targetedCompanyName: c.targeted_company === 'Yes' ? (c.targeted_company_name || '') : '',
-        referenceName: c.reference_name || '',
-        // Extra context fields (used by /candidate/extended backend)
-        jobCode: c.job_code || '',
-      };
-
+    if (onImportBatch) {
       try {
-        await createCandidateExtendedApi(formData);
+        const result = await onImportBatch(selectedCandidates);
+        setImportProgress({
+          current: result.importedCount + result.errors.length,
+          total: selectedCandidates.length,
+          errors: result.errors.map(err => ({
+            name: err.candidate_name,
+            message: err.message
+          }))
+        });
       } catch (err: any) {
-        errors.push({
-          name: c.candidate_name || `Row ${idx + 1}`,
-          message: err.response?.data?.message || err.message || 'Unknown error',
+        setImportProgress({
+          current: 0,
+          total: selectedCandidates.length,
+          errors: [{ name: 'Batch Error', message: err.message || 'Import failed' }]
         });
       }
+    } else {
+      const errors: any[] = [];
+
+      for (let pos = 0; pos < indicesToImport.length; pos++) {
+        const idx = indicesToImport[pos];
+        const c = parsedCandidates[idx];
+        setImportProgress((prev) => ({ ...prev, current: pos + 1 }));
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const validEmail = c.candidate_email && emailRegex.test(c.candidate_email) ? c.candidate_email : '';
+
+        const formatApiDate = (val: any) => {
+          if (!val) return '';
+          try {
+            const d = new Date(val);
+            if (isNaN(d.getTime())) return '';
+            return d.toISOString().slice(0, 10);
+          } catch {
+            return '';
+          }
+        };
+
+        const formData = {
+          candidateCode: c.employee_code || '',
+          candidateName: c.candidate_name || '',
+          candidateEmail: validEmail,
+          candidatePhone: c.candidate_phone || '',
+          agency: c.agency || '',
+          offerDate: formatApiDate(c.offer_date),
+          onboardDate: formatApiDate(c.onboard_date),
+          expectedOnboardDate: '',
+          feedbackDate: formatApiDate(c.feedback_date),
+          currentSalary: c.current_salary || '',
+          expectedSalary: c.expected_salary || '',
+          status: c.status || '',
+          note: c.note || '',
+          file: null,
+          platformId: '',
+          recruiterId: c.recruiter?.user_id || '',
+          jobId: '',
+          targetedCompanyId: '',
+          referenceId: '',
+          platformName: c.source || '',
+          recruiterName: c.recruiter?.user_id === null ? (c.recruiter?.user_name || '') : '',
+          targetedCompanyName: c.targeted_company === 'Yes' ? (c.targeted_company_name || '') : '',
+          referenceName: c.reference_name || '',
+          jobCode: c.job_code || '',
+        };
+
+        try {
+          await createCandidateExtendedApi(formData);
+        } catch (err: any) {
+          errors.push({
+            name: c.candidate_name || `Row ${idx + 1}`,
+            message: err.response?.data?.message || err.message || 'Unknown error',
+          });
+        }
+      }
+
+      setImportProgress((prev) => ({ ...prev, errors }));
     }
 
-    setImportProgress((prev) => ({ ...prev, errors }));
     setStep(STEPS.DONE);
   };
 

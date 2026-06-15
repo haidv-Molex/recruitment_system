@@ -6,6 +6,7 @@ import { getById } from "./getById";
 import { deleteCandidate } from "./delete";
 import { getAgencies } from "./getAgencies";
 import { getStatuses } from "./getStatuses";
+import { batchImport } from "./batchImport";
 
 const Candidate = {
   create,
@@ -16,6 +17,8 @@ const Candidate = {
   delete: deleteCandidate,
   getAgencies,
   getStatuses,
+  batchImport,
 };
 
 export default Candidate;
+

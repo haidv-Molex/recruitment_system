@@ -267,3 +267,9 @@ export async function downloadDatabaseSheetApi(): Promise<void> {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+export async function batchImportCandidatesApi(candidates: any[]): Promise<any> {
+  const response = await axiosInstance.post('/candidate/batch', { candidates });
+  return response.data.data;
+}
+

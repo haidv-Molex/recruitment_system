@@ -7,10 +7,13 @@ import getAllCandidatesController from "./getAllCandidatesController";
 import deleteCandidateController from "./deleteCandidateController";
 import getAgenciesController from "./getAgenciesController";
 import getStatusesController from "./getStatusesController";
+import batchImportCandidatesController from "./batchImportCandidatesController";
+
 const router = express.Router();
 
 router.use("/", createCandidateController);
 router.use("/extended", createCandidateWithAllController);
+router.use("/batch", batchImportCandidatesController);
 router.use("/", updateCandidateController);
 router.use("/", getCandidateByIdController);
 router.use("/search", getAllCandidatesController);
@@ -19,4 +22,5 @@ router.use("/agencies", getAgenciesController);
 router.use("/statuses", getStatusesController);
 
 export default router;
+
 

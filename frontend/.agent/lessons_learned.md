@@ -290,3 +290,15 @@ All filters use `ILIKE` (case-insensitive). Multiple filters are combined with `
   - Expose `onChangeVisibleColumns` and `defaultVisibleColumns` props in `ExcelTable`.
   - Inside `ExcelTable`, sync `visibleColumns` state using `useEffect` whenever `defaultVisibleColumns` changes.
   - In `JobTracking.tsx`, read with `useItem('visibleJobColumns')` and write with `setItem('visibleJobColumns', cols)`.
+
+## 11. Candidate Excel Import & Batch Import Deduplication System
+
+### Frontend Excel Import Layout
+- **Preview & Action Controls**: Similar to the Job import flow, actions like "Delete Selected" and "Import Selected" are inside the header area next to the title `Preview — N Candidate(s) Found` to maximize table space.
+- **Bulk Import Integration**: Integrates directly with the `batchImportCandidatesApi` endpoint on the frontend. The payload formats name-based fields like `recruiter_name`, `reference_name`, `platform_name`, and `targeted_company_name`.
+
+### Backend Batch Import (`POST /api/candidate/batch`)
+- **Case-Insensitive Deduplication**: Collects and normalizes string-based name relations (recruiter, reference, platform, company, level) from the entire batch, resolves existing rows case-insensitively using `LOWER(col) = ANY($1)`, and auto-creates missing rows.
+- **Job Code Resolution**: Automatically resolves the `job_code` provided in the Excel sheet to the corresponding `job_id` from the database.
+- **Nested Transactions**: Uses `SAVEPOINT` and `ROLLBACK TO SAVEPOINT` for each candidate record so that a validation error in one row does not roll back the entire batch.
+
