@@ -386,38 +386,40 @@ export default function ExcelTable<T extends Record<string, any>>({
               ))}
             </tr>
             {/* Filter row */}
-            <tr className="bg-slate-50 border-b-2 border-slate-300">
-              {/* Sticky checkbox filter cell */}
-              {actions && (
-                <th className="w-10 px-3 py-2 border-r border-slate-300 bg-slate-50 sticky left-0 z-20" />
-              )}
-              {activeColumns.map((col) => (
-                <th key={`${col.key}-filter`} className="p-2 border-r border-slate-300 last:border-r-0">
-                  {col.disableFilter ? null : col.filterOptions ? (
-                    <select
-                      value={columnFilters[col.key] || ''}
-                      onChange={(e) => updateFilter(col.key, e.target.value)}
-                      onKeyDown={handleFilterKeyDown}
-                      className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                    >
-                      <option value="">All</option>
-                      {col.filterOptions.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={columnFilters[col.key] || ''}
-                      onChange={(e) => updateFilter(col.key, e.target.value)}
-                      onKeyDown={handleFilterKeyDown}
-                      placeholder="Filter..."
-                      className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                    />
-                  )}
-                </th>
-              ))}
-            </tr>
+            {activeColumns.some((col) => !col.disableFilter) && (
+              <tr className="bg-slate-50 border-b-2 border-slate-300">
+                {/* Sticky checkbox filter cell */}
+                {actions && (
+                  <th className="w-10 px-3 py-2 border-r border-slate-300 bg-slate-50 sticky left-0 z-20" />
+                )}
+                {activeColumns.map((col) => (
+                  <th key={`${col.key}-filter`} className="p-2 border-r border-slate-300 last:border-r-0">
+                    {col.disableFilter ? null : col.filterOptions ? (
+                      <select
+                        value={columnFilters[col.key] || ''}
+                        onChange={(e) => updateFilter(col.key, e.target.value)}
+                        onKeyDown={handleFilterKeyDown}
+                        className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                      >
+                        <option value="">All</option>
+                        {col.filterOptions.map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={columnFilters[col.key] || ''}
+                        onChange={(e) => updateFilter(col.key, e.target.value)}
+                        onKeyDown={handleFilterKeyDown}
+                        placeholder="Filter..."
+                        className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                      />
+                    )}
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody className="divide-y divide-slate-200">
             {isLoading ? (

@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
 import { searchCompaniesApi, createCompanyApi, deleteCompanyApi, updateCompanyApi } from '../services/companyApi';
-import CompanyTable from '../components/company/CompanyTable';
 import CompanyForm from '../components/company/CompanyForm';
-import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
 import Pagination from '../components/ui/Pagination';
 import Modal from '../components/ui/Modal';
+import ExcelTable, { ExcelColumn } from '../components/ui/ExcelTable';
 import { useHeader } from '../contexts/HeaderContext';
 
 const ITEMS_PER_PAGE = 10;
@@ -46,23 +45,6 @@ export const CompanyPage = () => {
   useEffect(() => {
     loadCompanies(currentPage, searchQuery);
   }, [currentPage]);
-
-  const handleSearch = () => {
-    setCurrentPage(1);
-    loadCompanies(1, searchQuery);
-  };
-
-  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setCurrentPage(1);
-    loadCompanies(1, '');
-  };
 
   const openCreateForm = () => {
     setEditingCompany(null);
@@ -150,36 +132,72 @@ export const CompanyPage = () => {
     actions: headerActions,
   }, [headerActions]);
 
+  const columns = useMemo<ExcelColumn<any>[]>(
+    () => [
+      {
+        key: 'company_name',
+        label: 'Company Name',
+        width: 250,
+        disableFilter: true,
+      },
+      {
+        key: 'company_description',
+        label: 'Description',
+        width: 450,
+        disableFilter: true,
+        render: (_: any, val: any) => val || '—',
+      },
+    ],
+    []
+  );
+
+  const tableActions = [
+    {
+      label: 'Edit',
+      icon: <Edit2 size={14} />,
+      onClick: (row: any) => {
+        openEditForm(row);
+      },
+    },
+    {
+      label: 'Delete',
+      icon: <Trash2 size={14} className="text-red-500" />,
+      onClick: (row: any) => {
+        handleDelete(row);
+      },
+    },
+  ];
+
+  // Map rows for ExcelTable
+  const tableRows = useMemo(() => {
+    return companies.map((c) => ({
+      id: c.company_id,
+      company_id: c.company_id,
+      company_name: c.company_name,
+      company_description: c.company_description,
+    }));
+  }, [companies]);
+
+  const handleExcelSearch = (_colFilters: Record<string, string>, globalSearch: string) => {
+    setSearchQuery(globalSearch);
+    setCurrentPage(1);
+    loadCompanies(1, globalSearch);
+  };
+
   return (
     <div className="space-y-6">
-
-      {/* Search Bar */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex flex-col sm:flex-row gap-3 items-end">
-        <div className="flex-1 w-full">
-          <InputField
-            label="Search Companies"
-            placeholder="Search by company name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-          />
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="secondary" onClick={handleClearSearch} className="flex-1 sm:flex-none">
-            Clear
-          </Button>
-          <Button onClick={handleSearch} icon={<Search size={16} />} className="flex-1 sm:flex-none">
-            Search
-          </Button>
-        </div>
-      </div>
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
 
       {/* Table */}
-      <CompanyTable
-        companies={companies}
-        onEdit={openEditForm}
-        onDelete={handleDelete}
-        loading={loading}
+      <ExcelTable
+        title="Company Records"
+        rows={tableRows}
+        columns={columns}
+        actions={tableActions}
+        isLoading={loading}
+        onSearch={handleExcelSearch}
+        emptyMessage="No companies found"
       />
 
       {/* Pagination */}
