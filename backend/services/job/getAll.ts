@@ -54,7 +54,7 @@ async function getAll(
       OR EXISTS (SELECT 1 FROM job_title jt JOIN level l ON jt.level_id = l.level_id WHERE jt.job_id = j.job_id AND (l.level_code ILIKE $${index} OR l.level_name ILIKE $${index}))
       OR EXISTS (SELECT 1 FROM employee_level el JOIN level l ON el.level_id = l.level_id WHERE el.job_id = j.job_id AND (l.level_code ILIKE $${index} OR l.level_name ILIKE $${index}))
       OR EXISTS (SELECT 1 FROM hiring_manager hm JOIN "user" u ON hm.user_id = u.user_id WHERE hm.job_id = j.job_id AND u.user_name ILIKE $${index})
-      OR EXISTS (SELECT 1 FROM job_business_partner jbp JOIN "user" u ON jbp.user_id = u.user_id WHERE jbp.job_id = j.job_id AND u.user_name ILIKE $${index})
+      OR EXISTS (SELECT 1 FROM job_department jd JOIN "user" u ON jd.user_id = u.user_id WHERE jd.job_id = j.job_id AND u.user_name ILIKE $${index})
     )`);
     values.push(s);
     index++;
@@ -111,7 +111,7 @@ async function getAll(
     values.push(`%${params.manager}%`);
   }
   if (params.partner) {
-    conditions.push(`EXISTS (SELECT 1 FROM job_business_partner jbp JOIN "user" u ON jbp.user_id = u.user_id WHERE jbp.job_id = j.job_id AND u.user_name ILIKE $${index++})`);
+    conditions.push(`EXISTS (SELECT 1 FROM job_department jd JOIN "user" u ON jd.user_id = u.user_id WHERE jd.job_id = j.job_id AND u.user_name ILIKE $${index++})`);
     values.push(`%${params.partner}%`);
   }
 

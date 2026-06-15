@@ -21,7 +21,7 @@ type UpdateJobData = {
     buffer: Buffer;
   } | null;
   partners?: number[];
-  departments?: { department_id: number; candidate_required: number }[];
+  departments?: { department_id: number; candidate_required: number; user_id?: number | null }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
@@ -99,59 +99,102 @@ async function update(
     }
 
     // 3. Update linking records if provided
-    // partners
-    if (data.partners !== undefined || data.partners_name !== undefined) {
-      const partnersList = data.partners || [];
-      const newPartnerIds: number[] = [];
-      if (data.partners_name) {
-        for (const name of data.partners_name) {
-          const user = await User.create({ username: name }, pool);
-          newPartnerIds.push(user.user_id);
-        }
-      }
-      const merged = [...partnersList, ...newPartnerIds];
+    const isDeptUpdated = data.departments !== undefined || data.departments_name !== undefined;
+    const isPartnerUpdated = data.partners !== undefined || data.partners_name !== undefined;
 
-      // Clear existing
-      await pool.query(`DELETE FROM job_business_partner WHERE job_id = $1`, [id]);
-      // Insert new
-      for (const userId of merged) {
-        const userCheck = await pool.query(`SELECT user_id FROM "user" WHERE user_id = $1`, [userId]);
-        if (userCheck.rows.length === 0) {
-          throw new AppError(`Đối tác (user_id = ${userId}) không tồn tại`, 400);
-        }
-        await pool.query(
-          `INSERT INTO job_business_partner (job_id, user_id) VALUES ($1, $2)`,
-          [id, userId]
-        );
-      }
-    }
+    if (isDeptUpdated || isPartnerUpdated) {
+      // Get existing departments for this job
+      const existingDeptsRes = await pool.query(
+        `SELECT department_id, candidate_required, user_id FROM job_department WHERE job_id = $1`,
+        [id]
+      );
+      const existingDepts = existingDeptsRes.rows;
 
-    // departments
-    if (data.departments !== undefined || data.departments_name !== undefined) {
-      const deptsList = data.departments || [];
-      const newDepts: { department_id: number; candidate_required: number }[] = [];
-      if (data.departments_name) {
-        for (const item of data.departments_name) {
-          const dept = await Department.create({
-            department_code: item.name.toUpperCase(),
-            department_name: item.name,
-          }, pool);
-          newDepts.push({ department_id: dept.department_id, candidate_required: item.candidate_required });
+      // Resolve departments list
+      let targetDepts: { department_id: number; candidate_required: number; user_id?: number | null }[] = [];
+      if (isDeptUpdated) {
+        const deptsList = data.departments || [];
+        const newDepts: { department_id: number; candidate_required: number; user_id?: number | null }[] = [];
+        if (data.departments_name) {
+          for (const item of data.departments_name) {
+            const dept = await Department.create({
+              department_code: item.name.toUpperCase(),
+              department_name: item.name,
+            }, pool);
+            newDepts.push({ department_id: dept.department_id, candidate_required: item.candidate_required });
+          }
         }
+        targetDepts = [...deptsList, ...newDepts];
+      } else {
+        targetDepts = existingDepts.map(d => ({
+          department_id: d.department_id,
+          candidate_required: d.candidate_required,
+          user_id: d.user_id
+        }));
       }
-      const merged = [...deptsList, ...newDepts];
 
+      // Resolve partners list
+      let targetPartners: number[] = [];
+      if (isPartnerUpdated) {
+        const partnersList = data.partners || [];
+        const newPartnerIds: number[] = [];
+        if (data.partners_name) {
+          for (const name of data.partners_name) {
+            const user = await User.create({ username: name }, pool);
+            newPartnerIds.push(user.user_id);
+          }
+        }
+        targetPartners = [...partnersList, ...newPartnerIds];
+      } else {
+        targetPartners = existingDepts.map(d => d.user_id).filter(Boolean) as number[];
+      }
+
+      // Map targetPartners to targetDepts
+      const mappedDepts = targetDepts.map((d, index) => {
+        let userId = d.user_id;
+        // Map top-level partners to departments if not explicitly set
+        if (userId === undefined || userId === null) {
+          if (targetPartners.length > 0) {
+            if (targetPartners.length === 1) {
+              userId = targetPartners[0];
+            } else {
+              userId = targetPartners[index] !== undefined ? targetPartners[index] : null;
+            }
+          } else {
+            userId = null;
+          }
+        }
+        return {
+          department_id: d.department_id,
+          candidate_required: d.candidate_required,
+          user_id: userId
+        };
+      });
+
+      // Clear existing departments
       await pool.query(`DELETE FROM job_department WHERE job_id = $1`, [id]);
-      for (const item of merged) {
+
+      // Insert new/updated departments
+      for (const item of mappedDepts) {
         const departmentId = item.department_id;
         const candidateRequired = item.candidate_required;
+        const userId = item.user_id;
+
         const depCheck = await pool.query(`SELECT department_id FROM department WHERE department_id = $1`, [departmentId]);
         if (depCheck.rows.length === 0) {
           throw new AppError(`Phòng ban (department_id = ${departmentId}) không tồn tại`, 400);
         }
+
+        if (userId) {
+          const userCheck = await pool.query(`SELECT user_id FROM "user" WHERE user_id = $1`, [userId]);
+          if (userCheck.rows.length === 0) {
+            throw new AppError(`Đối tác (user_id = ${userId}) không tồn tại`, 400);
+          }
+        }
+
         await pool.query(
-          `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
-          [id, departmentId, candidateRequired]
+          `INSERT INTO job_department (job_id, department_id, candidate_required, user_id) VALUES ($1, $2, $3, $4)`,
+          [id, departmentId, candidateRequired, userId]
         );
       }
     }

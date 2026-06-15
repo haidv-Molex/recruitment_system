@@ -48,6 +48,10 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-PARTNER-001",
         project: "Project Beta",
+        departments_name: [
+          { name: "Dept A", candidate_required: 1 },
+          { name: "Dept B", candidate_required: 1 }
+        ],
         partners_name: ["Alice Nguyen", "Bob Tran"],
       },
       client
@@ -162,6 +166,10 @@ describe("createWithAll job service", () => {
       {
         job_code: "JOB-MERGE-001",
         project: "Project Theta",
+        departments_name: [
+          { name: "Dept X", candidate_required: 1 },
+          { name: "Dept Y", candidate_required: 1 }
+        ],
         partners: [existingPartnerId],
         partners_name: ["New Partner"],
       },

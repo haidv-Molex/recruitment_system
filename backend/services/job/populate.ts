@@ -2,13 +2,13 @@ import { PoolClient } from "pg";
 
 export async function populateJobRelations(jobId: number, pool: PoolClient) {
   const partnersQuery = `
-    SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at, u.department_id
-    FROM job_business_partner jbp
-    JOIN "user" u ON jbp.user_id = u.user_id
-    WHERE jbp.job_id = $1
+    SELECT DISTINCT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at, u.department_id
+    FROM job_department jd
+    JOIN "user" u ON jd.user_id = u.user_id
+    WHERE jd.job_id = $1
   `;
   const departmentsQuery = `
-    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, jd.candidate_required
+    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, jd.candidate_required, jd.user_id
     FROM job_department jd
     JOIN department d ON jd.department_id = d.department_id
     WHERE jd.job_id = $1

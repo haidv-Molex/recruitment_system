@@ -55,7 +55,10 @@ describe("update job service with auto-creation names", () => {
       sampleJobId,
       {
         partners_name: ["Update Partner A", "Update Partner B"],
-        departments_name: [{ name: "Update Dept X", candidate_required: 3 }],
+        departments_name: [
+          { name: "Update Dept X", candidate_required: 3 },
+          { name: "Update Dept W", candidate_required: 2 }
+        ],
         segments_name: ["Update Seg Y"],
         sites_name: ["Update Site Z"],
         titles_name: ["Update Title L1"],
@@ -70,8 +73,10 @@ describe("update job service with auto-creation names", () => {
     expect(partnerNames).to.include("Update Partner A");
     expect(partnerNames).to.include("Update Partner B");
 
-    expect(result.departments).to.be.an("array").with.lengthOf(1);
-    expect(result.departments![0]).to.have.property("department_name", "Update Dept X");
+    expect(result.departments).to.be.an("array").with.lengthOf(2);
+    const deptNames = result.departments!.map((d: any) => d.department_name);
+    expect(deptNames).to.include("Update Dept X");
+    expect(deptNames).to.include("Update Dept W");
 
     expect(result.segments).to.be.an("array").with.lengthOf(1);
     expect(result.segments![0]).to.have.property("segment_name", "Update Seg Y");
