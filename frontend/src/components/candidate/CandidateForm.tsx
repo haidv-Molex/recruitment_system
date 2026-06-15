@@ -9,6 +9,7 @@ import Modal from '../ui/Modal';
 import InputField from '../common/InputField';
 import SelectField from '../common/SelectField';
 import Button from '../common/Button';
+import SingleSearchSelect from '../ui/SingleSearchSelect';
 
 const emptyCandidate = {
   candidateCode: '',
@@ -46,6 +47,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
   const [error, setError] = useState('');
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
 
   const [options, setOptions] = useState({
     jobs: [] as any[],
@@ -79,14 +81,25 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         referenceId: candidate.reference?.user_id || candidate.reference || '',
         file: null,
       });
+      setSelectedJob(candidate.job || null);
     } else {
       setFormData(emptyCandidate);
+      setSelectedJob(null);
     }
   }, [candidate]);
 
   useEffect(() => {
     loadOptions();
   }, []);
+
+  useEffect(() => {
+    if (formData.jobId && options.jobs.length > 0 && !selectedJob) {
+      const found = options.jobs.find((j) => String(j.job_id) === String(formData.jobId));
+      if (found) {
+        setSelectedJob(found);
+      }
+    }
+  }, [formData.jobId, options.jobs, selectedJob]);
 
   const loadOptions = async () => {
     setLoadingOptions(true);
@@ -133,10 +146,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
     e.preventDefault();
     setError('');
 
-    if (!formData.candidateCode.trim()) {
-      setError('Candidate Code is required.');
-      return;
-    }
     if (!formData.candidateName.trim()) {
       setError('Candidate Name is required.');
       return;
@@ -152,11 +161,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
 
     onSubmit(formData);
   };
-
-  const jobOptions = [
-    { value: '', label: 'Select Job' },
-    ...options.jobs.map((j) => ({ value: j.job_id, label: `${j.job_code} — ${j.project}` })),
-  ];
 
   const statusOptions = [
     { value: '', label: 'Select Status' },
@@ -205,7 +209,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <div className="bg-red-50 text-red-600 text-xs px-3.5 py-2 rounded-lg border border-red-200">
             {error}
@@ -216,149 +220,197 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
           <p className="text-xs text-slate-400">Loading form options from server...</p>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <InputField
-            label="Candidate Code *"
-            name="candidateCode"
-            value={formData.candidateCode}
-            onChange={handleChange}
-            placeholder="e.g. CAND-001"
-            disabled={saving}
-          />
-          <InputField
-            label="Candidate Name *"
-            name="candidateName"
-            value={formData.candidateName}
-            onChange={handleChange}
-            placeholder="e.g. Nguyễn Văn A"
-            disabled={saving}
-          />
-          <InputField
-            label="Email"
-            type="email"
-            name="candidateEmail"
-            value={formData.candidateEmail}
-            onChange={handleChange}
-            placeholder="e.g. email@example.com"
-            disabled={saving}
-          />
-          <InputField
-            label="Phone"
-            type="tel"
-            name="candidatePhone"
-            value={formData.candidatePhone}
-            onChange={handlePhoneInput}
-            placeholder="Numeric only"
-            disabled={saving}
-          />
-          <SelectField
-            label="Job *"
-            name="jobId"
-            value={formData.jobId}
-            onChange={handleChange}
-            options={jobOptions}
-            disabled={saving}
-          />
-          <SelectField
-            label="Status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            options={statusOptions}
-            disabled={saving}
-          />
-          <SelectField
-            label="Platform (Source)"
-            name="platformId"
-            value={formData.platformId}
-            onChange={handleChange}
-            options={platformOptions}
-            disabled={saving}
-          />
-          <SelectField
-            label="Recruiter"
-            name="recruiterId"
-            value={formData.recruiterId}
-            onChange={handleChange}
-            options={recruiterOptions}
-            disabled={saving}
-          />
-          <SelectField
-            label="Targeted Company"
-            name="targetedCompanyId"
-            value={formData.targetedCompanyId}
-            onChange={handleChange}
-            options={companyOptions}
-            disabled={saving}
-          />
-          <SelectField
-            label="Reference (User)"
-            name="referenceId"
-            value={formData.referenceId}
-            onChange={handleChange}
-            options={referenceOptions}
-            disabled={saving}
-          />
-          <SelectField
-            label="Agency"
-            name="agency"
-            value={formData.agency}
-            onChange={handleChange}
-            options={agencyOptions}
-            disabled={saving}
-          />
-          <InputField
-            label="Current Salary"
-            name="currentSalary"
-            value={formData.currentSalary}
-            onChange={handleChange}
-            placeholder="e.g. 2200 USD"
-            disabled={saving}
-          />
-          <InputField
-            label="Expected Salary"
-            name="expectedSalary"
-            value={formData.expectedSalary}
-            onChange={handleChange}
-            placeholder="e.g. 2800 USD"
-            disabled={saving}
-          />
-          <InputField
-            label="Offer Date"
-            type="date"
-            name="offerDate"
-            value={formData.offerDate}
-            onChange={handleChange}
-            disabled={saving}
-          />
-          <InputField
-            label="Onboard Date"
-            type="date"
-            name="onboardDate"
-            value={formData.onboardDate}
-            onChange={handleChange}
-            disabled={saving}
-          />
-          <InputField
-            label="Expected Onboard Date"
-            type="date"
-            name="expectedOnboardDate"
-            value={formData.expectedOnboardDate}
-            onChange={handleChange}
-            disabled={saving}
-          />
-          <InputField
-            label="Feedback Date"
-            type="date"
-            name="feedbackDate"
-            value={formData.feedbackDate}
-            onChange={handleChange}
-            disabled={saving}
-          />
+        {/* Section 1: Required & Key Information */}
+        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Required & Key Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Candidate Name *"
+              name="candidateName"
+              value={formData.candidateName}
+              onChange={handleChange}
+              placeholder="e.g. Nguyễn Văn A"
+              disabled={saving}
+            />
+            <SelectField
+              label="Status *"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              options={statusOptions}
+              disabled={saving}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SingleSearchSelect
+              label="Job (Requisition)"
+              placeholder="Type job code or project to search..."
+              initialItem={selectedJob}
+              searchApi={(search) => searchJobsApi({ search })}
+              displayFn={(j: any) => `${j.job_code} — ${j.project}`}
+              keyProp="job_id"
+              onChange={(id, item) => {
+                setFormData((prev) => ({ ...prev, jobId: id || '' }));
+                setSelectedJob(item);
+              }}
+              disabled={saving}
+            />
+            <InputField
+              label="Candidate Code"
+              name="candidateCode"
+              value={formData.candidateCode}
+              onChange={handleChange}
+              placeholder="e.g. CAND-001 (Optional)"
+              disabled={saving}
+            />
+          </div>
+        </div>
+
+        {/* Section 2: Contact Information */}
+        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contact Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Email"
+              type="email"
+              name="candidateEmail"
+              value={formData.candidateEmail}
+              onChange={handleChange}
+              placeholder="e.g. email@example.com"
+              disabled={saving}
+            />
+            <InputField
+              label="Phone"
+              type="tel"
+              name="candidatePhone"
+              value={formData.candidatePhone}
+              onChange={handlePhoneInput}
+              placeholder="Numeric only"
+              disabled={saving}
+            />
+          </div>
+        </div>
+
+        {/* Section 3: Sourcing & Assignment */}
+        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sourcing & Assignment</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SelectField
+              label="Recruiter"
+              name="recruiterId"
+              value={formData.recruiterId}
+              onChange={handleChange}
+              options={recruiterOptions}
+              disabled={saving}
+            />
+            <SelectField
+              label="Reference (Internal User)"
+              name="referenceId"
+              value={formData.referenceId}
+              onChange={handleChange}
+              options={referenceOptions}
+              disabled={saving}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SelectField
+              label="Platform (Source)"
+              name="platformId"
+              value={formData.platformId}
+              onChange={handleChange}
+              options={platformOptions}
+              disabled={saving}
+            />
+            <SelectField
+              label="Agency"
+              name="agency"
+              value={formData.agency}
+              onChange={handleChange}
+              options={agencyOptions}
+              disabled={saving}
+            />
+          </div>
+        </div>
+
+        {/* Section 4: Employment & Salary Details */}
+        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment & Salary Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <InputField
+              label="Current Salary"
+              name="currentSalary"
+              value={formData.currentSalary}
+              onChange={handleChange}
+              placeholder="e.g. 2200 USD"
+              disabled={saving}
+            />
+            <InputField
+              label="Expected Salary"
+              name="expectedSalary"
+              value={formData.expectedSalary}
+              onChange={handleChange}
+              placeholder="e.g. 2800 USD"
+              disabled={saving}
+            />
+            <SelectField
+              label="Targeted Company"
+              name="targetedCompanyId"
+              value={formData.targetedCompanyId}
+              onChange={handleChange}
+              options={companyOptions}
+              disabled={saving}
+            />
+          </div>
+        </div>
+
+        {/* Section 5: Recruitment Timeline */}
+        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recruitment Timeline</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <InputField
+              label="Offer Date"
+              type="date"
+              name="offerDate"
+              value={formData.offerDate}
+              onChange={handleChange}
+              disabled={saving}
+            />
+            <InputField
+              label="Onboard Date"
+              type="date"
+              name="onboardDate"
+              value={formData.onboardDate}
+              onChange={handleChange}
+              disabled={saving}
+            />
+            <InputField
+              label="Expected Onboard Date"
+              type="date"
+              name="expectedOnboardDate"
+              value={formData.expectedOnboardDate}
+              onChange={handleChange}
+              disabled={saving}
+            />
+            <InputField
+              label="Feedback Date"
+              type="date"
+              name="feedbackDate"
+              value={formData.feedbackDate}
+              onChange={handleChange}
+              disabled={saving}
+            />
+          </div>
+        </div>
+
+        {/* Section 6: Attachments & Notes */}
+        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attachments & Notes</h3>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-700">CV File (optional)</label>
             {candidate?.file && (
-              <FileLink file={candidate.file} onClick={() => setPreviewFile(candidate.file)} />
+              <div className="mb-2">
+                <FileLink file={candidate.file} onClick={() => setPreviewFile(candidate.file)} />
+              </div>
             )}
             <input
               type="file"
@@ -373,18 +425,17 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
               </p>
             )}
           </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700">Note</label>
-          <textarea
-            name="note"
-            value={formData.note}
-            onChange={handleChange}
-            rows={3}
-            disabled={saving}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-          />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-slate-700">Note</label>
+            <textarea
+              name="note"
+              value={formData.note}
+              onChange={handleChange}
+              rows={3}
+              disabled={saving}
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+            />
+          </div>
         </div>
       </form>
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
