@@ -1,76 +1,98 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
-import UserForm from '../components/common/UserForm';
-import ToastContainer from '../components/common/Toast';
-import Pagination from '../components/ui/Pagination';
-import Modal from '../components/ui/Modal';
-import Button from '../components/common/Button';
-import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../hooks/useToast';
-import { createHRApi, fetchUsersApi, deleteUserApi } from '../services/userApi';
-import AdminStats from '../components/admin/AdminStats';
-import AdminFilters from '../components/admin/AdminFilters';
-import AdminTable from '../components/admin/AdminTable';
-import { useHeader } from '../contexts/HeaderContext';
+import { useCallback, useEffect, useState, useMemo } from 'react';
+import { Plus, Edit2, Trash2, Shield, User } from 'lucide-react';
+import ToastContainer from '@/components/common/Toast';
+import { useToast } from '@/hooks/useToast';
+import { fetchUsersApi, createHRApi, deleteUserApi, fetchRolesApi } from '@/services/userApi';
+import Button from '@/components/common/Button';
+import Pagination from '@/components/ui/Pagination';
+import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
+import { useHeader } from '@/contexts/HeaderContext';
+import { useAuth } from '@/contexts/AuthContext';
+import UserForm from '@/components/common/UserForm';
 
-const ITEMS_PER_PAGE = 5;
+
+const roleColors: Record<string, string> = {
+  admin: 'bg-red-50 text-red-700 border-red-200',
+  hr: 'bg-blue-50 text-blue-700 border-blue-200',
+  user: 'bg-slate-50 text-slate-600 border-slate-200',
+  banned: 'bg-orange-50 text-orange-700 border-orange-200',
+};
+
+const getRoleIcon = (role: string) => {
+  if (role === 'admin') return <Shield size={12} className="text-red-500" />;
+  return <User size={12} className="text-blue-500" />;
+};
 
 export const AdminPage = () => {
   const { user: currentUser } = useAuth();
   const { toasts, removeToast, toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roles, setRoles] = useState<string[]>([]);
+  const [selectedRole, setSelectedRole] = useState('');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterRole, setFilterRole] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async (page: number, limit: number, search: string, role: string) => {
+    setLoading(true);
     try {
-      const response = await fetchUsersApi({ page: 1, limit: 100 });
-      setUsers(response.data || []);
-    } catch (err) {
-      toast.error('Failed to load users.');
+      const result = await fetchUsersApi({ page, limit, search, role });
+      setUsers(result.data || []);
+      setTotalItems(result.pagination?.total_items || result.data?.length || 0);
+      setCurrentPage(page);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to load users.');
+    } finally {
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadUsers();
   }, []);
 
-  const filteredUsers = useMemo(() => {
-    let result = users;
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.trim().toLowerCase();
-      result = result.filter(
-        (u) =>
-          (u.user_name || '').toLowerCase().includes(query) ||
-          (u.user_account || '').toLowerCase().includes(query)
-      );
-    }
-
-    if (filterRole) {
-      result = result.filter((u) => u.user_role === filterRole);
-    }
-
-    return result;
-  }, [users, searchQuery, filterRole]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
-
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(1);
-    }
-  }, [filteredUsers, totalPages, currentPage]);
+    loadUsers(1, pageSize, searchQuery, selectedRole);
+    const loadRoles = async () => {
+      try {
+        const rolesList = await fetchRolesApi();
+        setRoles(rolesList);
+      } catch (err: any) {
+        console.error('Failed to load roles:', err);
+      }
+    };
+    loadRoles();
+  }, []);
 
-  const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredUsers, currentPage]);
+  const handlePageChange = (page: number) => {
+    loadUsers(page, pageSize, searchQuery, selectedRole);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    loadUsers(1, newSize, searchQuery, selectedRole);
+  };
+
+  const openCreateForm = () => {
+    setEditingUser(null);
+    setShowForm(true);
+  };
+
+  const openEditForm = (u: any) => {
+    setEditingUser(u);
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingUser(null);
+  };
 
   const handleCreateOrUpdateUser = async (formData: any) => {
     setSaving(true);
@@ -85,8 +107,8 @@ export const AdminPage = () => {
           description: formData.description || undefined,
         });
         toast.success(`Account "${formData.account}" created successfully.`);
-        setShowForm(false);
-        loadUsers();
+        closeForm();
+        loadUsers(currentPage, pageSize, searchQuery, selectedRole);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Action failed.');
@@ -95,45 +117,31 @@ export const AdminPage = () => {
     }
   };
 
-  const handleDeleteUser = async (userToDelete: any) => {
-    if (currentUser && (currentUser as any).user_id === userToDelete.user_id) {
+  const handleDeleteUser = async (idOrIds: number | number[], message: string) => {
+    if (!confirm(message)) return;
+
+    const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+
+    // Prevent deleting own account
+    if (ids.some((id) => currentUser && (currentUser as any).user_id === id)) {
       toast.error('You cannot delete your own account.');
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete account "${userToDelete.user_name || userToDelete.user_account}"?`)) {
-      return;
-    }
-
     try {
-      await deleteUserApi(userToDelete.user_id);
-      toast.success(`Account "${userToDelete.user_name || userToDelete.user_account}" deleted.`);
-      setUsers((prev) => prev.filter((u) => u.user_id !== userToDelete.user_id));
+      for (const id of ids) {
+        await deleteUserApi(id);
+      }
+      const count = ids.length;
+      toast.success(count === 1 ? 'Account deleted.' : `Successfully deleted ${count} accounts.`);
+      const newTotal = totalItems - count;
+      const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
+      const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
+      loadUsers(targetPage, pageSize, searchQuery, selectedRole);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Delete user failed.');
+      toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
   };
-
-  const handleClearFilters = () => {
-    setSearchQuery('');
-    setFilterRole('');
-    setCurrentPage(1);
-  };
-
-  const openCreateForm = () => {
-    setEditingUser(null);
-    setShowForm(true);
-  };
-
-  const openEditForm = (u: any) => {
-    setEditingUser(u);
-    setShowForm(true);
-  };
-
-  const totalUsers = users.length;
-  const adminCount = users.filter((u) => u.user_role === 'admin').length;
-  const hrCount = users.filter((u) => u.user_role === 'hr' || u.user_role === 'recruiter').length;
-  const viewerCount = users.filter((u) => u.user_role === 'viewer').length;
 
   const headerActions = useMemo(() => (
     <Button onClick={openCreateForm} icon={<Plus size={16} />}>
@@ -147,50 +155,151 @@ export const AdminPage = () => {
     actions: headerActions,
   }, [headerActions]);
 
+  const columns = useMemo<ExcelColumn<any>[]>(
+    () => [
+      {
+        key: 'user_name',
+        label: 'Name',
+        width: 220,
+        disableFilter: true,
+        render: (row: any, val: any) => {
+          const isSelf = currentUser && row.user_id === (currentUser as any).user_id;
+          return (
+            <div className="flex items-center gap-1.5 font-semibold text-slate-800">
+              {val || '—'}
+              {isSelf && (
+                <span className="text-[9px] bg-slate-100 text-slate-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  You
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        key: 'user_description',
+        label: 'Description',
+        width: 250,
+        disableFilter: true,
+        render: (_row: any, val: any) => val || '—',
+      },
+      {
+        key: 'user_role',
+        label: 'Role',
+        width: 130,
+        disableFilter: false,
+        filterOptions: roles,
+        render: (_row: any, val: any) => (
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+              roleColors[val] || 'bg-slate-100 text-slate-800 border-slate-200'
+            }`}
+          >
+            {getRoleIcon(val)}
+            <span className="capitalize">{val || '—'}</span>
+          </span>
+        ),
+      },
+      {
+        key: 'department',
+        label: 'Department',
+        width: 150,
+        disableFilter: true,
+        render: (_row: any, val: any) => {
+          if (!val) return <span className="text-slate-400">—</span>;
+          const label = val.department_code || val.department_name || '—';
+          return (
+            <span className="font-mono text-xs font-bold uppercase tracking-wide text-indigo-700">
+              {label}
+            </span>
+          );
+        },
+      },
+    ],
+    [currentUser, roles]
+  );
+
+  const tableActions = [
+    {
+      label: 'Edit',
+      icon: <Edit2 size={14} />,
+      onClick: (row: any) => openEditForm(row),
+    },
+    {
+      label: 'Delete',
+      icon: <Trash2 size={14} className="text-red-500" />,
+      onClick: (row: any) => {
+        handleDeleteUser(
+          row.user_id,
+          `Bạn có chắc chắn muốn xóa tài khoản "${row.user_name}"?`
+        );
+      },
+      onBulkClick: (selectedRows: any[]) => {
+        handleDeleteUser(
+          selectedRows.map((r) => r.user_id),
+          `Bạn có chắc chắn muốn xóa ${selectedRows.length} tài khoản đã chọn không?`
+        );
+      },
+    },
+  ];
+
+  const tableRows = useMemo(() => {
+    return users.map((u) => ({
+      id: u.user_id,
+      user_id: u.user_id,
+      user_name: u.user_name,
+      user_description: u.user_description,
+      user_role: u.user_role,
+      department: u.department,
+    }));
+  }, [users]);
+
+  const handleExcelSearch = (colFilters: Record<string, string>, globalSearch: string) => {
+    const roleFilter = colFilters.user_role || '';
+    setSearchQuery(globalSearch);
+    setSelectedRole(roleFilter);
+    loadUsers(1, pageSize, globalSearch, roleFilter);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Toast notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {/* Stats Cards */}
-      <AdminStats total={totalUsers} admins={adminCount} hrs={hrCount} viewers={viewerCount} />
-
-      {/* Filters Bar */}
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
-        <AdminFilters
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          filterRole={filterRole}
-          setFilterRole={setFilterRole}
-          onClear={handleClearFilters}
-        />
-      </div>
-
-      {/* Users Table */}
-      <AdminTable
-        users={paginatedUsers}
-        currentUser={currentUser}
-        onEdit={openEditForm}
-        onDelete={handleDeleteUser}
+      {/* Table */}
+      <ExcelTable
+        title="User Accounts"
+        rows={tableRows}
+        columns={columns}
+        actions={tableActions}
+        isLoading={loading}
+        onSearch={handleExcelSearch}
+        emptyMessage="No accounts found"
       />
 
       {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={filteredUsers.length}
-        onPageChange={setCurrentPage}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
         itemLabel="accounts"
+        pageSize={pageSize}
+        onPageSizeChange={handlePageSizeChange}
       />
 
+      {/* Modal Form */}
       {showForm && (
         <UserForm
           user={editingUser}
           onSubmit={handleCreateOrUpdateUser}
-          onClose={() => setShowForm(false)}
+          onClose={closeForm}
           saving={saving}
         />
       )}
     </div>
   );
 };
+
 export default AdminPage;
+

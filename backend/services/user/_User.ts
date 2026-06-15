@@ -10,6 +10,7 @@ import updatePassword from "@services/user/updatePassword";
 import updateProfile from "@services/user/updateProfile";
 import changeRole from "@services/user/changeRole";
 import getAll from "@services/user/getAll";
+import getRoles from "@services/user/getRoles";
 
 class User {
   static create = create;
@@ -24,6 +25,7 @@ class User {
   static updateProfile = updateProfile;
   static changeRole = changeRole;
   static getAll = getAll;
+  static getRoles = getRoles;
 }
 
 export default User;

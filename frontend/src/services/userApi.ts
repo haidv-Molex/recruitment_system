@@ -17,14 +17,19 @@ export async function fetchUsersApi({
   page = 1,
   limit = 100,
   search = '',
+  role = '',
 }: {
   page?: number;
   limit?: number;
   search?: string;
+  role?: string;
 } = {}): Promise<{ data: userOutputModel[]; pagination?: PaginationMetadata }> {
   const params: Record<string, any> = { page, limit };
   if (search.trim()) {
     params.search = search.trim();
+  }
+  if (role.trim()) {
+    params.role = role.trim();
   }
 
   const response = await axiosInstance.get('/user/search', { params });
@@ -32,6 +37,11 @@ export async function fetchUsersApi({
     data: response.data.data || [],
     pagination: response.data.pagination as PaginationMetadata | undefined,
   };
+}
+
+export async function fetchRolesApi(): Promise<string[]> {
+  const response = await axiosInstance.get('/user/roles');
+  return response.data.data || [];
 }
 
 export async function getUserApi(id: number): Promise<userOutputModel> {

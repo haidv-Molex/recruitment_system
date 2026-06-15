@@ -43,9 +43,11 @@ describe("getAll (User)", () => {
     expect(user).to.have.property("user_name");
     expect(user).to.have.property("user_description");
     expect(user).to.have.property("user_role");
-    expect(user).to.have.property("department_id");
+    expect(user).to.have.property("department"); // full department object or null
     expect(user).to.have.property("create_at");
     expect(user).to.have.property("update_at");
+    // department_id must NOT be directly present
+    expect(user).to.not.have.property("department_id");
     // Sensitive fields must NOT be present
     expect(user).to.not.have.property("user_account");
     expect(user).to.not.have.property("user_password");
@@ -98,5 +100,39 @@ describe("getAll (User)", () => {
 
     expect(result.items).to.be.an("array").that.is.empty;
     expect(result.total).to.equal(0);
+  });
+
+  it("should filter by role", async () => {
+    // Seed users with different roles
+    await client.query(
+      `INSERT INTO "user" (user_name, user_role) VALUES ($1, $2), ($3, $4)`,
+      ["RoleUser_Admin", "admin", "RoleUser_HR", "hr"]
+    );
+
+    const result = await getAll({ page: 1, limit: 10, role: "admin" }, client);
+    const adminUser = result.items.find(u => u.user_name === "RoleUser_Admin");
+    const hrUser = result.items.find(u => u.user_name === "RoleUser_HR");
+
+    expect(adminUser).to.not.be.undefined;
+    expect(hrUser).to.be.undefined;
+    expect(adminUser!.user_role).to.equal("admin");
+  });
+
+  it("should filter by both search keyword and role", async () => {
+    await client.query(
+      `INSERT INTO "user" (user_name, user_role) VALUES ($1, $2), ($3, $4)`,
+      ["SearchAndRoleUser_Target", "hr", "SearchAndRoleUser_Other", "admin"]
+    );
+
+    const result = await getAll({
+      page: 1,
+      limit: 10,
+      search: "SearchAndRoleUser_",
+      role: "hr"
+    }, client);
+
+    expect(result.items.length).to.equal(1);
+    expect(result.items[0].user_name).to.equal("SearchAndRoleUser_Target");
+    expect(result.items[0].user_role).to.equal("hr");
   });
 });

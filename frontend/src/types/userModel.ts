@@ -1,3 +1,12 @@
+export type departmentModel = {
+  department_id: number;
+  department_code: string;
+  department_name: string;
+  department_description: string | null;
+  create_at: string | Date;
+  update_at: string | Date;
+}
+
 export type userModel = {
   user_id: number;
   user_name: string;
@@ -5,9 +14,11 @@ export type userModel = {
   user_password: string | null;
   user_description: string | null;
   user_role: 'admin' | 'hr' | 'user' | 'banned' | string | null;
-  create_at: Date;
-  update_at: Date;
+  create_at: string | Date;
+  update_at: string | Date;
   department_id: number | null;
 }
 
-export type userOutputModel = Omit<userModel, 'user_password' | 'user_account'>;
+export type userOutputModel = Omit<userModel, 'user_password' | 'user_account' | 'department_id'> & {
+  department: departmentModel | null;
+};

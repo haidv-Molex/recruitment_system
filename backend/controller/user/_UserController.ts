@@ -7,12 +7,14 @@ import createUserController from "./createUserController";
 import updateUserController from "./updateUserController";
 import deleteUserController from "./deleteUserController";
 import changeAccountRoleController from "./changeAccountRoleController";
+import getRolesController from "./getRolesController";
 
 const UserController = express.Router();
 
 UserController.use("/hr", createHRController);
 UserController.use("/profile", updateProfileController);
 UserController.use("/search", getAllUsersController);
+UserController.use("/roles", getRolesController);
 UserController.use("/", getUserController);
 UserController.use("/", createUserController);
 UserController.use("/", updateUserController);

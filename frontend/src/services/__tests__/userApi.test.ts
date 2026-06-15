@@ -8,6 +8,7 @@ import {
   updateUserApi,
   deleteUserApi,
   changeUserRoleApi,
+  fetchRolesApi,
 } from '../userApi';
 
 vi.mock('@/config/axiosInstance', () => {
@@ -42,11 +43,22 @@ describe('userApi tests', () => {
       data: { result: true, data: mockList, pagination: mockPagination },
     });
 
-    const result = await fetchUsersApi({ page: 1, limit: 100, search: 'Test' });
+    const result = await fetchUsersApi({ page: 1, limit: 100, search: 'Test', role: 'admin' });
     expect(axiosInstance.get).toHaveBeenCalledWith('/user/search', {
-      params: { page: 1, limit: 100, search: 'Test' },
+      params: { page: 1, limit: 100, search: 'Test', role: 'admin' },
     });
     expect(result).toEqual({ data: mockList, pagination: mockPagination });
+  });
+
+  it('fetchRolesApi should call axiosInstance.get and return roles list', async () => {
+    const mockRoles = ['admin', 'hr', 'user', 'banned'];
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({
+      data: { result: true, data: mockRoles },
+    });
+
+    const result = await fetchRolesApi();
+    expect(axiosInstance.get).toHaveBeenCalledWith('/user/roles');
+    expect(result).toEqual(mockRoles);
   });
 
   it('getUserApi should call axiosInstance.get and return user', async () => {

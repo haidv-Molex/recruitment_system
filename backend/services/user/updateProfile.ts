@@ -35,10 +35,19 @@ async function updateProfile(
 
   values.push(userId);
   const query = `
-    UPDATE "user"
-    SET ${fields.join(", ")}
-    WHERE user_id = $${index}
-    RETURNING user_id, user_name, user_description, user_role, department_id, create_at, update_at
+    WITH updated AS (
+      UPDATE "user"
+      SET ${fields.join(", ")}
+      WHERE user_id = $${index}
+      RETURNING user_id, user_name, user_description, user_role, department_id, create_at, update_at
+    )
+    SELECT
+      u.user_id, u.user_name, u.user_description, u.user_role,
+      u.create_at, u.update_at,
+      d.department_id, d.department_code, d.department_name, d.department_description,
+      d.create_at AS d_create_at, d.update_at AS d_update_at
+    FROM updated u
+    LEFT JOIN department d ON u.department_id = d.department_id
   `;
 
   const result = await pool.query(query, values);
@@ -47,14 +56,22 @@ async function updateProfile(
     throw new AppError("Không tìm thấy người dùng", 404);
   }
 
+  const row = result.rows[0];
   return {
-    user_id: result.rows[0].user_id,
-    user_name: result.rows[0].user_name,
-    user_description: result.rows[0].user_description,
-    user_role: result.rows[0].user_role,
-    department_id: result.rows[0].department_id,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
+    user_id: row.user_id,
+    user_name: row.user_name,
+    user_description: row.user_description,
+    user_role: row.user_role,
+    create_at: row.create_at,
+    update_at: row.update_at,
+    department: row.department_id != null ? {
+      department_id: row.department_id,
+      department_code: row.department_code,
+      department_name: row.department_name,
+      department_description: row.department_description,
+      create_at: row.d_create_at,
+      update_at: row.d_update_at
+    } : null
   } satisfies userOutputModel;
 }
 

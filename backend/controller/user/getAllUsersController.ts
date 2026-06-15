@@ -11,7 +11,8 @@ const querySchema = Joi.object({
   page: Joi.number().integer().min(1).optional().default(1),
   limit: Joi.number().integer().min(1).optional().default(10),
   unlimited: Joi.boolean().optional().default(false),
-  search: Joi.string().optional().allow("").max(255)
+  search: Joi.string().optional().allow("").max(255),
+  role: Joi.string().optional().allow("").max(255)
 });
 
 getAllUsersController.get("",
@@ -23,9 +24,10 @@ getAllUsersController.get("",
     const limit = Number(query.limit);
     const unlimited = query.unlimited === true;
     const search = query.search;
+    const role = query.role;
 
     const result = await withTransaction(async (pool) => {
-      return await User.getAll({ page, limit, unlimited, search }, pool);
+      return await User.getAll({ page, limit, unlimited, search, role }, pool);
     });
 
     const totalPages = unlimited ? 1 : Math.ceil(result.total / limit);

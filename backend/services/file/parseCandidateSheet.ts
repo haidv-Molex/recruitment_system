@@ -17,7 +17,7 @@ function resolveUserByName(
     user_role: null,
     create_at: null,
     update_at: null,
-    department_id: null,
+    department: null,
   } as any);
 }
 
@@ -69,8 +69,11 @@ export default async function parseCandidateSheet(
 ): Promise<ParsedCandidateRow[]> {
   // Load all users so we can resolve recruiter / hiring_manager by name
   const usersRes = await pool.query(
-    `SELECT user_id, user_name, user_description, user_role, create_at, update_at, department_id
-     FROM "user"`
+    `SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at,
+            d.department_id, d.department_code, d.department_name, d.department_description,
+            d.create_at AS d_create_at, d.update_at AS d_update_at
+     FROM "user" u
+     LEFT JOIN department d ON u.department_id = d.department_id`
   );
 
   const userMap = new Map<string, userOutputModel>();
@@ -83,7 +86,14 @@ export default async function parseCandidateSheet(
         user_role: row.user_role,
         create_at: row.create_at,
         update_at: row.update_at,
-        department_id: row.department_id,
+        department: row.department_id != null ? {
+          department_id: row.department_id,
+          department_code: row.department_code,
+          department_name: row.department_name,
+          department_description: row.department_description,
+          create_at: row.d_create_at,
+          update_at: row.d_update_at
+        } : null,
       } satisfies userOutputModel);
     }
   }
