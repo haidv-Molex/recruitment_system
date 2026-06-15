@@ -4,6 +4,7 @@ import hcByStatusAndExpectedOnboardMonthController from "./hcByStatusAndExpected
 import hcByRecruiterController from "./hcByRecruiterController";
 import hcRequestedByHrbpController from "./hcRequestedByHrbpController";
 import hcRequestedByHiringManagerController from "./hcRequestedByHiringManagerController";
+import hcRequestedByMonthController from "./hcRequestedByMonthController";
 
 const DashboardController = express.Router();
 
@@ -12,5 +13,6 @@ DashboardController.use("/hc-by-status-month", hcByStatusAndExpectedOnboardMonth
 DashboardController.use("/hc-by-recruiter", hcByRecruiterController);
 DashboardController.use("/hc-by-hrbp", hcRequestedByHrbpController);
 DashboardController.use("/hc-by-hiring-manager", hcRequestedByHiringManagerController);
+DashboardController.use("/hc-by-month", hcRequestedByMonthController);
 
 export default DashboardController;

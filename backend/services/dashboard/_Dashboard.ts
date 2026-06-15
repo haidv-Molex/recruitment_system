@@ -3,6 +3,7 @@ import hcByStatusAndExpectedOnboardMonth from "./hcByStatusAndExpectedOnboardMon
 import hcByRecruiter from "./hcByRecruiter";
 import hcRequestedByHrbp from "./hcRequestedByHrbp";
 import hcRequestedByHiringManager from "./hcRequestedByHiringManager";
+import hcRequestedByMonth from "./hcRequestedByMonth";
 
 class Dashboard {
   static hcRequestedByDepartment = hcRequestedByDepartment;
@@ -10,6 +11,7 @@ class Dashboard {
   static hcByRecruiter = hcByRecruiter;
   static hcRequestedByHrbp = hcRequestedByHrbp;
   static hcRequestedByHiringManager = hcRequestedByHiringManager;
+  static hcRequestedByMonth = hcRequestedByMonth;
 }
 
 export default Dashboard;
