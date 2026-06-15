@@ -237,6 +237,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         recruiter_name: string | null;
         reference_name: string | null;
         reference_department: string | null;
+        targeted_company_is_set: boolean;
         targeted_company_name: string | null;
         candidate_level_name: string | null;
     }>(`
@@ -251,6 +252,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
       u.user_name  AS recruiter_name,
       ref.user_name AS reference_name,
       ref_dept.department_name AS reference_department,
+      (c.targeted_company IS NOT NULL) AS targeted_company_is_set,
       comp.company_name AS targeted_company_name,
       cl_level.level_name AS candidate_level_name
     FROM candidate c
@@ -384,7 +386,8 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
             : null,
         candidate_result_feedback_date: row.feedback_date ?? null,
         headhunt_agency: row.agency ?? null,
-        targeted_company: row.targeted_company_name ?? null,
+        targeted_company: row.targeted_company_is_set ? 'Yes' : null,
+        targeted_company_name: row.targeted_company_name ?? null,
     }));
 
     const validationColumns: Record<string, (string | null)[]> = {

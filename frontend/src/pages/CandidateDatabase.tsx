@@ -8,7 +8,6 @@ import ToastContainer from '../components/common/Toast';
 import { useToast } from '../hooks/useToast';
 import {
   createCandidateApi,
-  createCandidateExtendedApi,
   searchCandidatesApi,
   deleteCandidateApi,
   updateCandidateApi,
@@ -16,7 +15,7 @@ import {
   downloadDatabaseSheetApi,
 } from '../services/candidateApi';
 import { FileBadge, FilePreviewModal } from '../components/common/FilePreview';
-import CandidateExcelImport from '../components/common/CandidateExcelImport';
+import CandidateExcelImport from '../components/candidate/CandidateExcelImport';
 import { downloadFullWorkbookApi } from '../services/jobApi';
 import { useHeader } from '../contexts/HeaderContext';
 import DatabaseFilters from '../components/candidate-database/DatabaseFilters';
@@ -101,14 +100,6 @@ export const CandidateDatabasePage = ({
     setItem('visibleCandidateColumns', cols);
   };
 
-  const jobCodes = useMemo(
-    () => Array.from(new Set(jobs.map((job) => job.jobCode).filter(Boolean))),
-    [jobs]
-  );
-  const recruiters = useMemo(
-    () => Array.from(new Set(candidates.map((c) => c.recruiter).filter(Boolean))),
-    [candidates]
-  );
 
   // Pagination & Filter state
   const [currentPage, setCurrentPage] = useState(1);
@@ -225,47 +216,6 @@ export const CandidateDatabasePage = ({
     setShowBulkUpload(false);
   };
 
-  const handleImportCandidate = async (parsedCandidate: any) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const validEmail =
-      parsedCandidate.candidateEmail && emailRegex.test(parsedCandidate.candidateEmail)
-        ? parsedCandidate.candidateEmail
-        : '';
-
-    const formData = {
-      candidateCode: '',
-      candidateName: parsedCandidate.candidateName,
-      candidateEmail: validEmail,
-      candidatePhone: parsedCandidate.candidatePhone,
-      agency: parsedCandidate.agency,
-      offerDate: parsedCandidate.offerDate,
-      onboardDate: parsedCandidate.onboardDate,
-      expectedOnboardDate: '',
-      feedbackDate: parsedCandidate.feedbackDate,
-      currentSalary: parsedCandidate.currentSalary,
-      expectedSalary: parsedCandidate.expectedSalary,
-      status: parsedCandidate.status,
-      note: parsedCandidate.note,
-      file: null,
-      platformId: '',
-      recruiterId: parsedCandidate.recruiter?.id || '',
-      jobId: '',
-      targetedCompanyId: '',
-      referenceId: '',
-      platformName: parsedCandidate.source || '',
-      recruiterName: parsedCandidate.recruiter?.id === null ? parsedCandidate.recruiter.name : '',
-      targetedCompanyName:
-        parsedCandidate.targetedCompany === 'Yes' ? parsedCandidate.targetedCompanyName : '',
-      referenceName: parsedCandidate.referenceName || '',
-    };
-
-    try {
-      await createCandidateExtendedApi(formData);
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, message: err.message || 'Import failed' };
-    }
-  };
 
   const handleExcelImportClose = () => {
     setShowExcelImport(false);
@@ -320,8 +270,8 @@ export const CandidateDatabasePage = ({
       { key: 'name', label: 'Candidate Name', width: 190 },
       { key: 'email', label: 'Email', width: 220 },
       { key: 'phone', label: 'Phone Number', width: 150 },
-      { key: 'recruiter', label: 'Recruiter', width: 150, filterOptions: recruiters },
-      { key: 'jobCode', label: 'Job Code', width: 130, filterOptions: jobCodes },
+      { key: 'recruiter', label: 'Recruiter', width: 150 },
+      { key: 'jobCode', label: 'Job Code', width: 130 },
       { key: 'project', label: 'Project', width: 170 },
       {
         key: 'status',
@@ -350,7 +300,7 @@ export const CandidateDatabasePage = ({
       { key: 'referrerName', label: 'Reference', width: 160 },
       { key: 'note', label: 'Note', width: 260 },
     ],
-    [recruiters, jobCodes]
+    []
   );
 
   const tableActions = [
@@ -486,7 +436,7 @@ export const CandidateDatabasePage = ({
 
       {/* Excel Import Modal */}
       {showExcelImport && (
-        <CandidateExcelImport onImport={handleImportCandidate} onClose={handleExcelImportClose} />
+        <CandidateExcelImport onClose={handleExcelImportClose} />
       )}
     </div>
   );
