@@ -594,3 +594,4 @@ DashboardController.use("/my-chart", myChartController); // → GET /dashboard/m
 | `GET /dashboard/hc-by-status-month` | `hcByStatusAndExpectedOnboardMonth` | Số lượng HC theo status và expected onboard month (lọc status bắt buộc) |
 | `GET /dashboard/hc-by-recruiter` | `hcByRecruiter` | Số lượng candidate tuyển được theo từng recruiter (lọc job_id, department_id tùy chọn) |
 | `GET /dashboard/hc-by-hrbp` | `hcRequestedByHrbp` | Tổng HC yêu cầu theo từng HRBP (lọc job_id, department_id tùy chọn) |
+| `GET /dashboard/hc-by-hiring-manager` | `hcRequestedByHiringManager` | Tổng HC yêu cầu theo từng Hiring Manager (lọc job_id, department_id tùy chọn) |
