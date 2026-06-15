@@ -17,6 +17,8 @@ type GetAllJobsParams = PaginationQueryMetadata & {
   note?: string;
   request_date_from?: string;
   request_date_to?: string;
+  sort_by?: string;
+  sort_order?: "asc" | "desc";
 };
 
 type GetAllJobsResult = {
@@ -114,6 +116,15 @@ async function getAll(
 
   const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "";
 
+  const sort_by = params.sort_by || "job_id";
+  const sort_order = params.sort_order || "desc";
+  const validSortFields: Record<string, string> = {
+    job_id: "j.job_id",
+    candidate_required: "j.candidate_required"
+  };
+  const orderByField = validSortFields[sort_by] || "j.job_id";
+  const orderByDirection = sort_order === "asc" ? "ASC" : "DESC";
+
   const countQuery = `SELECT COUNT(*) AS total FROM job j${whereClause}`;
   const dataQuery = `
     SELECT j.job_id, j.job_code, j.project, j.candidate_required, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
@@ -121,7 +132,7 @@ async function getAll(
     FROM job j
     LEFT JOIN file f ON j.file_id = f.file_id
     ${whereClause}
-    ORDER BY j.job_id DESC
+    ORDER BY ${orderByField} ${orderByDirection}
   `;
 
   // Count total matching records

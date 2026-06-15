@@ -167,8 +167,8 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     }
   };
 
-  // Active search params must be declared before handlers that reload data
   const [activeSearchParams, setActiveSearchParams] = useState<Record<string, any>>({});
+  const [sortParams, setSortParams] = useState<{ sort_by?: string; sort_order?: string }>({});
 
   const [confirmDeleteState, setConfirmDeleteState] = useState<{
     isOpen: boolean;
@@ -199,7 +199,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       const newTotal = totalItems - ids.length;
       const newMaxPage = Math.max(1, Math.ceil(newTotal / pageSize));
       const targetPage = currentPage > newMaxPage ? newMaxPage : currentPage;
-      await loadJobsFromApi(targetPage, pageSize, activeSearchParams);
+      await loadJobsFromApi(targetPage, pageSize, { ...activeSearchParams, ...sortParams });
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete failed.');
     }
@@ -215,10 +215,24 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         }
       });
       setActiveSearchParams(params);
-      loadJobsFromApi(1, pageSize, params);
+      loadJobsFromApi(1, pageSize, { ...params, ...sortParams });
     },
-    [loadJobsFromApi, pageSize]
+    [loadJobsFromApi, pageSize, sortParams]
   );
+
+  const handleTableSort = useCallback((key: string, direction: 'asc' | 'desc' | null) => {
+    let sort_by = '';
+    if (key === 'hcRequested') sort_by = 'candidate_required';
+
+    if (!direction || !sort_by) {
+      setSortParams({});
+      loadJobsFromApi(currentPage, pageSize, { ...activeSearchParams });
+    } else {
+      const newSort = { sort_by, sort_order: direction };
+      setSortParams(newSort);
+      loadJobsFromApi(currentPage, pageSize, { ...activeSearchParams, ...newSort });
+    }
+  }, [loadJobsFromApi, currentPage, pageSize, activeSearchParams]);
 
   const handleImportJobsBatch = async (
     parsedJobs: any[]
@@ -315,12 +329,12 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
-    loadJobsFromApi(page, pageSize, activeSearchParams);
+    loadJobsFromApi(page, pageSize, { ...activeSearchParams, ...sortParams });
   };
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
-    loadJobsFromApi(1, newSize, activeSearchParams);
+    loadJobsFromApi(1, newSize, { ...activeSearchParams, ...sortParams });
   };
 
   const columns = useMemo(
@@ -328,7 +342,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       { key: 'jobCode', label: 'Job Code', width: 110 },
       { key: 'project', label: 'Project Name', width: 150 },
       { key: 'department', label: 'Dept', width: 90 },
-      { key: 'hcRequested', label: 'HC Req', width: 70, align: 'right' as const, disableFilter: true },
+      { key: 'hcRequested', label: 'HC Req', width: 70, align: 'right' as const, disableFilter: true, sortable: true },
       { key: 'jobTitle', label: 'Job Title', width: 160 },
       { key: 'eeLevel', label: 'EE Level', width: 100 },
       { key: 'sites', label: 'Site', width: 80 },
@@ -454,6 +468,9 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             selectedId={selectedJobCode}
             onSelectRow={(row: any) => setSelectedJobCode(row.jobCode === selectedJobCode ? '' : row.jobCode)}
             onSearch={handleTableSearch}
+            onSort={handleTableSort}
+            sortKey={sortParams.sort_by === 'candidate_required' ? 'hcRequested' : sortParams.sort_by}
+            sortDirection={sortParams.sort_order as any}
             isLoading={loading}
           />
 

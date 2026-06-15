@@ -24,6 +24,7 @@ export interface ExcelColumn<T> {
   disableFilter?: boolean;
   disableTruncate?: boolean;
   filterOptions?: string[];
+  sortable?: boolean;
   valueGetter?: (row: T) => any;
   render?: (row: T, value: any) => React.ReactNode;
 }
@@ -62,6 +63,9 @@ export interface ExcelTableProps<T> {
    * with empty values so the parent can reload unfiltered data.
    */
   onSearch?: (columnFilters: Record<string, string>, globalSearch: string) => void;
+  onSort?: (key: string, direction: 'asc' | 'desc' | null) => void;
+  sortKey?: string;
+  sortDirection?: 'asc' | 'desc' | null;
 }
 
 export default function ExcelTable<T extends Record<string, any>>({
@@ -78,6 +82,9 @@ export default function ExcelTable<T extends Record<string, any>>({
   selectedId,
   onSelectRow,
   onSearch,
+  onSort,
+  sortKey,
+  sortDirection,
 }: ExcelTableProps<T>) {
   const initialVisible = defaultVisibleColumns || columns.map((col) => col.key);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(initialVisible);
@@ -385,37 +392,69 @@ export default function ExcelTable<T extends Record<string, any>>({
                 </th>
               ))}
             </tr>
-            {/* Filter row */}
-            {activeColumns.some((col) => !col.disableFilter) && (
+            {/* Filter and Sort row */}
+            {activeColumns.some((col) => !col.disableFilter || col.sortable) && (
               <tr className="bg-slate-50 border-b-2 border-slate-300">
                 {/* Sticky checkbox filter cell */}
                 {actions && (
                   <th className="w-10 px-3 py-2 border-r border-slate-300 bg-slate-50 sticky left-0 z-20" />
                 )}
                 {activeColumns.map((col) => (
-                  <th key={`${col.key}-filter`} className="p-2 border-r border-slate-300 last:border-r-0">
-                    {col.disableFilter ? null : col.filterOptions ? (
-                      <select
-                        value={columnFilters[col.key] || ''}
-                        onChange={(e) => updateFilter(col.key, e.target.value)}
-                        onKeyDown={handleFilterKeyDown}
-                        className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                      >
-                        <option value="">All</option>
-                        {col.filterOptions.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        value={columnFilters[col.key] || ''}
-                        onChange={(e) => updateFilter(col.key, e.target.value)}
-                        onKeyDown={handleFilterKeyDown}
-                        placeholder="Filter..."
-                        className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                      />
-                    )}
+                  <th key={`${col.key}-filter`} className="p-2 border-r border-slate-300 last:border-r-0 align-top">
+                    <div className="flex flex-col gap-1.5 h-full">
+                      {!col.disableFilter && (
+                        col.filterOptions ? (
+                          <select
+                            value={columnFilters[col.key] || ''}
+                            onChange={(e) => updateFilter(col.key, e.target.value)}
+                            onKeyDown={handleFilterKeyDown}
+                            className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                          >
+                            <option value="">All</option>
+                            {col.filterOptions.map((opt) => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            value={columnFilters[col.key] || ''}
+                            onChange={(e) => updateFilter(col.key, e.target.value)}
+                            onKeyDown={handleFilterKeyDown}
+                            placeholder="Filter..."
+                            className="w-full p-1 text-xs border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                          />
+                        )
+                      )}
+                      
+                      {col.sortable && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!col.sortable || !onSort) return;
+                            let nextDirection: 'asc' | 'desc' | null = 'desc';
+                            if (sortKey === col.key) {
+                              if (sortDirection === 'desc') nextDirection = 'asc';
+                              else if (sortDirection === 'asc') nextDirection = null;
+                            }
+                            onSort(col.key, nextDirection);
+                          }}
+                          className={`w-full inline-flex justify-center items-center gap-1.5 px-2 py-1 text-[10px] font-medium border rounded transition-all mt-auto ${
+                            sortKey === col.key
+                              ? 'bg-emerald-100 border-emerald-300 text-emerald-700 shadow-inner'
+                              : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700 shadow-sm'
+                          }`}
+                        >
+                          {sortKey === col.key && sortDirection === 'asc' ? (
+                            <><span>Asc</span> <span className="text-[9px]">▲</span></>
+                          ) : sortKey === col.key && sortDirection === 'desc' ? (
+                            <><span>Desc</span> <span className="text-[9px]">▼</span></>
+                          ) : (
+                            <><span>Sort</span> <span className="text-[9px]">↕</span></>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </th>
                 ))}
               </tr>

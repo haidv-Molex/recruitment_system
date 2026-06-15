@@ -26,6 +26,8 @@ const querySchema = Joi.object({
   note: Joi.string().optional().allow("").max(500),
   request_date_from: Joi.string().optional().allow("").isoDate(),
   request_date_to: Joi.string().optional().allow("").isoDate(),
+  sort_by: Joi.string().valid("job_id", "candidate_required").optional().default("job_id"),
+  sort_order: Joi.string().valid("asc", "desc").optional().default("desc"),
 });
 
 getAllJobsController.get("",
@@ -55,6 +57,8 @@ getAllJobsController.get("",
         note: query.note,
         request_date_from: query.request_date_from,
         request_date_to: query.request_date_to,
+        sort_by: query.sort_by,
+        sort_order: query.sort_order,
       }, pool);
     });
 
