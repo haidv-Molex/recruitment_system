@@ -273,7 +273,7 @@ export const DashboardPage = () => {
                   renderFooter: () => <span className="text-xs font-bold text-slate-700">Total</span>,
                 },
                 {
-                  header: 'Pending',
+                  header: 'candidate',
                   width: '60px',
                   headerClassName: 'text-right',
                   renderCell: (item) => item.value,

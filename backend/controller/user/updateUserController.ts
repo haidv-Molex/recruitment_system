@@ -6,6 +6,8 @@ import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
 import { AppError } from "@middlewares/AppError";
 
+import type { userOutputModel } from "@model/user/userModel";
+
 const updateUserController = express.Router({ mergeParams: true });
 
 const querySchema = Joi.object({
@@ -40,6 +42,7 @@ updateUserController.put("",
   joiValidate(querySchema, "query"),
   joiValidate(bodySchema, "body"),
   async (req, res) => {
+    const requestor = req.user as userOutputModel;
     const targetUserId = parseInt(req.query.id as string, 10);
     const { username, description, departmentId } = req.body;
 
@@ -47,7 +50,7 @@ updateUserController.put("",
       // 1. Tìm thông tin user cần cập nhật và kiểm tra role
       const targetUser = await User.findById(targetUserId, pool);
 
-      if (targetUser.user_role === "admin" || targetUser.user_role === "hr") {
+      if (requestor.user_role !== "admin" && (targetUser.user_role === "admin" || targetUser.user_role === "hr")) {
         throw new AppError("Không thể chỉnh sửa thông tin của tài khoản HR hoặc Admin", 403);
       }
 

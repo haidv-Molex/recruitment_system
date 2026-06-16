@@ -165,7 +165,7 @@ describe("updateUserController API", () => {
     mockCurrentUser = {
       user_id: 1,
       user_name: "Requester",
-      user_role: "admin"
+      user_role: "hr"
     };
 
     const targetUser = {
@@ -192,6 +192,53 @@ describe("updateUserController API", () => {
       });
 
     expectLocal(updateProfileStub.called).to.be.false;
+  });
+
+  it("should successfully update hr user details when requester is an admin", async () => {
+    mockCurrentUser = {
+      user_id: 1,
+      user_name: "Requester",
+      user_role: "admin"
+    };
+
+    const targetUser = {
+      user_id: 99,
+      user_name: "HR User",
+      user_role: "hr"
+    };
+
+    const mockUpdatedUser = {
+      user_id: 99,
+      user_name: "New HR Name",
+      user_description: "New HR Desc",
+      department_id: 10,
+      user_role: "hr"
+    };
+
+    findByIdStub.withArgs(1).resolves(mockCurrentUser);
+    findByIdStub.withArgs(99).resolves(targetUser);
+
+    updateProfileStub.resolves(mockUpdatedUser);
+
+    const token = generateTestToken(1, "Requester");
+
+    await pactum.spec()
+      .put("/user?id=99")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        username: "New HR Name",
+        description: "New HR Desc",
+        departmentId: 10
+      })
+      .expectStatus(200)
+      .expectJson({
+        result: true,
+        message: "Cập nhật thông tin người dùng thành công",
+        data: mockUpdatedUser
+      });
+
+    expectLocal(updateProfileStub.calledOnce).to.be.true;
+    expectLocal(updateProfileStub.firstCall.args[0]).to.equal(99);
   });
 
   it("should return 400 validation error if body is empty", async () => {

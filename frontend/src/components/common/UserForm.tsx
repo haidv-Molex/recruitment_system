@@ -50,24 +50,26 @@ export default function UserForm({ user, onSubmit, onClose, saving }: UserFormPr
       return;
     }
 
-    if (!formData.account.trim()) {
-      setError('Account is required.');
-      return;
-    }
+    if (!isEditing) {
+      if (!formData.account.trim()) {
+        setError('Account is required.');
+        return;
+      }
 
-    if (/\s/.test(formData.account)) {
-      setError('Account cannot contain spaces.');
-      return;
-    }
+      if (/\s/.test(formData.account)) {
+        setError('Account cannot contain spaces.');
+        return;
+      }
 
-    if (!isEditing && !formData.password.trim()) {
-      setError('Password is required for new accounts.');
-      return;
-    }
+      if (!formData.password.trim()) {
+        setError('Password is required for new accounts.');
+        return;
+      }
 
-    if (formData.password && formData.password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
+      if (formData.password && formData.password.length < 6) {
+        setError('Password must be at least 6 characters.');
+        return;
+      }
     }
 
     onSubmit(formData);
@@ -112,25 +114,29 @@ export default function UserForm({ user, onSubmit, onClose, saving }: UserFormPr
           hint="This name will be displayed throughout the system."
         />
 
-        <InputField
-          label="Account (Login ID) *"
-          name="account"
-          value={formData.account}
-          onChange={handleChange}
-          placeholder="e.g. hr02"
-          disabled={isEditing || saving}
-          hint={isEditing ? 'Account cannot be changed.' : 'Used to sign in. No spaces allowed.'}
-        />
+        {!isEditing && (
+          <>
+            <InputField
+              label="Account (Login ID) *"
+              name="account"
+              value={formData.account}
+              onChange={handleChange}
+              placeholder="e.g. hr02"
+              disabled={saving}
+              hint="Used to sign in. No spaces allowed."
+            />
 
-        <InputField
-          label={isEditing ? 'New Password (leave blank to keep current)' : 'Password *'}
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder={isEditing ? 'Leave blank to keep current' : 'Min 6 characters'}
-          disabled={saving}
-        />
+            <InputField
+              label="Password *"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Min 6 characters"
+              disabled={saving}
+            />
+          </>
+        )}
 
         <InputField
           label="Description"

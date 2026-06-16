@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import { Plus, Edit2, Trash2, Shield, User } from 'lucide-react';
 import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
-import { fetchUsersApi, createHRApi, deleteUserApi, fetchRolesApi } from '@/services/userApi';
+import { fetchUsersApi, createHRApi, deleteUserApi, fetchRolesApi, updateUserApi } from '@/services/userApi';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/ui/Pagination';
 import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
@@ -100,7 +100,13 @@ export const AdminPage = () => {
     setSaving(true);
     try {
       if (editingUser) {
-        toast.error('Edit account API not fully implemented yet.');
+        await updateUserApi(editingUser.user_id, {
+          username: formData.username.trim(),
+          description: formData.description || undefined,
+        });
+        toast.success(`Account updated successfully.`);
+        closeForm();
+        loadUsers(currentPage, pageSize, searchQuery, selectedRole);
       } else {
         await createHRApi({
           username: formData.username.trim(),
