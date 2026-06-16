@@ -27,8 +27,8 @@ export default function DashboardTable<T>({
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full font-sans dashboard-table">
       {/* Scrollable table container */}
-      <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
-        <table className="w-full min-w-full text-xs border-collapse dashboard-table">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <table className="w-full text-xs border-collapse table-fixed dashboard-table">
           {/* Table Header Row */}
           {hasHeaderRow && (
             <thead>
