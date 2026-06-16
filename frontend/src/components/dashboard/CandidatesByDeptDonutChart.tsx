@@ -48,13 +48,15 @@ export default function CandidatesByDeptDonutChart({ data }: CandidatesByDeptDon
                 outerRadius={75}
                 paddingAngle={2}
                 dataKey="value"
+                nameKey="label"
               >
                 {sortedData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: any, name: any) => [`${value} Candidates`, name]}
+                separator=" - "
+                formatter={(value: any, name: any) => [value, name]}
                 contentStyle={{
                   fontSize: '11px',
                   borderRadius: '8px',

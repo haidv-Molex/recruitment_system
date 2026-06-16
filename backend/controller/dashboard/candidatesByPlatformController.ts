@@ -52,13 +52,21 @@ candidatesByPlatformController.get(
     let status: string | string[] | undefined;
     if (statusVal !== undefined && statusVal !== null && statusVal !== '') {
       if (Array.isArray(statusVal)) {
-        status = statusVal.map((s) => String(s));
+        const filtered = statusVal.map((s) => String(s).trim()).filter((s) => s !== '');
+        if (filtered.length > 0) {
+          status = filtered;
+        }
       } else {
-        const strVal = String(statusVal);
-        if (strVal.includes(',')) {
-          status = strVal.split(',').map((s) => s.trim());
-        } else {
-          status = strVal;
+        const strVal = String(statusVal).trim();
+        if (strVal !== '') {
+          if (strVal.includes(',')) {
+            const parsed = strVal.split(',').map((s) => s.trim()).filter((s) => s !== '');
+            if (parsed.length > 0) {
+              status = parsed;
+            }
+          } else {
+            status = strVal;
+          }
         }
       }
     }

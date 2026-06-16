@@ -148,7 +148,7 @@ export const DashboardPage = () => {
           fetchHCByStatusAndMonthApi('Overdue', dateF),
           fetchRecruitmentFunnelApi({ site_id: siteIds, job_id: jobIds, department_id: deptIds }),
           fetchCandidatesByPlatformApi({
-            status: filters.selectedStatuses.length > 0 ? filters.selectedStatuses : ['Offer Accepted', 'Offer accepted'],
+            status: filters.selectedStatuses.length > 0 ? filters.selectedStatuses : undefined,
             department_id: deptIds,
             job_id: jobIds,
           }),

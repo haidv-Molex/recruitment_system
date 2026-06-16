@@ -22,10 +22,12 @@ async function candidatesByPlatform(
   const conditions: string[] = [];
   const sqlParams: any[] = [];
 
-  if (params.status !== undefined) {
+  if (params.status !== undefined && params.status !== null && params.status !== '') {
     if (Array.isArray(params.status)) {
-      sqlParams.push(params.status);
-      conditions.push(`c.status = ANY($${sqlParams.length})`);
+      if (params.status.length > 0) {
+        sqlParams.push(params.status);
+        conditions.push(`c.status = ANY($${sqlParams.length})`);
+      }
     } else {
       sqlParams.push(params.status);
       conditions.push(`c.status = $${sqlParams.length}`);
