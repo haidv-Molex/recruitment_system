@@ -2,10 +2,11 @@ import { ChartDataPoint } from '@/services/dashboardApi';
 import type { departmentModel } from '@/types/departmentModel';
 import { searchDepartmentsApi } from '@/services/departmentApi';
 import { searchJobsApi } from '@/services/jobApi';
+import { searchSitesApi } from '@/services/siteApi';
 import OutlookSearchSelect from '@/components/ui/OutlookSearchSelect';
 
 export interface DashboardFilters {
-  selectedSites: string[];
+  selectedSiteId: string;
   selectedStatuses: string[];
   selectedDeptId: string;
   selectedJobId: string;
@@ -17,6 +18,7 @@ export interface FilterPanelProps {
   filters: DashboardFilters;
   departments: departmentModel[];
   jobs: any[];
+  sites: any[];
   totalHCRequested: number;
   onStatusChange: (statuses: string[]) => void;
   onFilterChange: (key: keyof DashboardFilters, value: string) => void;
@@ -29,6 +31,7 @@ export default function FilterPanel({
   filters,
   departments,
   jobs,
+  sites,
   totalHCRequested,
   onStatusChange,
   onFilterChange,
@@ -36,6 +39,7 @@ export default function FilterPanel({
 }: FilterPanelProps) {
   const hasActiveFilters =
     filters.selectedStatuses.length > 0 ||
+    filters.selectedSiteId ||
     filters.selectedDeptId ||
     filters.selectedJobId ||
     filters.dateFrom ||
@@ -46,6 +50,9 @@ export default function FilterPanel({
   );
   const selectedJobItem = jobs.find(
     (j: any) => j.job_id.toString() === filters.selectedJobId
+  );
+  const selectedSiteItem = sites.find(
+    (s: any) => s.site_id.toString() === filters.selectedSiteId
   );
 
   return (
@@ -63,7 +70,7 @@ export default function FilterPanel({
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-3.5 py-2.5 flex-1 flex items-end justify-between gap-3">
-        {/* <div className="w-[105px] shrink-0 flex flex-col gap-1.5">
+        <div className="w-[105px] shrink-0 flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-700">Status</label>
           <select
             value={filters.selectedStatuses[0] || ''}
@@ -80,7 +87,27 @@ export default function FilterPanel({
               </option>
             ))}
           </select>
-        </div> */}
+        </div>
+
+        {/* Site Search (OutlookSearchSelect) */}
+        <div className="flex-1 min-w-[120px]">
+          <OutlookSearchSelect
+            label="Site"
+            placeholder="Search site..."
+            initialItems={selectedSiteItem ? [selectedSiteItem] : []}
+            searchApi={async (search) => {
+              const res = await searchSitesApi({ search, limit: 10 });
+              return { data: res.data || [] };
+            }}
+            displayFn={(s: any) => s.site_name}
+            chipDisplayFn={(s: any) => s.site_code || s.site_name}
+            keyProp="site_id"
+            onChange={(ids) => {
+              const lastId = ids[ids.length - 1];
+              onFilterChange('selectedSiteId', lastId ? lastId.toString() : '');
+            }}
+          />
+        </div>
 
         {/* Department Search (OutlookSearchSelect) */}
         <div className="flex-1 min-w-[150px]">

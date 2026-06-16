@@ -60,3 +60,34 @@ export async function fetchJobHCTrackingApi(params: { department_id?: number } =
   const response = await axiosInstance.get('/dashboard/job-hc-tracking', { params });
   return response.data.data || [];
 }
+
+export async function fetchRecruitmentFunnelApi(params: {
+  site_id?: number[];
+  job_id?: number[];
+  department_id?: number[];
+  recruiter_id?: number;
+} = {}): Promise<ChartDataPoint[]> {
+  const formattedParams = {
+    ...params,
+    site_id: params.site_id?.join(','),
+    job_id: params.job_id?.join(','),
+    department_id: params.department_id?.join(','),
+  };
+  const response = await axiosInstance.get('/dashboard/funnel', { params: formattedParams });
+  return response.data.data || [];
+}
+
+export async function fetchCandidatesByDepartmentApi(params: {
+  status?: string | string[];
+  department_id?: number[];
+  job_id?: number[];
+} = {}): Promise<ChartDataPoint[]> {
+  const formattedParams = {
+    ...params,
+    status: Array.isArray(params.status) ? params.status.join(',') : params.status,
+    department_id: params.department_id?.join(','),
+    job_id: params.job_id?.join(','),
+  };
+  const response = await axiosInstance.get('/dashboard/candidates-by-department', { params: formattedParams });
+  return response.data.data || [];
+}

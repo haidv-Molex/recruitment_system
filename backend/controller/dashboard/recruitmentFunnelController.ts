@@ -56,11 +56,13 @@ recruitmentFunnelController.get(
     const job_ids = parseIds(req.query.job_id);
     const department_ids = parseIds(req.query.department_id);
 
-    // Fallback to logged-in user's user_id
     const user = req.user as any;
-    const recruiter_id = req.query.recruiter_id
-      ? Number(req.query.recruiter_id)
-      : user?.user_id;
+    let recruiter_id: number | undefined = undefined;
+    if (req.query.recruiter_id) {
+      recruiter_id = Number(req.query.recruiter_id);
+    } else if (user?.user_role?.toLowerCase() === "recruiter") {
+      recruiter_id = user.user_id;
+    }
 
     const data = await withTransaction((pool) =>
       Dashboard.recruitmentFunnel({ site_ids, job_ids, department_ids, recruiter_id }, pool)

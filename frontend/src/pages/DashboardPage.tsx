@@ -6,11 +6,14 @@ import {
   fetchHCByHrbpApi,
   fetchHCByMonthApi,
   fetchJobHCTrackingApi,
+  fetchRecruitmentFunnelApi,
+  fetchCandidatesByDepartmentApi,
   ChartDataPoint,
   JobHCTracking,
 } from '@/services/dashboardApi';
 import { searchDepartmentsApi } from '@/services/departmentApi';
 import { searchJobsApi } from '@/services/jobApi';
+import { searchSitesApi } from '@/services/siteApi';
 import { useHeader } from '@/contexts/HeaderContext';
 import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
@@ -20,6 +23,8 @@ import DashboardTable from '@/components/dashboard/DashboardTable';
 import MonthlyHCChart from '@/components/dashboard/MonthlyHCChart';
 import StatusLineChart from '@/components/dashboard/StatusLineChart';
 import DeptHCChart from '@/components/dashboard/DeptHCChart';
+import CandidatesByDeptDonutChart from '@/components/dashboard/CandidatesByDeptDonutChart';
+import RecruitmentFunnelChart from '@/components/dashboard/RecruitmentFunnelChart';
 
 // Fixed row heights for the dashboard charts/tables
 const ROW_1_H = 340; // px — top row
@@ -29,7 +34,7 @@ export const DashboardPage = () => {
   const { toasts, removeToast, toast } = useToast();
 
   const [filters, setFilters] = useState<DashboardFilters>({
-    selectedSites: [],
+    selectedSiteId: '',
     selectedStatuses: [],
     selectedDeptId: '',
     selectedJobId: '',
@@ -39,6 +44,7 @@ export const DashboardPage = () => {
 
   const [departments, setDepartments] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
 
   const [deptHCData, setDeptHCData] = useState<ChartDataPoint[]>([]);
   const [monthHCData, setMonthHCData] = useState<ChartDataPoint[]>([]);
@@ -49,6 +55,8 @@ export const DashboardPage = () => {
   const [offeredData, setOfferedData] = useState<ChartDataPoint[]>([]);
   const [onboardedData, setOnboardedData] = useState<ChartDataPoint[]>([]);
   const [overdueData, setOverdueData] = useState<ChartDataPoint[]>([]);
+  const [funnelData, setFunnelData] = useState<ChartDataPoint[]>([]);
+  const [candidatesByDeptData, setCandidatesByDeptData] = useState<ChartDataPoint[]>([]);
 
   useHeader({ title: '📊 IDL Recruitment Dashboard', subTitle: 'Headcount, status & pipeline analytics.' }, []);
 
@@ -56,9 +64,11 @@ export const DashboardPage = () => {
     Promise.all([
       searchDepartmentsApi({ limit: 1000 }),
       searchJobsApi({ limit: 1000 }),
-    ]).then(([d, j]) => {
+      searchSitesApi({ limit: 1000 }),
+    ]).then(([d, j, s]) => {
       setDepartments(d.data || []);
       setJobs(j.data || []);
+      setSites(s.data || []);
     }).catch(() => toast.error('Failed to load filter options'));
   }, []);
 
@@ -70,8 +80,13 @@ export const DashboardPage = () => {
         if (filters.dateTo) dateF.to = filters.dateTo;
         const deptFilter = filters.selectedDeptId ? Number(filters.selectedDeptId) : undefined;
         const jobFilter = filters.selectedJobId ? Number(filters.selectedJobId) : undefined;
+        const siteFilter = filters.selectedSiteId ? Number(filters.selectedSiteId) : undefined;
 
-        const [dr, mr, rr, hr, jtr, ip, off, onb, ovd] = await Promise.all([
+        const siteIds = siteFilter !== undefined ? [siteFilter] : undefined;
+        const jobIds = jobFilter !== undefined ? [jobFilter] : undefined;
+        const deptIds = deptFilter !== undefined ? [deptFilter] : undefined;
+
+        const [dr, mr, rr, hr, jtr, ip, off, onb, ovd, fun, cbd] = await Promise.all([
           fetchHCByDepartmentApi({ job_id: jobFilter, ...dateF }),
           fetchHCByMonthApi({ department_id: deptFilter, ...dateF }),
           fetchHCByRecruiterApi({ department_id: deptFilter, job_id: jobFilter, ...dateF }),
@@ -81,17 +96,24 @@ export const DashboardPage = () => {
           fetchHCByStatusAndMonthApi('Offered', dateF),
           fetchHCByStatusAndMonthApi('Onboarded', dateF),
           fetchHCByStatusAndMonthApi('Overdue', dateF),
+          fetchRecruitmentFunnelApi({ site_id: siteIds, job_id: jobIds, department_id: deptIds }),
+          fetchCandidatesByDepartmentApi({
+            status: filters.selectedStatuses.length > 0 ? filters.selectedStatuses : ['Offer Accepted', 'Offer accepted'],
+            department_id: deptIds,
+            job_id: jobIds,
+          }),
         ]);
 
         setDeptHCData(dr); setMonthHCData(mr); setRecruiterData(rr); setHrbpData(hr);
         setJobTrackingData(jtr); setInProgressData(ip); setOfferedData(off);
         setOnboardedData(onb); setOverdueData(ovd);
+        setFunnelData(fun); setCandidatesByDeptData(cbd);
       } catch (err: any) {
         toast.error(err?.response?.data?.message || err?.message || 'Failed to load dashboard');
       }
     }
     load();
-  }, [filters.selectedDeptId, filters.selectedJobId, filters.dateFrom, filters.dateTo]);
+  }, [filters.selectedDeptId, filters.selectedJobId, filters.selectedSiteId, filters.selectedStatuses, filters.dateFrom, filters.dateTo]);
 
   const totalHCRequested = useMemo(() => deptHCData.reduce((s, d) => s + d.value, 0), [deptHCData]);
   const totalHrbpPending = useMemo(() => hrbpData.reduce((s, d) => s + d.value, 0), [hrbpData]);
@@ -141,19 +163,20 @@ export const DashboardPage = () => {
     setFilters((p) => ({ ...p, [key]: value }));
 
   const handleClearAll = () =>
-    setFilters({ selectedSites: [], selectedStatuses: [], selectedDeptId: '', selectedJobId: '', dateFrom: '', dateTo: '' });
+    setFilters({ selectedSiteId: '', selectedStatuses: [], selectedDeptId: '', selectedJobId: '', dateFrom: '', dateTo: '' });
 
   return (
     <div className="select-none space-y-3 pb-4">
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-      {/* Wrapper that stacks FilterPanel horizontally and then the 2 rows of charts/tables */}
+      {/* Wrapper that stacks FilterPanel horizontally and then the 3 rows of charts/tables */}
       <div className="flex flex-col gap-3">
         {/* Filter Panel (Horizontal at the top) */}
         <FilterPanel
           filters={filters}
           departments={departments}
           jobs={jobs}
+          sites={sites}
           totalHCRequested={totalHCRequested}
           onStatusChange={handleStatusChange}
           onFilterChange={handleFilterChange}
@@ -275,6 +298,18 @@ export const DashboardPage = () => {
                 },
               ]}
             />
+          </div>
+        </div>
+
+        {/* Row 3 (New Funnel & Source widgets) */}
+        <div className="flex gap-3 shrink-0" style={{ height: ROW_1_H }}>
+          {/* Recruitment Source Donut Chart */}
+          <div className="flex-1 flex flex-col min-w-0">
+            <CandidatesByDeptDonutChart data={candidatesByDeptData} />
+          </div>
+          {/* Recruitment Funnel Chart */}
+          <div className="flex-1 flex flex-col min-w-0">
+            <RecruitmentFunnelChart data={funnelData} />
           </div>
         </div>
       </div>
