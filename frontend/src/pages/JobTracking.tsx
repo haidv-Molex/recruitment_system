@@ -4,6 +4,7 @@ import Pagination from '@/components/ui/Pagination';
 import ExcelTable from '@/components/ui/ExcelTable';
 import JobForm from '@/components/job/JobForm';
 import ToastContainer from '@/components/common/Toast';
+import Modal from '@/components/ui/Modal';
 import { useToast } from '@/hooks/useToast';
 import {
   createJobApi,
@@ -80,7 +81,7 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPageProps) => {
   const { toasts, removeToast, toast } = useToast();
-  const [selectedJobCode, setSelectedJobCode] = useState('');
+  const [viewJobCode, setViewJobCode] = useState('');
   const [editingJob, setEditingJob] = useState<any | null>(null);
   const [showJobForm, setShowJobForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -117,10 +118,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     loadJobsFromApi(1, pageSize);
   }, []);
 
-  const selectedJob = jobs.find((job) => job.jobCode === selectedJobCode);
-  const selectedCandidates = selectedJobCode
-    ? candidates.filter((candidate) => candidate.jobCode === selectedJobCode)
-    : [];
+  // Candidates state removed (now handled directly in modal using viewJobCode)
 
   const handleSaveJob = async (formData: any) => {
     setSaving(true);
@@ -427,6 +425,13 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
 
   const tableActions = [
     {
+      label: 'View',
+      icon: <Users size={14} className="text-emerald-600" />,
+      onClick: (row: any) => {
+        setViewJobCode(row.jobCode);
+      },
+    },
+    {
       label: 'Edit',
       icon: <Edit2 size={14} />,
       onClick: async (row: any) => {
@@ -514,8 +519,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             defaultVisibleColumns={savedColumns}
             onChangeVisibleColumns={handleVisibleColumnsChange}
             actions={tableActions}
-            selectedId={selectedJobCode}
-            onSelectRow={(row: any) => setSelectedJobCode(row.jobCode === selectedJobCode ? '' : row.jobCode)}
             onSearch={handleTableSearch}
             onSort={handleTableSort}
             sortKey={sortParams.sort_by === 'candidate_required' ? 'hcRequested' : sortParams.sort_by}
@@ -534,49 +537,43 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
           />
       </div>
 
-      {/* Selected Job candidates details drawer */}
-      {selectedJob && (
-        <section className="bg-slate-50 rounded-xl border border-slate-200/60 p-6 space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                <Users className="text-emerald-600" size={20} />
-                Candidates applying for Job code: {selectedJobCode}
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Current active pipeline applying for this requisition.
-              </p>
+      {/* View Candidates Modal */}
+      {viewJobCode && (
+        <Modal
+          isOpen={true}
+          onClose={() => setViewJobCode('')}
+          title={
+            <div className="flex items-center gap-2">
+              <Users className="text-emerald-600" size={20} />
+              <span>Candidates applying for Job code: {viewJobCode}</span>
             </div>
-            <button
-              onClick={() => setSelectedJobCode('')}
-              className="text-xs font-bold text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 px-2.5 py-1 rounded"
-            >
-              Hide Pipeline
-            </button>
-          </div>
-
-          {selectedCandidates.length === 0 ? (
+          }
+          maxWidthClass="max-w-3xl"
+        >
+          {candidates.filter((c) => c.jobCode === viewJobCode).length === 0 ? (
             <p className="text-sm text-slate-400 bg-white border border-dashed border-slate-200 rounded-lg p-6 text-center font-medium">
               No candidates are currently applying for this job.
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedCandidates.map((c) => (
-                <div
-                  key={c.id}
-                  className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-all"
-                >
-                  <p className="font-bold text-slate-800 text-sm">{c.name}</p>
-                  <p className="text-xs text-slate-500 font-medium mt-1">
-                    Status:{' '}
-                    <span className="font-semibold text-emerald-600 capitalize">{c.status}</span>
-                  </p>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-1">Source: {c.source || '—'}</p>
-                </div>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {candidates
+                .filter((c) => c.jobCode === viewJobCode)
+                .map((c) => (
+                  <div
+                    key={c.id}
+                    className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 hover:shadow-md transition-all"
+                  >
+                    <p className="font-bold text-slate-800 text-sm">{c.name}</p>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      Status:{' '}
+                      <span className="font-semibold text-emerald-600 capitalize">{c.status}</span>
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-1">Source: {c.source || '—'}</p>
+                  </div>
+                ))}
             </div>
           )}
-        </section>
+        </Modal>
       )}
 
       {/* Modal - Job Edit / Add form */}
