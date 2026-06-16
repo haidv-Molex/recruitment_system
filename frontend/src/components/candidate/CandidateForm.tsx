@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { searchJobsApi } from '../../services/jobApi';
-import { searchPlatformsApi } from '../../services/platformApi';
-import { searchCompaniesApi } from '../../services/companyApi';
-import { fetchUsersApi } from '../../services/userApi';
-import { FileLink, FilePreviewModal } from '../common/FilePreview';
-import { fetchAgenciesApi, fetchStatusesApi } from '../../services/candidateApi';
-import Modal from '../ui/Modal';
-import InputField from '../common/InputField';
-import SelectField from '../common/SelectField';
-import Button from '../common/Button';
-import SingleSearchSelect from '../ui/SingleSearchSelect';
+import { searchJobsApi } from '@/services/jobApi';
+import { searchPlatformsApi } from '@/services/platformApi';
+import { searchCompaniesApi } from '@/services/companyApi';
+import { fetchUsersApi } from '@/services/userApi';
+import { FilePreviewModal } from '@/components/common/FilePreview';
+import { fetchAgenciesApi, fetchStatusesApi } from '@/services/candidateApi';
+import Modal from '@/components/ui/Modal';
+import InputField from '@/components/common/InputField';
+import SelectField from '@/components/common/SelectField';
+import Button from '@/components/common/Button';
+import SingleSearchSelect from '@/components/ui/SingleSearchSelect';
+import FileUploadField from '@/components/common/FileUploadField';
 
 const emptyCandidate = {
   candidateCode: '',
@@ -192,11 +193,42 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
     ...options.agencies.map((a) => ({ value: a, label: a })),
   ];
 
+  const fileToDisplay = formData.file || candidate?.file;
+
+  const modalTitle = (
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="font-semibold text-slate-800">
+        {candidate ? 'Edit Candidate' : 'Add Candidate'}
+      </span>
+      {fileToDisplay && (
+        <span
+          onClick={() => {
+            if (fileToDisplay instanceof File) {
+              const fileUrl = URL.createObjectURL(fileToDisplay);
+              setPreviewFile({
+                file_name: fileToDisplay.name,
+                file_path: fileUrl,
+                file_url: fileUrl,
+              });
+            } else {
+              setPreviewFile(fileToDisplay);
+            }
+          }}
+          className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-emerald-200 cursor-pointer transition-colors max-w-[240px] truncate"
+          title="Click to preview CV File"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          CV: {fileToDisplay instanceof File ? fileToDisplay.name : (fileToDisplay.file_name || fileToDisplay.file_path?.split('/').pop() || 'File')}
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <Modal
       isOpen={true}
       onClose={onClose}
-      title={candidate ? 'Edit Candidate' : 'Add Candidate'}
+      title={modalTitle}
       maxWidthClass="max-w-4xl"
       footer={
         <>
@@ -223,7 +255,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         {/* Section 1: Required & Key Information */}
         <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Required & Key Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <InputField
               label="Candidate Name *"
               name="candidateName"
@@ -240,6 +272,22 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
               options={statusOptions}
               disabled={saving}
             />
+            <div>
+              <FileUploadField
+                label="CV File (optional)"
+                fileName={
+                  formData.file
+                    ? formData.file.name
+                    : candidate?.file
+                    ? (candidate.file.file_name || candidate.file.file_path?.split('/').pop())
+                    : null
+                }
+                placeholder="Click to select CV file..."
+                onChange={handleFileChange}
+                disabled={saving}
+                accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.png"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SingleSearchSelect
@@ -405,26 +453,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         {/* Section 6: Attachments & Notes */}
         <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attachments & Notes</h3>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700">CV File (optional)</label>
-            {candidate?.file && (
-              <div className="mb-2">
-                <FileLink file={candidate.file} onClick={() => setPreviewFile(candidate.file)} />
-              </div>
-            )}
-            <input
-              type="file"
-              onChange={handleFileChange}
-              disabled={saving}
-              accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.png"
-              className="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
-            />
-            {formData.file && (
-              <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                New: {formData.file.name}
-              </p>
-            )}
-          </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-slate-700">Note</label>
             <textarea

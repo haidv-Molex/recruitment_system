@@ -300,15 +300,6 @@ export const CandidateDatabasePage = ({
   const columns = useMemo(
     () => [
       { key: 'candidateCode', label: 'Code', width: 140 },
-      {
-        key: 'file',
-        label: 'CV File',
-        width: 160,
-        disableFilter: true,
-        render: (candidate: any) => (
-          <FileBadge file={candidate.file} onClick={() => setPreviewFile(candidate.file)} />
-        ),
-      },
       { key: 'inputDate', label: 'Input Date', width: 130, render: (_: any, value: any) => formatDate(value) },
       { key: 'name', label: 'Candidate Name', width: 190 },
       { key: 'email', label: 'Email', width: 220 },
@@ -341,6 +332,15 @@ export const CandidateDatabasePage = ({
       { key: 'headhuntAgency', label: 'Agency', width: 170 },
       { key: 'targetedCompanyName', label: 'Targeted Company', width: 180 },
       { key: 'referrerName', label: 'Reference', width: 160 },
+      {
+        key: 'file',
+        label: 'CV File',
+        width: 160,
+        disableFilter: true,
+        render: (candidate: any) => (
+          <FileBadge file={candidate.file} onClick={() => setPreviewFile(candidate.file)} />
+        ),
+      },
       { key: 'note', label: 'Note', width: 260 },
     ],
     []

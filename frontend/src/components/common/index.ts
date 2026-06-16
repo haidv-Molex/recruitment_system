@@ -25,3 +25,7 @@ export * from './Toast';
 
 export { default as UserForm } from './UserForm';
 export * from './UserForm';
+
+export { default as FileUploadField } from './FileUploadField';
+export * from './FileUploadField';
+
