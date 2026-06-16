@@ -7,7 +7,7 @@ import {
   fetchHCByMonthApi,
   fetchJobHCTrackingApi,
   fetchRecruitmentFunnelApi,
-  fetchCandidatesByDepartmentApi,
+  fetchCandidatesByPlatformApi,
   ChartDataPoint,
   JobHCTracking,
 } from '@/services/dashboardApi';
@@ -56,7 +56,7 @@ export const DashboardPage = () => {
   const [onboardedData, setOnboardedData] = useState<ChartDataPoint[]>([]);
   const [overdueData, setOverdueData] = useState<ChartDataPoint[]>([]);
   const [funnelData, setFunnelData] = useState<ChartDataPoint[]>([]);
-  const [candidatesByDeptData, setCandidatesByDeptData] = useState<ChartDataPoint[]>([]);
+  const [candidatesByPlatformData, setCandidatesByPlatformData] = useState<ChartDataPoint[]>([]);
 
   useHeader({ title: '📊 IDL Recruitment Dashboard', subTitle: 'Headcount, status & pipeline analytics.' }, []);
 
@@ -86,7 +86,7 @@ export const DashboardPage = () => {
         const jobIds = jobFilter !== undefined ? [jobFilter] : undefined;
         const deptIds = deptFilter !== undefined ? [deptFilter] : undefined;
 
-        const [dr, mr, rr, hr, jtr, ip, off, onb, ovd, fun, cbd] = await Promise.all([
+        const [dr, mr, rr, hr, jtr, ip, off, onb, ovd, fun, cbp] = await Promise.all([
           fetchHCByDepartmentApi({ job_id: jobFilter, ...dateF }),
           fetchHCByMonthApi({ department_id: deptFilter, ...dateF }),
           fetchHCByRecruiterApi({ department_id: deptFilter, job_id: jobFilter, ...dateF }),
@@ -97,7 +97,7 @@ export const DashboardPage = () => {
           fetchHCByStatusAndMonthApi('Onboarded', dateF),
           fetchHCByStatusAndMonthApi('Overdue', dateF),
           fetchRecruitmentFunnelApi({ site_id: siteIds, job_id: jobIds, department_id: deptIds }),
-          fetchCandidatesByDepartmentApi({
+          fetchCandidatesByPlatformApi({
             status: filters.selectedStatuses.length > 0 ? filters.selectedStatuses : ['Offer Accepted', 'Offer accepted'],
             department_id: deptIds,
             job_id: jobIds,
@@ -107,7 +107,7 @@ export const DashboardPage = () => {
         setDeptHCData(dr); setMonthHCData(mr); setRecruiterData(rr); setHrbpData(hr);
         setJobTrackingData(jtr); setInProgressData(ip); setOfferedData(off);
         setOnboardedData(onb); setOverdueData(ovd);
-        setFunnelData(fun); setCandidatesByDeptData(cbd);
+        setFunnelData(fun); setCandidatesByPlatformData(cbp);
       } catch (err: any) {
         toast.error(err?.response?.data?.message || err?.message || 'Failed to load dashboard');
       }
@@ -305,7 +305,7 @@ export const DashboardPage = () => {
         <div className="flex gap-3 shrink-0" style={{ height: ROW_1_H }}>
           {/* Recruitment Source Donut Chart */}
           <div className="flex-1 flex flex-col min-w-0">
-            <CandidatesByDeptDonutChart data={candidatesByDeptData} />
+            <CandidatesByDeptDonutChart data={candidatesByPlatformData} />
           </div>
           {/* Recruitment Funnel Chart */}
           <div className="flex-1 flex flex-col min-w-0">

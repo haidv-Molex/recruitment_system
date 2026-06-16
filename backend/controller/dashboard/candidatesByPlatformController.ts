@@ -8,17 +8,28 @@ import { withTransaction } from "@middlewares/withTransaction";
 const candidatesByPlatformController = express.Router();
 
 const joiQuery = Joi.object({
-  job_id: Joi.number().integer().optional(),
-  department_id: Joi.number().integer().optional(),
-  status: Joi.string().optional(),
+  status: Joi.alternatives().try(
+    Joi.array().items(Joi.string()),
+    Joi.string()
+  ).optional(),
+  department_id: Joi.alternatives().try(
+    Joi.array().items(Joi.number().integer()),
+    Joi.string(),
+    Joi.number().integer()
+  ).optional(),
+  job_id: Joi.alternatives().try(
+    Joi.array().items(Joi.number().integer()),
+    Joi.string(),
+    Joi.number().integer()
+  ).optional(),
 });
 
 /**
  * GET /dashboard/candidates-by-platform
  * Query params:
- *   - job_id: number (optional)
- *   - department_id: number (optional)
- *   - status: string (optional)
+ *   - status: string or array of strings (optional)
+ *   - department_id: number or array of numbers or comma-separated string (optional)
+ *   - job_id: number or array of numbers or comma-separated string (optional)
  * Output: ChartDataPoint[] — [{ label: platform_name, value: count }]
  */
 candidatesByPlatformController.get(
@@ -26,12 +37,37 @@ candidatesByPlatformController.get(
   passport.authenticate("jwt", { session: false }),
   joiValidate(joiQuery, "query"),
   async (req, res) => {
-    const job_id = req.query.job_id ? Number(req.query.job_id) : undefined;
-    const department_id = req.query.department_id ? Number(req.query.department_id) : undefined;
-    const status = req.query.status as string | undefined;
+    const parseIds = (val: any): number[] | undefined => {
+      if (val === undefined || val === null || val === '') return undefined;
+      if (Array.isArray(val)) {
+        return val.map((v) => Number(v)).filter((v) => !isNaN(v));
+      }
+      return String(val)
+        .split(',')
+        .map((v) => Number(v.trim()))
+        .filter((v) => !isNaN(v));
+    };
+
+    const statusVal = req.query.status;
+    let status: string | string[] | undefined;
+    if (statusVal !== undefined && statusVal !== null && statusVal !== '') {
+      if (Array.isArray(statusVal)) {
+        status = statusVal.map((s) => String(s));
+      } else {
+        const strVal = String(statusVal);
+        if (strVal.includes(',')) {
+          status = strVal.split(',').map((s) => s.trim());
+        } else {
+          status = strVal;
+        }
+      }
+    }
+
+    const department_ids = parseIds(req.query.department_id);
+    const job_ids = parseIds(req.query.job_id);
 
     const data = await withTransaction((pool) =>
-      Dashboard.candidatesByPlatform({ job_id, department_id, status }, pool)
+      Dashboard.candidatesByPlatform({ status, department_ids, job_ids }, pool)
     );
 
     res.status(200).json({

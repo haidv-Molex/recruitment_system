@@ -107,7 +107,7 @@ describe("candidatesByPlatform", () => {
     expect(indeed.value).to.equal(1); // Cand B
   });
 
-  it("should filter by status", async () => {
+  it("should filter by status string", async () => {
     const data = await candidatesByPlatform({ status: "Offer Accepted" }, client);
 
     const linkedin = data.find((d: any) => d.label === "Linkedin")!;
@@ -117,8 +117,18 @@ describe("candidatesByPlatform", () => {
     expect(indeed.value).to.equal(1); // Cand B
   });
 
-  it("should filter by job_id", async () => {
-    const data = await candidatesByPlatform({ job_id: jobId1 }, client);
+  it("should filter by status array", async () => {
+    const data = await candidatesByPlatform({ status: ["Offer Accepted", "Interview"] }, client);
+
+    const linkedin = data.find((d: any) => d.label === "Linkedin")!;
+    const indeed = data.find((d: any) => d.label === "Indeed")!;
+
+    expect(linkedin.value).to.equal(2); // Cand A and Cand C
+    expect(indeed.value).to.equal(1); // Cand B
+  });
+
+  it("should filter by job_ids", async () => {
+    const data = await candidatesByPlatform({ job_ids: [jobId1] }, client);
 
     const linkedin = data.find((d: any) => d.label === "Linkedin")!;
     const indeed = data.find((d: any) => d.label === "Indeed");
@@ -127,8 +137,8 @@ describe("candidatesByPlatform", () => {
     expect(indeed).to.be.undefined; // Indeed is empty for jobId1
   });
 
-  it("should filter by department_id", async () => {
-    const data = await candidatesByPlatform({ department_id: deptId1 }, client);
+  it("should filter by department_ids", async () => {
+    const data = await candidatesByPlatform({ department_ids: [deptId1] }, client);
 
     const linkedin = data.find((d: any) => d.label === "Linkedin")!;
     const indeed = data.find((d: any) => d.label === "Indeed");

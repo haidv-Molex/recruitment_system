@@ -2,18 +2,18 @@ import { PoolClient } from "pg";
 import type { ChartDataPoint } from "@type/chart.d";
 
 export interface CandidatesByPlatformParams {
-  job_id?: number;
-  department_id?: number;
-  status?: string;
+  status?: string | string[];
+  department_ids?: number[];
+  job_ids?: number[];
 }
 
 /**
  * Candidates count grouped by Platform
  * ─────────────────────────────────────────────────────────────
  * Returns the count of candidates per platform matching the filters:
- * - status (string, optional)
- * - job_id (number, optional)
- * - department_id (number, optional)
+ * - status (string or array of strings, optional)
+ * - job_ids (array of numbers, optional)
+ * - department_ids (array of numbers, optional)
  */
 async function candidatesByPlatform(
   params: CandidatesByPlatformParams,
@@ -21,21 +21,25 @@ async function candidatesByPlatform(
 ): Promise<ChartDataPoint[]> {
   const conditions: string[] = [];
   const sqlParams: any[] = [];
-  let paramIndex = 1;
 
-  if (params.status !== undefined && params.status !== "") {
-    conditions.push(`c.status = $${paramIndex++}`);
-    sqlParams.push(params.status);
+  if (params.status !== undefined) {
+    if (Array.isArray(params.status)) {
+      sqlParams.push(params.status);
+      conditions.push(`c.status = ANY($${sqlParams.length})`);
+    } else {
+      sqlParams.push(params.status);
+      conditions.push(`c.status = $${sqlParams.length}`);
+    }
   }
 
-  if (params.job_id !== undefined) {
-    conditions.push(`c.job_id = $${paramIndex++}`);
-    sqlParams.push(params.job_id);
+  if (params.job_ids && params.job_ids.length > 0) {
+    sqlParams.push(params.job_ids);
+    conditions.push(`c.job_id = ANY($${sqlParams.length})`);
   }
 
-  if (params.department_id !== undefined) {
-    conditions.push(`c.job_id IN (SELECT job_id FROM job_department WHERE department_id = $${paramIndex++})`);
-    sqlParams.push(params.department_id);
+  if (params.department_ids && params.department_ids.length > 0) {
+    sqlParams.push(params.department_ids);
+    conditions.push(`c.job_id IN (SELECT job_id FROM job_department WHERE department_id = ANY($${sqlParams.length}))`);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
