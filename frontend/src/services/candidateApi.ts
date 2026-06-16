@@ -277,3 +277,10 @@ export async function batchImportCandidatesApi(candidates: any[]): Promise<any> 
   return response.data.data;
 }
 
+export async function parseCVApi(file: File): Promise<any> {
+  const fd = new FormData();
+  fd.append('file', file);
+  const response = await axiosInstance.post('/file/parse-cv', fd);
+  return response.data.data;
+}
+

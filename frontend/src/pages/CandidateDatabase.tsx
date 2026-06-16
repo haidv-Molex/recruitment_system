@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import CandidateForm from '@/components/candidate/CandidateForm';
-import BulkCVUpload from '@/components/candidate/BulkCVUpload';
+import CVUploadModal from '@/components/candidate/CVUploadModal';
+import CVParseResultModal from '@/components/candidate/CVParseResultModal';
 import ExcelTable, { formatDate } from '@/components/ui/ExcelTable';
 import Pagination from '@/components/ui/Pagination';
 import { masterData } from '@/services/mockData';
@@ -13,6 +14,7 @@ import {
   updateCandidateApi,
   downloadDatabaseSheetApi,
   batchImportCandidatesApi,
+  parseCVApi,
 } from '@/services/candidateApi';
 import { FileBadge, FilePreviewModal } from '@/components/common/FilePreview';
 import CandidateExcelImport from '@/components/candidate/CandidateExcelImport';
@@ -21,6 +23,7 @@ import DatabaseFilters from '@/components/candidate-database/DatabaseFilters';
 import { useItem, setItem } from '@/config/zustandStore';
 import { FileUp, Download, Plus, Upload, Edit2, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
+import Modal from '@/components/ui/Modal';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
@@ -73,11 +76,13 @@ export const CandidateDatabasePage = ({
   const { toasts, removeToast, toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<any | null>(null);
-  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showCVUploadModal, setShowCVUploadModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
+
+  const [parsedCVInfo, setParsedCVInfo] = useState<{ data: any; file: File } | null>(null);
 
   const savedColumns = useItem('visibleCandidateColumns');
   const defaultVisible = savedColumns || [
@@ -208,13 +213,6 @@ export const CandidateDatabasePage = ({
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || 'Delete candidate failed.');
     }
-  };
-
-  const handleBulkUpload = (fileArray: any[]) => {
-    alert(
-      `${fileArray.length} CV file(s) uploaded successfully.\n\nNote: Files are stored in memory. Backend integration needed for permanent storage.`
-    );
-    setShowBulkUpload(false);
   };
 
 
@@ -377,11 +375,11 @@ export const CandidateDatabasePage = ({
       </button>
       <button
         type="button"
-        onClick={() => setShowBulkUpload(true)}
+        onClick={() => setShowCVUploadModal(true)}
         className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
       >
         <Upload size={14} />
-        <span>Bulk CV</span>
+        <span>Parse CV</span>
       </button>
       <button
         type="button"
@@ -454,8 +452,14 @@ export const CandidateDatabasePage = ({
         />
       )}
 
-      {showBulkUpload && (
-        <BulkCVUpload onUpload={handleBulkUpload} onClose={() => setShowBulkUpload(false)} />
+      {showCVUploadModal && (
+        <CVUploadModal
+          onParsed={(data, file) => {
+            setShowCVUploadModal(false);
+            setParsedCVInfo({ data, file });
+          }}
+          onClose={() => setShowCVUploadModal(false)}
+        />
       )}
 
       {/* File Preview Modal */}
@@ -466,6 +470,15 @@ export const CandidateDatabasePage = ({
         <CandidateExcelImport
           onImportBatch={handleImportCandidatesBatch}
           onClose={handleExcelImportClose}
+        />
+      )}
+
+      {/* Parse CV Result Modal */}
+      {parsedCVInfo && (
+        <CVParseResultModal
+          parsedData={parsedCVInfo.data}
+          file={parsedCVInfo.file}
+          onClose={() => setParsedCVInfo(null)}
         />
       )}
     </div>
