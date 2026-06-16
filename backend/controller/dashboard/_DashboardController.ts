@@ -7,6 +7,7 @@ import hcRequestedByHiringManagerController from "./hcRequestedByHiringManagerCo
 import hcRequestedByMonthController from "./hcRequestedByMonthController";
 import jobHCTrackingController from "./jobHCTrackingController";
 import recruitmentFunnelController from "./recruitmentFunnelController";
+import candidatesByDepartmentController from "./candidatesByDepartmentController";
 
 const DashboardController = express.Router();
 
@@ -18,5 +19,6 @@ DashboardController.use("/hc-by-hiring-manager", hcRequestedByHiringManagerContr
 DashboardController.use("/hc-by-month", hcRequestedByMonthController);
 DashboardController.use("/job-hc-tracking", jobHCTrackingController);
 DashboardController.use("/funnel", recruitmentFunnelController);
+DashboardController.use("/candidates-by-department", candidatesByDepartmentController);
 
 export default DashboardController;
