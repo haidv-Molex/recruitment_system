@@ -21,7 +21,7 @@ export type candidateStatus =
   | 'Interview'
   | 'Interview Fail'
   | 'Hold'
-  | 'Offer'
+  | 'Offered'
   | 'Offer Accepted'
   | 'Offer Rejected'
   | 'Onboarded'

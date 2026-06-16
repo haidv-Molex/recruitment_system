@@ -9,7 +9,7 @@ const DEFAULT_STATUSES: candidateStatus[] = [
   'Interview',
   'Interview Fail',
   'Hold',
-  'Offer',
+  'Offered',
   'Offer Accepted',
   'Offer Rejected',
   'Onboarded',
