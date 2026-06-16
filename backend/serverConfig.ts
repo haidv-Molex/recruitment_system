@@ -68,7 +68,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limiter);
+// app.use(limiter);s
 
 // 6. Redis & Socket.IO
 const io = new Server(server, {

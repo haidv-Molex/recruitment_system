@@ -1,4 +1,6 @@
 import Redis from "ioredis";
+import fs from "fs";
+import path from "path";
 
 const useRedis = process.env.USE_REDIS === "true";
 
@@ -10,7 +12,49 @@ interface MockValue {
   expiry: number;
 }
 
-const memoryStore = new Map<string, MockValue>();
+const cacheFilePath = path.join(__dirname, "../scratch/cache_persist.json");
+
+// Helper to load cache from disk
+const loadCache = (): Map<string, MockValue> => {
+  try {
+    if (fs.existsSync(cacheFilePath)) {
+      const fileData = fs.readFileSync(cacheFilePath, "utf8");
+      const parsed = JSON.parse(fileData);
+      const map = new Map<string, MockValue>();
+      for (const [key, val] of Object.entries(parsed)) {
+        const mockVal = val as MockValue;
+        if (Date.now() <= mockVal.expiry) {
+          map.set(key, mockVal);
+        }
+      }
+      return map;
+    }
+  } catch (err) {
+    console.error("Failed to load persisted cache:", err);
+  }
+  return new Map<string, MockValue>();
+};
+
+// Helper to save cache to disk
+const saveCache = (map: Map<string, MockValue>) => {
+  try {
+    const dir = path.dirname(cacheFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const obj: Record<string, MockValue> = {};
+    for (const [key, val] of map.entries()) {
+      if (Date.now() <= val.expiry) {
+        obj[key] = val;
+      }
+    }
+    fs.writeFileSync(cacheFilePath, JSON.stringify(obj, null, 2), "utf8");
+  } catch (err) {
+    console.error("Failed to save cache to file:", err);
+  }
+};
+
+const memoryStore = loadCache();
 
 let redis: any;
 
@@ -30,13 +74,14 @@ if (useRedis) {
     console.error("Failed to connect to Redis:", err.message);
   });
 } else {
-  // In-memory mock redis client that perfectly matches the methods used in passport and index
+  // In-memory mock redis client that persists to cache_persist.json
   redis = {
     get: async (key: string): Promise<string | null> => {
       const item = memoryStore.get(key);
       if (!item) return null;
       if (Date.now() > item.expiry) {
         memoryStore.delete(key);
+        saveCache(memoryStore);
         return null;
       }
       return item.value;
@@ -44,10 +89,16 @@ if (useRedis) {
     set: async (key: string, value: string, mode?: string, duration?: number): Promise<string> => {
       const expiry = mode === "EX" && duration ? Date.now() + duration * 1000 : Infinity;
       memoryStore.set(key, { value, expiry });
+      saveCache(memoryStore);
       return "OK";
     },
     del: async (key: string): Promise<number> => {
-      return memoryStore.delete(key) ? 1 : 0;
+      const deleted = memoryStore.delete(key);
+      if (deleted) {
+        saveCache(memoryStore);
+        return 1;
+      }
+      return 0;
     },
     ttl: async (key: string): Promise<number> => {
       const item = memoryStore.get(key);
@@ -65,6 +116,7 @@ if (useRedis) {
       }
       const newVal = currentVal + 1;
       memoryStore.set(key, { value: String(newVal), expiry });
+      saveCache(memoryStore);
       return newVal;
     },
     expire: async (key: string, seconds: number): Promise<number> => {
@@ -72,10 +124,12 @@ if (useRedis) {
       if (!item) return 0;
       item.expiry = Date.now() + seconds * 1000;
       memoryStore.set(key, item);
+      saveCache(memoryStore);
       return 1;
     },
     flushall: async (): Promise<string> => {
       memoryStore.clear();
+      saveCache(memoryStore);
       return "OK";
     },
     quit: async (): Promise<string> => {
@@ -85,7 +139,7 @@ if (useRedis) {
       // no-op
     }
   };
-  console.log("ℹ️ Redis is disabled. Falling back to in-memory/no-op cache.");
+  console.log("ℹ️ Redis is disabled. Falling back to persistent in-memory cache.");
 }
 
 // 🔹 Hàm tiện ích set với TTL

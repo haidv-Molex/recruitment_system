@@ -134,14 +134,14 @@ export default function FilterPanel({
         {/* Job Title Search (OutlookSearchSelect) */}
         <div className="flex-1 min-w-[150px]">
           <OutlookSearchSelect
-            label="Job Title"
+            label="job code"
             placeholder="Search job..."
             initialItems={selectedJobItem ? [selectedJobItem] : []}
             searchApi={async (search) => {
-              const res = await searchJobsApi({ search, limit: 10 });
+              const res = await searchJobsApi({ job_code: search, limit: 10 });
               return { data: res.data || [] };
             }}
-            displayFn={(j: any) => j.job_title || j.job_code}
+            displayFn={(j: any) => j.job_code}
             chipDisplayFn={(j: any) => j.job_code}
             keyProp="job_id"
             singleSelect={true}
