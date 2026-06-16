@@ -5,6 +5,7 @@ import createValidationSheetController from "./createValidationSheetController";
 import createDatabaseSheetController from "./createDatabaseSheetController";
 import createIDLTrackingSheetController from "./createIDLTrackingSheetController";
 import createFullWorkbookController from "./createFullWorkbookController";
+import parseCVController from "./parseCVController";
 const FileController = express.Router();
 
 FileController.use("/parse-job-sheet", parseJobSheetController);
@@ -13,4 +14,5 @@ FileController.use("/validation-sheet", createValidationSheetController);
 FileController.use("/database-sheet", createDatabaseSheetController);
 FileController.use("/idl-tracking-sheet", createIDLTrackingSheetController);
 FileController.use("/full-workbook", createFullWorkbookController);
+FileController.use("/parse-cv", parseCVController);
 export default FileController;

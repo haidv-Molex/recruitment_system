@@ -6,6 +6,7 @@ import createValidationSheet from "./createValidationSheet";
 import createDatabaseSheet from "./createDatabaseSheet";
 import createIDLTrackingSheet from "./createIDLTrackingSheet";
 import createFullWorkbook from "./createFullWorkbook";
+import parseCV from "./parseCV";
 
 class FileService {
   static upload = upload;
@@ -15,7 +16,8 @@ class FileService {
   static createValidationSheet = createValidationSheet;
   static createDatabaseSheet = createDatabaseSheet;
   static createIDLTrackingSheet = createIDLTrackingSheet;
-  static createFullWorkbook = createFullWorkbook
+  static createFullWorkbook = createFullWorkbook;
+  static parseCV = parseCV;
 }
 
 export default FileService;
