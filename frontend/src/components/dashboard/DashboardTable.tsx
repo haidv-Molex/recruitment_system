@@ -27,8 +27,8 @@ export default function DashboardTable<T>({
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full font-sans dashboard-table">
       {/* Scrollable table container */}
-      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-        <table className="w-full text-xs border-collapse dashboard-table">
+      <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
+        <table className="w-full min-w-full text-xs border-collapse dashboard-table">
           {/* Table Header Row */}
           {hasHeaderRow && (
             <thead>
@@ -53,7 +53,11 @@ export default function DashboardTable<T>({
             {data.map((item, idx) => (
               <tr key={rowKey(item, idx)} className="hover:bg-slate-50/80 transition-colors">
                 {columns.map((col, cIdx) => (
-                  <td key={cIdx} className={`px-2 py-1.5 align-middle truncate ${col.cellClassName || ''}`}>
+                  <td
+                    key={cIdx}
+                    className={`px-2 py-1.5 align-middle whitespace-nowrap ${col.cellClassName || ''}`}
+                    style={{ width: col.width }}
+                  >
                     {col.renderCell(item, idx)}
                   </td>
                 ))}

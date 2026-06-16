@@ -1,5 +1,8 @@
 import { ChartDataPoint } from '@/services/dashboardApi';
 import type { departmentModel } from '@/types/departmentModel';
+import { searchDepartmentsApi } from '@/services/departmentApi';
+import { searchJobsApi } from '@/services/jobApi';
+import OutlookSearchSelect from '@/components/ui/OutlookSearchSelect';
 
 export interface DashboardFilters {
   selectedSites: string[];
@@ -15,13 +18,11 @@ export interface FilterPanelProps {
   departments: departmentModel[];
   jobs: any[];
   totalHCRequested: number;
-  onSiteToggle: (site: string) => void;
-  onStatusToggle: (status: string) => void;
+  onStatusChange: (statuses: string[]) => void;
   onFilterChange: (key: keyof DashboardFilters, value: string) => void;
   onClearAll: () => void;
 }
 
-const SITE_OPTIONS = ['BU', 'MXHY', 'MXHY3', 'MXV', 'SYT'];
 const STATUS_OPTIONS = ['In progress', 'Offered', 'Onboarded', 'Overdue'];
 
 export default function FilterPanel({
@@ -29,130 +30,129 @@ export default function FilterPanel({
   departments,
   jobs,
   totalHCRequested,
-  onSiteToggle,
-  onStatusToggle,
+  onStatusChange,
   onFilterChange,
   onClearAll,
 }: FilterPanelProps) {
   const hasActiveFilters =
-    filters.selectedSites.length > 0 ||
     filters.selectedStatuses.length > 0 ||
     filters.selectedDeptId ||
     filters.selectedJobId ||
     filters.dateFrom ||
     filters.dateTo;
 
-  return (
-    <div className="flex flex-col gap-3 h-full">
-      {/* Title banner */}
-      <div className="bg-excel-green-dark text-white rounded-xl shadow-md p-4">
-        <h2 className="text-sm font-black tracking-widest uppercase text-white">IDL RECRUITMENT TRACKING</h2>
-        <p className="text-[10px] text-emerald-200 mt-0.5 font-medium">Real-time Headcount Analytics</p>
+  const selectedDeptItem = departments.find(
+    (d: any) => d.department_id.toString() === filters.selectedDeptId
+  );
+  const selectedJobItem = jobs.find(
+    (j: any) => j.job_id.toString() === filters.selectedJobId
+  );
 
-        {/* KPI inline */}
-        <div className="mt-3 border-t border-white/20 pt-3">
-          <span className="text-[10px] text-emerald-200 uppercase font-bold tracking-wider block">HC Requested</span>
-          <span className="text-4xl font-black text-white leading-none mt-1 block">{totalHCRequested}</span>
+  return (
+    <div className="flex gap-3 w-full shrink-0 items-stretch font-sans">
+      {/* Title banner / KPI */}
+      <div className="bg-excel-green-dark text-white rounded-xl shadow-md px-4 py-2 flex items-center gap-5 shrink-0">
+        <div>
+          <h2 className="text-xs font-black tracking-widest uppercase">IDL RECRUITMENT</h2>
+          <p className="text-[9px] text-emerald-200 font-medium">Headcount Analytics</p>
+        </div>
+        <div className="border-l border-white/20 pl-4 py-0.5">
+          <span className="text-[9px] text-emerald-200 uppercase font-bold tracking-wider block leading-none">Requested</span>
+          <span className="text-xl font-black text-white leading-none mt-1 block">{totalHCRequested}</span>
         </div>
       </div>
 
-      {/* Filters card — flex-1 + min-h-0 so it fills remaining height and scrolls if needed */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4">
-        {/* SITE / STATUS side by side */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-2">SITE</span>
-            <div className="space-y-1">
-              {SITE_OPTIONS.map((site) => (
-                <label key={site} className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={filters.selectedSites.includes(site)}
-                    onChange={() => onSiteToggle(site)}
-                    className="w-3.5 h-3.5 rounded text-excel-green border-slate-300 focus:ring-excel-green"
-                  />
-                  <span className="text-xs text-slate-600 group-hover:text-slate-900">{site}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-2">STATUS</span>
-            <div className="space-y-1">
-              {STATUS_OPTIONS.map((st) => (
-                <label key={st} className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={filters.selectedStatuses.includes(st)}
-                    onChange={() => onStatusToggle(st)}
-                    className="w-3.5 h-3.5 rounded text-excel-green border-slate-300 focus:ring-excel-green"
-                  />
-                  <span className="text-xs text-slate-600 group-hover:text-slate-900">{st}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+      {/* Filters card */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-3.5 py-2.5 flex-1 flex items-end justify-between gap-3">
+        {/* Status Dropdown */}
+        <div className="w-[105px] shrink-0 flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-700">Status</label>
+          <select
+            value={filters.selectedStatuses[0] || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              onStatusChange(val ? [val] : []);
+            }}
+            className="w-full text-xs px-2 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 focus:ring-1 focus:ring-excel-green focus:border-excel-green h-[38px] transition-all focus:outline-none"
+          >
+            <option value="">All</option>
+            {STATUS_OPTIONS.map((st) => (
+              <option key={st} value={st}>
+                {st}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* DEPT / JOB TITLE side by side */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">DEPT.</span>
-            <select
-              value={filters.selectedDeptId}
-              onChange={(e) => onFilterChange('selectedDeptId', e.target.value)}
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-800 focus:ring-excel-green focus:border-excel-green"
-            >
-              <option value="">All</option>
-              {departments.map((d: any) => (
-                <option key={d.department_id} value={d.department_id}>{d.department_name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">JOB TITLE</span>
-            <select
-              value={filters.selectedJobId}
-              onChange={(e) => onFilterChange('selectedJobId', e.target.value)}
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-800 focus:ring-excel-green focus:border-excel-green"
-            >
-              <option value="">All</option>
-              {jobs.map((j: any) => (
-                <option key={j.job_id} value={j.job_id}>{j.job_code}</option>
-              ))}
-            </select>
-          </div>
+        {/* Department Search (OutlookSearchSelect) */}
+        <div className="flex-1 min-w-[150px]">
+          <OutlookSearchSelect
+            label="Dept."
+            placeholder="Search dept..."
+            initialItems={selectedDeptItem ? [selectedDeptItem] : []}
+            searchApi={async (search) => {
+              const res = await searchDepartmentsApi({ search, limit: 10 });
+              return { data: res.data || [] };
+            }}
+            displayFn={(d: any) => d.department_name}
+            chipDisplayFn={(d: any) => d.department_code || d.department_name}
+            keyProp="department_id"
+            onChange={(ids) => {
+              const lastId = ids[ids.length - 1];
+              onFilterChange('selectedDeptId', lastId ? lastId.toString() : '');
+            }}
+          />
         </div>
 
-        {/* Expected onboard date */}
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-excel-green-dark block mb-1.5">
-            Expected onboard date
-          </span>
-          <div className="grid grid-cols-2 gap-2">
+        {/* Job Title Search (OutlookSearchSelect) */}
+        <div className="flex-1 min-w-[150px]">
+          <OutlookSearchSelect
+            label="Job Title"
+            placeholder="Search job..."
+            initialItems={selectedJobItem ? [selectedJobItem] : []}
+            searchApi={async (search) => {
+              const res = await searchJobsApi({ search, limit: 10 });
+              return { data: res.data || [] };
+            }}
+            displayFn={(j: any) => j.job_title || j.job_code}
+            chipDisplayFn={(j: any) => j.job_code}
+            keyProp="job_id"
+            onChange={(ids) => {
+              const lastId = ids[ids.length - 1];
+              onFilterChange('selectedJobId', lastId ? lastId.toString() : '');
+            }}
+          />
+        </div>
+
+        {/* Expected Onboard Date range */}
+        <div className="w-[260px] shrink-0 flex flex-col gap-1.5">
+          <label className="text-xs font-semibold text-slate-700">Expected onboard date</label>
+          <div className="flex items-center gap-1">
             <input
               type="date"
               value={filters.dateFrom}
               onChange={(e) => onFilterChange('dateFrom', e.target.value)}
               placeholder="mm/dd/yyyy"
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-700 focus:ring-excel-green focus:border-excel-green"
+              className="w-[115px] text-xs px-2 py-1.5 border border-slate-300 rounded-lg bg-white text-slate-700 focus:ring-1 focus:ring-excel-green focus:border-excel-green h-[38px] transition-all focus:outline-none"
             />
+            <span className="text-slate-400 text-xs font-medium px-0.5">to</span>
             <input
               type="date"
               value={filters.dateTo}
               onChange={(e) => onFilterChange('dateTo', e.target.value)}
               placeholder="mm/dd/yyyy"
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-700 focus:ring-excel-green focus:border-excel-green"
+              className="w-[115px] text-xs px-2 py-1.5 border border-slate-300 rounded-lg bg-white text-slate-700 focus:ring-1 focus:ring-excel-green focus:border-excel-green h-[38px] transition-all focus:outline-none"
             />
           </div>
         </div>
 
+        {/* Clear all filters button */}
         {hasActiveFilters && (
           <button
             onClick={onClearAll}
-            className="w-full text-xs text-red-500 hover:text-red-700 font-bold pt-2 border-t text-center transition-colors"
+            className="text-xs text-red-500 hover:text-red-700 font-bold px-3 py-2 border border-red-200 hover:border-red-400 rounded-lg bg-red-50/50 hover:bg-red-50 transition-colors h-[38px] shrink-0"
           >
-            ✕ Clear all filters
+            ✕ Clear
           </button>
         )}
       </div>
