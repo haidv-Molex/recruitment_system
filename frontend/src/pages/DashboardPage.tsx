@@ -16,11 +16,10 @@ import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
 
 import FilterPanel, { DashboardFilters } from '@/components/dashboard/FilterPanel';
-import PendingTable from '@/components/dashboard/PendingTable';
+import DashboardTable from '@/components/dashboard/DashboardTable';
 import MonthlyHCChart from '@/components/dashboard/MonthlyHCChart';
 import StatusLineChart from '@/components/dashboard/StatusLineChart';
 import DeptHCChart from '@/components/dashboard/DeptHCChart';
-import JobHCTable from '@/components/dashboard/JobHCTable';
 
 // Fixed row heights — tổng phải khớp với viewport content area
 const ROW_1_H = 340; // px — top row (Filter + Tables + Monthly chart)
@@ -148,11 +147,47 @@ export const DashboardPage = () => {
           <div className="flex gap-3 shrink-0" style={{ height: ROW_1_H }}>
             {/* HRBP */}
             <div className="flex flex-col" style={{ width: 160 }}>
-              <PendingTable title="HRBP" data={hrbpData} total={totalHrbpPending} />
+              <DashboardTable
+                data={hrbpData}
+                rowKey={(item, idx) => idx}
+                columns={[
+                  {
+                    header: 'HRBP',
+                    renderCell: (item) => <span className="truncate max-w-[80px] block font-medium">{item.label}</span>,
+                    cellClassName: 'px-2 py-1 text-slate-700',
+                    renderFooter: () => <span className="text-xs font-bold text-slate-700">Total</span>,
+                  },
+                  {
+                    header: 'Pending',
+                    headerClassName: 'text-right',
+                    renderCell: (item) => item.value,
+                    cellClassName: 'px-2 py-1 text-right font-bold text-slate-800 w-10',
+                    renderFooter: () => <span className="text-xs font-black text-slate-900">{totalHrbpPending}</span>,
+                  },
+                ]}
+              />
             </div>
             {/* Recruiter */}
             <div className="flex flex-col" style={{ width: 160 }}>
-              <PendingTable title="Recruiter" data={recruiterData} total={totalRecruiterPending} />
+              <DashboardTable
+                data={recruiterData}
+                rowKey={(item, idx) => idx}
+                columns={[
+                  {
+                    header: 'Recruiter',
+                    renderCell: (item) => <span className="truncate max-w-[80px] block font-medium">{item.label}</span>,
+                    cellClassName: 'px-2 py-1 text-slate-700',
+                    renderFooter: () => <span className="text-xs font-bold text-slate-700">Total</span>,
+                  },
+                  {
+                    header: 'Pending',
+                    headerClassName: 'text-right',
+                    renderCell: (item) => item.value,
+                    cellClassName: 'px-2 py-1 text-right font-bold text-slate-800 w-10',
+                    renderFooter: () => <span className="text-xs font-black text-slate-900">{totalRecruiterPending}</span>,
+                  },
+                ]}
+              />
             </div>
             {/* Monthly HC Chart */}
             <div className="flex-1 flex flex-col min-w-0">
@@ -177,7 +212,44 @@ export const DashboardPage = () => {
             </div>
             {/* Job HC Table */}
             <div className="flex flex-col" style={{ width: 300 }}>
-              <JobHCTable data={jobTrackingData} />
+              <DashboardTable
+                data={jobTrackingData}
+                rowKey={(item) => item.job_id}
+                columns={[
+                  {
+                    header: 'Job title',
+                    headerClassName: 'text-left',
+                    cellClassName: 'px-2 py-1.5 text-slate-700 font-medium',
+                    renderCell: (item) => item.job_title || '—',
+                    renderFooter: () => <span className="text-xs font-bold text-slate-700">Total</span>,
+                  },
+                  {
+                    header: 'RQ',
+                    headerClassName: 'text-right',
+                    cellClassName: 'px-2 py-1.5 text-right text-slate-600',
+                    renderCell: (item) => item.candidate_required,
+                    renderFooter: (items) => items.reduce((sum, item) => sum + item.candidate_required, 0),
+                  },
+                  {
+                    header: 'Closed',
+                    headerClassName: 'text-right',
+                    cellClassName: 'px-2 py-1.5 text-right text-excel-green font-bold',
+                    renderCell: (item) => item.closed_count,
+                    renderFooter: (items) => (
+                      <span className="text-excel-green-dark font-black">
+                        {items.reduce((sum, item) => sum + item.closed_count, 0)}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: 'Open',
+                    headerClassName: 'text-right',
+                    cellClassName: 'px-2 py-1.5 text-right font-bold text-slate-800',
+                    renderCell: (item) => item.open_count,
+                    renderFooter: (items) => items.reduce((sum, item) => sum + item.open_count, 0),
+                  },
+                ]}
+              />
             </div>
           </div>
 

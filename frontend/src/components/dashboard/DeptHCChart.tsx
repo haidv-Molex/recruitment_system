@@ -50,7 +50,7 @@ export default function DeptHCChart({ data }: DeptHCChartProps) {
                 border: '1px solid #e2e8f0',
               }}
             />
-            <Bar dataKey="value" fill="#10b981" radius={[0, 3, 3, 0]}>
+            <Bar dataKey="value" fill="var(--excel-green)" radius={[0, 3, 3, 0]}>
               <LabelList
                 dataKey="value"
                 position="right"

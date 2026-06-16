@@ -45,14 +45,14 @@ export default function FilterPanel({
   return (
     <div className="flex flex-col gap-3 h-full">
       {/* Title banner */}
-      <div className="bg-emerald-800 text-white rounded-xl shadow-md p-4">
+      <div className="bg-excel-green-dark text-white rounded-xl shadow-md p-4">
         <h2 className="text-sm font-black tracking-widest uppercase text-white">IDL RECRUITMENT TRACKING</h2>
-        <p className="text-[10px] text-emerald-300 mt-0.5 font-medium">Real-time Headcount Analytics</p>
+        <p className="text-[10px] text-emerald-200 mt-0.5 font-medium">Real-time Headcount Analytics</p>
 
         {/* KPI inline */}
-        <div className="mt-3 border-t border-emerald-700 pt-3">
-          <span className="text-[10px] text-emerald-300 uppercase font-bold tracking-wider block">HC Requested</span>
-          <span className="text-4xl font-black text-emerald-300 leading-none mt-1 block">{totalHCRequested}</span>
+        <div className="mt-3 border-t border-white/20 pt-3">
+          <span className="text-[10px] text-emerald-200 uppercase font-bold tracking-wider block">HC Requested</span>
+          <span className="text-4xl font-black text-white leading-none mt-1 block">{totalHCRequested}</span>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ export default function FilterPanel({
                     type="checkbox"
                     checked={filters.selectedSites.includes(site)}
                     onChange={() => onSiteToggle(site)}
-                    className="w-3.5 h-3.5 rounded text-emerald-600 border-slate-300 focus:ring-emerald-500"
+                    className="w-3.5 h-3.5 rounded text-excel-green border-slate-300 focus:ring-excel-green"
                   />
                   <span className="text-xs text-slate-600 group-hover:text-slate-900">{site}</span>
                 </label>
@@ -85,7 +85,7 @@ export default function FilterPanel({
                     type="checkbox"
                     checked={filters.selectedStatuses.includes(st)}
                     onChange={() => onStatusToggle(st)}
-                    className="w-3.5 h-3.5 rounded text-emerald-600 border-slate-300 focus:ring-emerald-500"
+                    className="w-3.5 h-3.5 rounded text-excel-green border-slate-300 focus:ring-excel-green"
                   />
                   <span className="text-xs text-slate-600 group-hover:text-slate-900">{st}</span>
                 </label>
@@ -101,7 +101,7 @@ export default function FilterPanel({
             <select
               value={filters.selectedDeptId}
               onChange={(e) => onFilterChange('selectedDeptId', e.target.value)}
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-800 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-800 focus:ring-excel-green focus:border-excel-green"
             >
               <option value="">All</option>
               {departments.map((d: any) => (
@@ -114,7 +114,7 @@ export default function FilterPanel({
             <select
               value={filters.selectedJobId}
               onChange={(e) => onFilterChange('selectedJobId', e.target.value)}
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-800 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-800 focus:ring-excel-green focus:border-excel-green"
             >
               <option value="">All</option>
               {jobs.map((j: any) => (
@@ -126,7 +126,7 @@ export default function FilterPanel({
 
         {/* Expected onboard date */}
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 block mb-1.5">
+          <span className="text-[10px] font-black uppercase tracking-widest text-excel-green-dark block mb-1.5">
             Expected onboard date
           </span>
           <div className="grid grid-cols-2 gap-2">
@@ -135,14 +135,14 @@ export default function FilterPanel({
               value={filters.dateFrom}
               onChange={(e) => onFilterChange('dateFrom', e.target.value)}
               placeholder="mm/dd/yyyy"
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-700 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-700 focus:ring-excel-green focus:border-excel-green"
             />
             <input
               type="date"
               value={filters.dateTo}
               onChange={(e) => onFilterChange('dateTo', e.target.value)}
               placeholder="mm/dd/yyyy"
-              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-700 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full text-xs px-2 py-1.5 border border-slate-300 rounded-md bg-white text-slate-700 focus:ring-excel-green focus:border-excel-green"
             />
           </div>
         </div>

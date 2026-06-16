@@ -22,7 +22,7 @@ interface StatusLineChartProps {
 const STATUS_CONFIG = [
   { key: 'In progress', color: '#f59e0b', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
   { key: 'Offered',     color: '#6366f1', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
-  { key: 'Onboarded',  color: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  { key: 'Onboarded',  color: '#059669', bg: 'bg-excel-green/10', text: 'text-excel-green-dark', border: 'border-excel-green/20' },
   { key: 'Overdue',    color: '#ef4444', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200' },
 ];
 

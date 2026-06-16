@@ -17,7 +17,7 @@ interface MonthlyHCChartProps {
 export default function MonthlyHCChart({ data }: MonthlyHCChartProps) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full">
-      <div className="px-4 py-2.5 bg-emerald-800">
+      <div className="px-4 py-2.5 bg-excel-green-dark">
         <h4 className="text-xs font-black uppercase tracking-widest text-white">
           HC Requested By Expected Onboard Month
         </h4>
@@ -51,7 +51,7 @@ export default function MonthlyHCChart({ data }: MonthlyHCChartProps) {
             />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {data.map((_, index) => (
-                <Cell key={`cell-${index}`} fill="#10b981" />
+                <Cell key={`cell-${index}`} fill="var(--excel-green)" />
               ))}
             </Bar>
           </BarChart>
