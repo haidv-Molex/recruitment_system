@@ -10,12 +10,13 @@ const hcRequestedByDepartmentController = express.Router();
 const joiQuery = Joi.object({
   from: Joi.date().iso().optional(),
   to: Joi.date().iso().min(Joi.ref("from")).optional(),
+  job_id: Joi.number().integer().positive().optional(),
 });
 
 /**
- * GET /dashboard/hc-by-department?from=YYYY-MM-DD&to=YYYY-MM-DD
+ * GET /dashboard/hc-by-department?from=YYYY-MM-DD&to=YYYY-MM-DD&job_id=N
  *
- * from & to là tuỳ chọn. Nếu không truyền → lấy toàn bộ dữ liệu.
+ * from, to & job_id là tuỳ chọn. Nếu không truyền → lấy toàn bộ dữ liệu.
  * Output: ChartDataPoint[] — [{ label, value }]
  */
 hcRequestedByDepartmentController.get(
@@ -25,9 +26,10 @@ hcRequestedByDepartmentController.get(
   async (req, res) => {
     const from = req.query.from ? new Date(req.query.from as string) : undefined;
     const to = req.query.to ? new Date(req.query.to as string) : undefined;
+    const job_id = req.query.job_id ? Number(req.query.job_id) : undefined;
 
     const data = await withTransaction((pool) =>
-      Dashboard.hcRequestedByDepartment({ from, to }, pool)
+      Dashboard.hcRequestedByDepartment({ from, to, job_id }, pool)
     );
 
     res.status(200).json({

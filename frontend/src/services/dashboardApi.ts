@@ -18,7 +18,9 @@ export interface ChartDateRangeParams {
   to?: string;
 }
 
-export async function fetchHCByDepartmentApi(params: ChartDateRangeParams = {}): Promise<ChartDataPoint[]> {
+export async function fetchHCByDepartmentApi(
+  params: ChartDateRangeParams & { job_id?: number } = {}
+): Promise<ChartDataPoint[]> {
   const response = await axiosInstance.get('/dashboard/hc-by-department', { params });
   return response.data.data || [];
 }

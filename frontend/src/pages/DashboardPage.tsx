@@ -71,10 +71,8 @@ export const DashboardPage = () => {
         const deptFilter = filters.selectedDeptId ? Number(filters.selectedDeptId) : undefined;
         const jobFilter = filters.selectedJobId ? Number(filters.selectedJobId) : undefined;
 
-        // Note: Filter status can be passed to the backend if the backend supports it, 
-        // but for now, we keep the original parallel fetch that filters dynamically or on-demand.
         const [dr, mr, rr, hr, jtr, ip, off, onb, ovd] = await Promise.all([
-          fetchHCByDepartmentApi(dateF),
+          fetchHCByDepartmentApi({ job_id: jobFilter, ...dateF }),
           fetchHCByMonthApi({ department_id: deptFilter, ...dateF }),
           fetchHCByRecruiterApi({ department_id: deptFilter, job_id: jobFilter, ...dateF }),
           fetchHCByHrbpApi({ department_id: deptFilter, job_id: jobFilter, ...dateF }),
@@ -98,6 +96,43 @@ export const DashboardPage = () => {
   const totalHCRequested = useMemo(() => deptHCData.reduce((s, d) => s + d.value, 0), [deptHCData]);
   const totalHrbpPending = useMemo(() => hrbpData.reduce((s, d) => s + d.value, 0), [hrbpData]);
   const totalRecruiterPending = useMemo(() => recruiterData.reduce((s, d) => s + d.value, 0), [recruiterData]);
+
+  // Frontend local filters based on status selection
+  const filteredInProgressData = useMemo(() => {
+    if (filters.selectedStatuses.length > 0 && !filters.selectedStatuses.includes('In progress')) return [];
+    return inProgressData;
+  }, [inProgressData, filters.selectedStatuses]);
+
+  const filteredOfferedData = useMemo(() => {
+    if (filters.selectedStatuses.length > 0 && !filters.selectedStatuses.includes('Offered')) return [];
+    return offeredData;
+  }, [offeredData, filters.selectedStatuses]);
+
+  const filteredOnboardedData = useMemo(() => {
+    if (filters.selectedStatuses.length > 0 && !filters.selectedStatuses.includes('Onboarded')) return [];
+    return onboardedData;
+  }, [onboardedData, filters.selectedStatuses]);
+
+  const filteredOverdueData = useMemo(() => {
+    if (filters.selectedStatuses.length > 0 && !filters.selectedStatuses.includes('Overdue')) return [];
+    return overdueData;
+  }, [overdueData, filters.selectedStatuses]);
+
+  // Frontend local filters based on department selection
+  const filteredDeptHCData = useMemo(() => {
+    if (!filters.selectedDeptId) return deptHCData;
+    const deptIdNum = Number(filters.selectedDeptId);
+    const deptObj = departments.find((d) => d.department_id === deptIdNum);
+    if (!deptObj) return deptHCData;
+    return deptHCData.filter((d) => d.label === deptObj.department_name);
+  }, [deptHCData, filters.selectedDeptId, departments]);
+
+  // Frontend local filters based on job title selection
+  const filteredJobTrackingData = useMemo(() => {
+    if (!filters.selectedJobId) return jobTrackingData;
+    const jobIdNum = Number(filters.selectedJobId);
+    return jobTrackingData.filter((j) => j.job_id === jobIdNum);
+  }, [jobTrackingData, filters.selectedJobId]);
 
   const handleStatusChange = (statuses: string[]) =>
     setFilters((p) => ({ ...p, selectedStatuses: statuses }));
@@ -186,20 +221,20 @@ export const DashboardPage = () => {
           {/* Status Line Chart */}
           <div className="flex-1 flex flex-col min-w-0">
             <StatusLineChart
-              inProgressData={inProgressData}
-              offeredData={offeredData}
-              onboardedData={onboardedData}
-              overdueData={overdueData}
+              inProgressData={filteredInProgressData}
+              offeredData={filteredOfferedData}
+              onboardedData={filteredOnboardedData}
+              overdueData={filteredOverdueData}
             />
           </div>
           {/* Dept HC Chart */}
           <div className="flex flex-col" style={{ width: 220 }}>
-            <DeptHCChart data={deptHCData} />
+            <DeptHCChart data={filteredDeptHCData} />
           </div>
           {/* Job HC Table */}
           <div className="flex flex-col" style={{ width: 320 }}>
             <DashboardTable
-              data={jobTrackingData}
+              data={filteredJobTrackingData}
               rowKey={(item) => item.job_id}
               columns={[
                 {

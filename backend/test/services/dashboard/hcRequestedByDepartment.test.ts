@@ -112,6 +112,33 @@ describe("hcRequestedByDepartment", () => {
     expect(me.value).to.equal(5);
   });
 
+  // ✅ Lọc theo job_id
+  it("should filter by job_id when provided", async () => {
+    // Insert another job recruiting for dept1 but not dept2
+    const otherJob = await client.query(
+      `INSERT INTO job (job_code, project, request_date)
+       VALUES ($1, $2, $3) RETURNING job_id`,
+      ["JOB-DASH-002", "Other Project", "2025-01-20"]
+    );
+    const otherJobId = otherJob.rows[0].job_id;
+
+    await client.query(
+      `INSERT INTO job_department (job_id, department_id, candidate_required)
+       VALUES ($1, $2, $3)`,
+      [otherJobId, deptId1, 10]
+    );
+
+    // If we filter by otherJobId, it should only return TEST_ME with value 10
+    const data = await hcRequestedByDepartment({ job_id: otherJobId }, client);
+
+    const me = data.find((d: any) => d.label === "TEST_ME");
+    const eng = data.find((d: any) => d.label === "TEST_ENG");
+
+    expect(me).to.exist;
+    expect(me.value).to.equal(10);
+    expect(eng).to.not.exist;
+  });
+
   // ✅ Cấu trúc phải đúng ChartDataPoint: { label: string, value: number }
   it("should return data with label (string) and value (number) only", async () => {
     const data = await hcRequestedByDepartment({}, client);
