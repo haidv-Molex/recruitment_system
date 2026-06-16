@@ -12,6 +12,7 @@ interface OutlookSearchSelectProps<T> {
   onChange: (selectedIds: number[], selectedItems: T[]) => void;
   disabled?: boolean;
   hideChips?: boolean;
+  singleSelect?: boolean;
 }
 
 export default function OutlookSearchSelect<T>({
@@ -25,6 +26,7 @@ export default function OutlookSearchSelect<T>({
   onChange,
   disabled = false,
   hideChips = false,
+  singleSelect = false,
 }: OutlookSearchSelectProps<T>) {
   const [selectedItems, setSelectedItems] = useState<T[]>(initialItems);
   const [inputValue, setInputValue] = useState('');
@@ -102,6 +104,17 @@ export default function OutlookSearchSelect<T>({
 
   const handleSelect = (item: T) => {
     const itemId = item[keyProp] as any;
+    if (singleSelect) {
+      const updated = [item];
+      setSelectedItems(updated);
+      onChange(updated.map((s) => s[keyProp] as any), updated);
+      setInputValue('');
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setActiveIndex(-1);
+      return;
+    }
+
     const exists = selectedItems.some((s) => (s[keyProp] as any) === itemId);
     if (!exists) {
       const updated = [...selectedItems, item];
@@ -192,25 +205,27 @@ export default function OutlookSearchSelect<T>({
           </span>
         ))}
         
-        <div className="flex-1 min-w-[80px] flex items-center relative">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            onKeyDown={handleKeyDown}
-            disabled={disabled}
-            placeholder={selectedItems.length === 0 ? placeholder : ''}
-            className="w-full text-xs text-slate-800 bg-transparent border-0 focus:ring-0 focus:outline-none p-0.5"
-          />
-          {isLoading && (
-            <Loader2 size={12} className="text-slate-400 animate-spin absolute right-2" />
-          )}
-        </div>
+        {(!singleSelect || selectedItems.length === 0) && (
+          <div className="flex-1 min-w-[80px] flex items-center relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={handleKeyDown}
+              disabled={disabled}
+              placeholder={selectedItems.length === 0 ? placeholder : ''}
+              className="w-full text-xs text-slate-800 bg-transparent border-0 focus:ring-0 focus:outline-none p-0.5"
+            />
+            {isLoading && (
+              <Loader2 size={12} className="text-slate-400 animate-spin absolute right-2" />
+            )}
+          </div>
+        )}
       </div>
 
       {showSuggestions && (inputValue.trim() || suggestions.length > 0) && (

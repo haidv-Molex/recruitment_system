@@ -102,6 +102,7 @@ export default function FilterPanel({
             displayFn={(s: any) => s.site_name}
             chipDisplayFn={(s: any) => s.site_code || s.site_name}
             keyProp="site_id"
+            singleSelect={true}
             onChange={(ids) => {
               const lastId = ids[ids.length - 1];
               onFilterChange('selectedSiteId', lastId ? lastId.toString() : '');
@@ -122,6 +123,7 @@ export default function FilterPanel({
             displayFn={(d: any) => d.department_name}
             chipDisplayFn={(d: any) => d.department_code || d.department_name}
             keyProp="department_id"
+            singleSelect={true}
             onChange={(ids) => {
               const lastId = ids[ids.length - 1];
               onFilterChange('selectedDeptId', lastId ? lastId.toString() : '');
@@ -142,6 +144,7 @@ export default function FilterPanel({
             displayFn={(j: any) => j.job_title || j.job_code}
             chipDisplayFn={(j: any) => j.job_code}
             keyProp="job_id"
+            singleSelect={true}
             onChange={(ids) => {
               const lastId = ids[ids.length - 1];
               onFilterChange('selectedJobId', lastId ? lastId.toString() : '');
