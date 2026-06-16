@@ -53,7 +53,21 @@ export default function StatusLineChart({
 
     // Sort chronologically by label
     return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => {
+        const [monthA, yearA] = a.split('/');
+        const [monthB, yearB] = b.split('/');
+
+        const yA = parseInt(yearA, 10);
+        const yB = parseInt(yearB, 10);
+
+        if (yA !== yB) {
+          return yA - yB;
+        }
+
+        const mA = parseInt(monthA, 10);
+        const mB = parseInt(monthB, 10);
+        return mA - mB;
+      })
       .map(([label, values]) => ({ label, ...values }));
   }, [inProgressData, offeredData, onboardedData, overdueData]);
 

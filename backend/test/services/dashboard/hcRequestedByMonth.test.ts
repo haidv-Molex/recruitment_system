@@ -78,8 +78,8 @@ describe("hcRequestedByMonth", () => {
 
     expect(result).to.be.an("array");
 
-    const june = result.find((d: any) => d.label === "2025 June");
-    const july = result.find((d: any) => d.label === "2025 July");
+    const june = result.find((d: any) => d.label === "6/2025");
+    const july = result.find((d: any) => d.label === "7/2025");
 
     expect(june).to.exist;
     expect(july).to.exist;
@@ -93,8 +93,8 @@ describe("hcRequestedByMonth", () => {
   it("should filter by department_id", async () => {
     const result = await hcRequestedByMonth({ department_id: deptAId }, client);
 
-    const june = result.find((d: any) => d.label === "2025 June");
-    const july = result.find((d: any) => d.label === "2025 July");
+    const june = result.find((d: any) => d.label === "6/2025");
+    const july = result.find((d: any) => d.label === "7/2025");
 
     expect(june).to.exist;
     expect(june.value).to.equal(10);
@@ -111,11 +111,37 @@ describe("hcRequestedByMonth", () => {
       client
     );
 
-    const june = result.find((d: any) => d.label === "2025 June");
-    const july = result.find((d: any) => d.label === "2025 July");
+    const june = result.find((d: any) => d.label === "6/2025");
+    const july = result.find((d: any) => d.label === "7/2025");
 
     expect(june).to.exist;
     expect(june.value).to.be.at.least(10);
     expect(july).to.not.exist;
+  });
+
+  it("should fill missing months with 0 value when date range spans multiple months with no data", async () => {
+    const result = await hcRequestedByMonth(
+      {
+        from: new Date("2035-05-01"),
+        to: new Date("2035-08-31"),
+      },
+      client
+    );
+
+    expect(result).to.be.an("array");
+    expect(result).to.have.lengthOf(4); // May, June, July, August
+
+    const labels = result.map((d: any) => d.label);
+    expect(labels).to.deep.equal(["5/2035", "6/2035", "7/2035", "8/2035"]);
+
+    const may = result.find((d: any) => d.label === "5/2035");
+    const june = result.find((d: any) => d.label === "6/2035");
+    const july = result.find((d: any) => d.label === "7/2035");
+    const august = result.find((d: any) => d.label === "8/2035");
+
+    expect(may?.value).to.equal(0);
+    expect(june?.value).to.equal(0);
+    expect(july?.value).to.equal(0);
+    expect(august?.value).to.equal(0);
   });
 });

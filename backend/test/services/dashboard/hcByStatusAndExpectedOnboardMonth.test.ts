@@ -81,8 +81,8 @@ describe("hcByStatusAndExpectedOnboardMonth", () => {
     // June 2025 should have 2 candidates, July 2025 should have 1 candidate
     expect(result).to.be.an("array");
     
-    const june = result.find((d: any) => d.label === "2025 June");
-    const july = result.find((d: any) => d.label === "2025 July");
+    const june = result.find((d: any) => d.label === "6/2025");
+    const july = result.find((d: any) => d.label === "7/2025");
 
     expect(june).to.exist;
     expect(july).to.exist;
@@ -100,12 +100,39 @@ describe("hcByStatusAndExpectedOnboardMonth", () => {
       client
     );
 
-    const june = result.find((d: any) => d.label === "2025 June");
-    const july = result.find((d: any) => d.label === "2025 July");
+    const june = result.find((d: any) => d.label === "6/2025");
+    const july = result.find((d: any) => d.label === "7/2025");
 
     expect(june).to.not.exist;
     expect(july).to.exist;
     expect(july.value).to.equal(1);
+  });
+
+  it("should fill missing months with 0 value when date range spans multiple months with no data", async () => {
+    const result = await hcByStatusAndExpectedOnboardMonth(
+      {
+        status: "Onboarded",
+        from: new Date("2025-05-01"),
+        to: new Date("2025-08-31"),
+      },
+      client
+    );
+
+    expect(result).to.be.an("array");
+    expect(result).to.have.lengthOf(4); // May, June, July, August
+
+    const labels = result.map((d: any) => d.label);
+    expect(labels).to.deep.equal(["5/2025", "6/2025", "7/2025", "8/2025"]);
+
+    const may = result.find((d: any) => d.label === "5/2025");
+    const june = result.find((d: any) => d.label === "6/2025");
+    const july = result.find((d: any) => d.label === "7/2025");
+    const august = result.find((d: any) => d.label === "8/2025");
+
+    expect(may?.value).to.equal(0);
+    expect(june?.value).to.equal(2);
+    expect(july?.value).to.equal(1);
+    expect(august?.value).to.equal(0);
   });
 
   it("should return empty array if no candidates match the status", async () => {
