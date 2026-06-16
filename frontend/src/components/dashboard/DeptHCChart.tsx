@@ -9,6 +9,7 @@ import {
   LabelList,
 } from 'recharts';
 import { ChartDataPoint } from '@/services/dashboardApi';
+import DashboardCard from './DashboardCard';
 
 interface DeptHCChartProps {
   data: ChartDataPoint[];
@@ -16,11 +17,7 @@ interface DeptHCChartProps {
 
 export default function DeptHCChart({ data }: DeptHCChartProps) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full">
-      <div className="px-4 py-2.5 bg-slate-800">
-        <h4 className="text-xs font-black uppercase tracking-widest text-white">HC Requested by Dept.</h4>
-      </div>
-
+    <DashboardCard title="HC Requested by Dept.">
       <div className="flex-1 p-3 min-h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -60,6 +57,6 @@ export default function DeptHCChart({ data }: DeptHCChartProps) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </DashboardCard>
   );
 }

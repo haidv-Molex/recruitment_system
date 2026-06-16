@@ -39,7 +39,7 @@ export default function DashboardTable<T>({
                     className={`sticky top-0 bg-slate-50 px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200 z-10 whitespace-nowrap ${
                       col.headerClassName || 'text-left'
                     }`}
-                    style={{ width: col.width }}
+                    style={{ width: col.width, backgroundColor: '#f8fafc' }}
                   >
                     {col.header}
                   </th>

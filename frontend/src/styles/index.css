@@ -614,3 +614,7 @@ button {
     min-width: 0;
   }
 }
+
+.dashboard-card-header {
+  background-color: var(--excel-green-dark);
+}

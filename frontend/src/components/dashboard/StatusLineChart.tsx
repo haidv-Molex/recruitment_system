@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { ChartDataPoint } from '@/services/dashboardApi';
 import { useMemo } from 'react';
+import DashboardCard from './DashboardCard';
 
 interface StatusLineChartProps {
   inProgressData: ChartDataPoint[];
@@ -65,14 +66,7 @@ export default function StatusLineChart({
   }), [inProgressData, offeredData, onboardedData, overdueData]);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full">
-      {/* Header */}
-      <div className="px-4 py-2.5 bg-slate-800">
-        <h4 className="text-xs font-black uppercase tracking-widest text-white">
-          HC Requested By Status &amp; Expected Onboard Month
-        </h4>
-      </div>
-
+    <DashboardCard title="HC Requested By Status & Expected Onboard Month">
       {/* Status badges */}
       <div className="flex flex-wrap gap-2 px-4 pt-3">
         {STATUS_CONFIG.map(({ key, bg, text, border }) => (
@@ -129,6 +123,6 @@ export default function StatusLineChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </DashboardCard>
   );
 }

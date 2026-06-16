@@ -7,6 +7,7 @@ import {
   Legend,
 } from 'recharts';
 import { ChartDataPoint } from '@/services/dashboardApi';
+import DashboardCard from './DashboardCard';
 
 interface CandidatesByDeptDonutChartProps {
   data: ChartDataPoint[];
@@ -31,16 +32,7 @@ export default function CandidatesByDeptDonutChart({ data }: CandidatesByDeptDon
   const total = sortedData.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full font-sans">
-      {/* Header */}
-      <div className="px-4 py-2.5 bg-slate-800 flex justify-between items-center shrink-0">
-        <h4 className="text-xs font-black uppercase tracking-widest text-white">
-          Recruitment Source For Successful Candidates (offer accepted)
-        </h4>
-        <button className="text-[10px] text-slate-300 hover:text-white border border-slate-600 hover:border-slate-400 px-2 py-0.5 rounded transition-all font-semibold italic">
-          Show List
-        </button>
-      </div>
+    <DashboardCard title="Recruitment Source">
 
       {/* Chart and Legend */}
       <div className="flex-1 p-4 flex flex-row items-center justify-between gap-4 min-h-[220px]">
@@ -104,6 +96,6 @@ export default function CandidatesByDeptDonutChart({ data }: CandidatesByDeptDon
           )}
         </div>
       </div>
-    </div>
+    </DashboardCard>
   );
 }

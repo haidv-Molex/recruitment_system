@@ -1,4 +1,5 @@
 import { ChartDataPoint } from '@/services/dashboardApi';
+import DashboardCard from './DashboardCard';
 
 interface RecruitmentFunnelChartProps {
   data: ChartDataPoint[];
@@ -36,12 +37,7 @@ export default function RecruitmentFunnelChart({ data }: RecruitmentFunnelChartP
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden h-full font-sans">
-      {/* Header */}
-      <div className="px-4 py-2.5 bg-slate-800 shrink-0">
-        <h4 className="text-xs font-black uppercase tracking-widest text-white">Recruitment Funnel</h4>
-      </div>
-
+    <DashboardCard title="Recruitment Funnel">
       {/* Funnel Body */}
       <div className="flex-1 p-4 flex flex-col justify-between min-h-[220px]">
         {/* Stages list */}
@@ -95,6 +91,6 @@ export default function RecruitmentFunnelChart({ data }: RecruitmentFunnelChartP
 
         </div>
       </div>
-    </div>
+    </DashboardCard>
   );
 }
