@@ -1,4 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Download } from 'lucide-react';
+import { downloadValidationSheetApi } from '@/services/candidateApi';
+import { downloadFullWorkbookApi } from '@/services/jobApi';
 import {
   fetchHCByDepartmentApi,
   fetchHCByStatusAndMonthApi,
@@ -58,7 +61,54 @@ export const DashboardPage = () => {
   const [funnelData, setFunnelData] = useState<ChartDataPoint[]>([]);
   const [candidatesByPlatformData, setCandidatesByPlatformData] = useState<ChartDataPoint[]>([]);
 
-  useHeader({ title: '📊 IDL Recruitment Dashboard', subTitle: 'Headcount, status & pipeline analytics.' }, []);
+  const handleDownloadTemplate = useCallback(async () => {
+    toast.info('Downloading template...');
+    try {
+      await downloadValidationSheetApi();
+      toast.success('Downloaded template.');
+    } catch (err: any) {
+      toast.error(err.message || 'Download failed.');
+    }
+  }, [toast]);
+
+  const handleDownloadFullWorkbook = useCallback(async () => {
+    toast.info('Downloading full workbook...');
+    try {
+      await downloadFullWorkbookApi();
+      toast.success('Downloaded full workbook.');
+    } catch (err: any) {
+      toast.error(err.message || 'Download failed.');
+    }
+  }, [toast]);
+
+  const headerActions = useMemo(() => (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={handleDownloadTemplate}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+        title="Download Validation Template"
+      >
+        <Download size={14} />
+        <span>Template</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleDownloadFullWorkbook}
+        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
+        title="Download Full Workbook"
+      >
+        <Download size={14} />
+        <span>Full Workbook</span>
+      </button>
+    </div>
+  ), [handleDownloadTemplate, handleDownloadFullWorkbook]);
+
+  useHeader({
+    title: '📊 IDL Recruitment Dashboard',
+    subTitle: 'Headcount, status & pipeline analytics.',
+    actions: headerActions,
+  }, [headerActions]);
 
   useEffect(() => {
     Promise.all([

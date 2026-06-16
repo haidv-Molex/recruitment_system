@@ -19,6 +19,8 @@ export type candidateStatus =
   | 'CV Sent'
   | 'CV Fail'
   | 'Interview'
+  | 'In progress'
+  | 'Overdue'
   | 'Interview Fail'
   | 'Hold'
   | 'Offered'

@@ -11,13 +11,11 @@ import {
   searchCandidatesApi,
   deleteCandidateApi,
   updateCandidateApi,
-  downloadValidationSheetApi,
   downloadDatabaseSheetApi,
   batchImportCandidatesApi,
 } from '@/services/candidateApi';
 import { FileBadge, FilePreviewModal } from '@/components/common/FilePreview';
 import CandidateExcelImport from '@/components/candidate/CandidateExcelImport';
-import { downloadFullWorkbookApi } from '@/services/jobApi';
 import { useHeader } from '@/contexts/HeaderContext';
 import DatabaseFilters from '@/components/candidate-database/DatabaseFilters';
 import { useItem, setItem } from '@/config/zustandStore';
@@ -289,31 +287,11 @@ export const CandidateDatabasePage = ({
   };
 
 
-  const handleDownloadTemplate = useCallback(async () => {
-    toast.info('Downloading template...');
-    try {
-      await downloadValidationSheetApi();
-      toast.success('Downloaded template.');
-    } catch (err: any) {
-      toast.error(err.message || 'Download failed.');
-    }
-  }, [toast]);
-
   const handleDownloadDatabase = useCallback(async () => {
     toast.info('Downloading database sheet...');
     try {
       await downloadDatabaseSheetApi();
       toast.success('Downloaded database sheet.');
-    } catch (err: any) {
-      toast.error(err.message || 'Download failed.');
-    }
-  }, [toast]);
-
-  const handleDownloadFullWorkbook = useCallback(async () => {
-    toast.info('Downloading full workbook...');
-    try {
-      await downloadFullWorkbookApi();
-      toast.success('Downloaded full workbook.');
     } catch (err: any) {
       toast.error(err.message || 'Download failed.');
     }
@@ -407,29 +385,11 @@ export const CandidateDatabasePage = ({
       </button>
       <button
         type="button"
-        onClick={handleDownloadTemplate}
-        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
-        title="Download Validation Template"
-      >
-        <Download size={14} />
-        <span>Template</span>
-      </button>
-      <button
-        type="button"
         onClick={handleDownloadDatabase}
         className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
       >
         <Download size={14} />
         <span>Export DB</span>
-      </button>
-      <button
-        type="button"
-        onClick={handleDownloadFullWorkbook}
-        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
-        title="Download Full Workbook"
-      >
-        <Download size={14} />
-        <span>Full Workbook</span>
       </button>
       <button
         type="button"
@@ -443,7 +403,7 @@ export const CandidateDatabasePage = ({
         <span>Add Candidate</span>
       </button>
     </div>
-  ), [handleDownloadTemplate, handleDownloadDatabase, handleDownloadFullWorkbook]);
+  ), [handleDownloadDatabase]);
 
   useHeader({
     title: '📂 Candidate Database',

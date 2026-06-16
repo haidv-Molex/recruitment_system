@@ -11,6 +11,8 @@ const DEFAULT_STATUSES: candidateStatus[] = [
   'Hold',
   'Offered',
   'Offer Accepted',
+  'In progress',
+  'Overdue',
   'Offer Rejected',
   'Onboarded',
   'Withdraw',

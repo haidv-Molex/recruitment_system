@@ -38,8 +38,9 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Routes>
-                      <Route path="/" element={<JobTrackingPage jobs={jobs} setJobs={setJobs} candidates={candidates} />} />
-                      <Route path="/dashboard" element={<DashboardPage />} />
+                      <Route path="/" element={<DashboardPage />} />
+                      <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                      <Route path="/job-tracking" element={<JobTrackingPage jobs={jobs} setJobs={setJobs} candidates={candidates} />} />
                       <Route path="/candidates" element={<CandidateDatabasePage candidates={candidates} setCandidates={setCandidates} jobs={jobs} />} />
                       <Route path="/companies" element={<CompanyPage />} />
                       <Route path="/departments" element={<DepartmentPage />} />

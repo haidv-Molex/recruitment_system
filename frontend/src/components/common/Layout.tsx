@@ -55,8 +55,8 @@ export default function Layout({ children }: LayoutProps) {
   });
 
   const mainTabs = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
-    { path: '/', label: 'Job Tracking', icon: Table2 },
+    { path: '/', label: 'Dashboard', icon: LayoutGrid },
+    { path: '/job-tracking', label: 'Job Tracking', icon: Table2 },
     { path: '/candidates', label: 'Candidate Database', icon: Database },
   ];
 
