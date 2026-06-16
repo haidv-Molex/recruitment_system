@@ -7,6 +7,7 @@ import hcRequestedByMonth from "./hcRequestedByMonth";
 import jobHCTracking from "./jobHCTracking";
 import recruitmentFunnel from "./recruitmentFunnel";
 import candidatesByDepartment from "./candidatesByDepartment";
+import candidatesByPlatform from "./candidatesByPlatform";
 
 class Dashboard {
   static hcRequestedByDepartment = hcRequestedByDepartment;
@@ -18,6 +19,7 @@ class Dashboard {
   static jobHCTracking = jobHCTracking;
   static recruitmentFunnel = recruitmentFunnel;
   static candidatesByDepartment = candidatesByDepartment;
+  static candidatesByPlatform = candidatesByPlatform;
 }
 
 export default Dashboard;
