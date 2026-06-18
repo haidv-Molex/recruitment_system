@@ -49,6 +49,11 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
+  const [selectedRecruiter, setSelectedRecruiter] = useState<any | null>(null);
+  const [selectedReference, setSelectedReference] = useState<any | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<any | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<any | null>(null);
+  const [selectedAgency, setSelectedAgency] = useState<any | null>(null);
 
   const [options, setOptions] = useState({
     jobs: [] as any[],
@@ -83,9 +88,19 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         file: null,
       });
       setSelectedJob(candidate.job || null);
+      setSelectedRecruiter(candidate.recruiter || null);
+      setSelectedReference(candidate.reference || null);
+      setSelectedPlatform(candidate.platform || null);
+      setSelectedCompany(candidate.targeted_company || null);
+      setSelectedAgency(candidate.agency ? { name: candidate.agency } : null);
     } else {
       setFormData(emptyCandidate);
       setSelectedJob(null);
+      setSelectedRecruiter(null);
+      setSelectedReference(null);
+      setSelectedPlatform(null);
+      setSelectedCompany(null);
+      setSelectedAgency(null);
     }
   }, [candidate]);
 
@@ -101,6 +116,34 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       }
     }
   }, [formData.jobId, options.jobs, selectedJob]);
+
+  useEffect(() => {
+    if (formData.recruiterId && options.users.length > 0 && !selectedRecruiter) {
+      const found = options.users.find((u) => String(u.user_id) === String(formData.recruiterId));
+      if (found) setSelectedRecruiter(found);
+    }
+  }, [formData.recruiterId, options.users, selectedRecruiter]);
+
+  useEffect(() => {
+    if (formData.referenceId && options.users.length > 0 && !selectedReference) {
+      const found = options.users.find((u) => String(u.user_id) === String(formData.referenceId));
+      if (found) setSelectedReference(found);
+    }
+  }, [formData.referenceId, options.users, selectedReference]);
+
+  useEffect(() => {
+    if (formData.platformId && options.platforms.length > 0 && !selectedPlatform) {
+      const found = options.platforms.find((p) => String(p.platform_id) === String(formData.platformId));
+      if (found) setSelectedPlatform(found);
+    }
+  }, [formData.platformId, options.platforms, selectedPlatform]);
+
+  useEffect(() => {
+    if (formData.targetedCompanyId && options.companies.length > 0 && !selectedCompany) {
+      const found = options.companies.find((c) => String(c.company_id) === String(formData.targetedCompanyId));
+      if (found) setSelectedCompany(found);
+    }
+  }, [formData.targetedCompanyId, options.companies, selectedCompany]);
 
   const loadOptions = async () => {
     setLoadingOptions(true);
@@ -175,7 +218,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
 
   const recruiterOptions = [
     { value: '', label: 'Select Recruiter' },
-    ...options.users.map((u) => ({ value: u.user_id, label: `${u.user_name} (${u.user_role})` })),
+    ...options.users.map((u) => ({ value: u.user_id, label: `${u.user_name}` })),
   ];
 
   const companyOptions = [
@@ -279,8 +322,8 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
                   formData.file
                     ? formData.file.name
                     : candidate?.file
-                    ? (candidate.file.file_name || candidate.file.file_path?.split('/').pop())
-                    : null
+                      ? (candidate.file.file_name || candidate.file.file_path?.split('/').pop())
+                      : null
                 }
                 placeholder="Click to select CV file..."
                 onChange={handleFileChange}
@@ -343,38 +386,64 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sourcing & Assignment</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SelectField
+            <SingleSearchSelect
               label="Recruiter"
-              name="recruiterId"
-              value={formData.recruiterId}
-              onChange={handleChange}
-              options={recruiterOptions}
+              placeholder="Search recruiter..."
+              initialItem={selectedRecruiter}
+              searchApi={(search) => fetchUsersApi({ search })}
+              displayFn={(u: any) => `${u.user_name}`}
+              keyProp="user_id"
+              onChange={(id, item) => {
+                setFormData((prev) => ({ ...prev, recruiterId: id || '' }));
+                setSelectedRecruiter(item);
+              }}
               disabled={saving}
             />
-            <SelectField
+            <SingleSearchSelect
               label="Reference (Internal User)"
-              name="referenceId"
-              value={formData.referenceId}
-              onChange={handleChange}
-              options={referenceOptions}
+              placeholder="Search reference user..."
+              initialItem={selectedReference}
+              searchApi={(search) => fetchUsersApi({ search })}
+              displayFn={(u: any) => u.user_name || ''}
+              keyProp="user_id"
+              onChange={(id, item) => {
+                setFormData((prev) => ({ ...prev, referenceId: id || '' }));
+                setSelectedReference(item);
+              }}
               disabled={saving}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SelectField
+            <SingleSearchSelect
               label="Platform (Source)"
-              name="platformId"
-              value={formData.platformId}
-              onChange={handleChange}
-              options={platformOptions}
+              placeholder="Search platform..."
+              initialItem={selectedPlatform}
+              searchApi={(search) => searchPlatformsApi({ search })}
+              displayFn={(p: any) => p.platform_name || ''}
+              keyProp="platform_id"
+              onChange={(id, item) => {
+                setFormData((prev) => ({ ...prev, platformId: id || '' }));
+                setSelectedPlatform(item);
+              }}
               disabled={saving}
             />
-            <SelectField
+            <SingleSearchSelect
               label="Agency"
-              name="agency"
-              value={formData.agency}
-              onChange={handleChange}
-              options={agencyOptions}
+              placeholder="Search or enter agency..."
+              initialItem={selectedAgency}
+              searchApi={async (search) => {
+                const filtered = options.agencies.filter((a) =>
+                  a.toLowerCase().includes(search.toLowerCase())
+                );
+                return { data: filtered.map((a) => ({ name: a })) };
+              }}
+              displayFn={(a: any) => a.name || ''}
+              keyProp="name"
+              onChange={(name, item) => {
+                setFormData((prev) => ({ ...prev, agency: name || '' }));
+                setSelectedAgency(item);
+              }}
+              allowCreation={true}
               disabled={saving}
             />
           </div>
@@ -400,12 +469,17 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
               placeholder="e.g. 2800 USD"
               disabled={saving}
             />
-            <SelectField
+            <SingleSearchSelect
               label="Targeted Company"
-              name="targetedCompanyId"
-              value={formData.targetedCompanyId}
-              onChange={handleChange}
-              options={companyOptions}
+              placeholder="Search company..."
+              initialItem={selectedCompany}
+              searchApi={(search) => searchCompaniesApi({ search })}
+              displayFn={(c: any) => c.company_name || ''}
+              keyProp="company_id"
+              onChange={(id, item) => {
+                setFormData((prev) => ({ ...prev, targetedCompanyId: id || '' }));
+                setSelectedCompany(item);
+              }}
               disabled={saving}
             />
           </div>

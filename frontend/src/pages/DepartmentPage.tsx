@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/useToast';
 import { searchDepartmentsApi, createDepartmentApi, deleteDepartmentApi, updateDepartmentApi } from '@/services/departmentApi';
 import { fetchUsersApi } from '@/services/userApi';
 import MasterDataForm from '@/components/ui/MasterDataForm';
+import SingleSearchSelect from '@/components/ui/SingleSearchSelect';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/ui/Pagination';
 import Modal from '@/components/ui/Modal';
@@ -20,8 +21,8 @@ export const DepartmentPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // HRBP selection state
-  const [users, setUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,14 +58,6 @@ export const DepartmentPage = () => {
     loadDepartments(1, pageSize, searchQuery);
   }, []);
 
-  useEffect(() => {
-    if (showForm) {
-      fetchUsersApi({ limit: 1000 })
-        .then((res) => setUsers(res.data || []))
-        .catch((err) => console.error(err));
-    }
-  }, [showForm]);
-
   const handlePageChange = (page: number) => {
     loadDepartments(page, pageSize, searchQuery);
   };
@@ -77,6 +70,7 @@ export const DepartmentPage = () => {
   const openCreateForm = () => {
     setEditingDept(null);
     setSelectedUserId(null);
+    setSelectedUser(null);
     setFormError('');
     setShowForm(true);
   };
@@ -84,6 +78,7 @@ export const DepartmentPage = () => {
   const openEditForm = (dept: any) => {
     setEditingDept(dept);
     setSelectedUserId(dept.user?.user_id || null);
+    setSelectedUser(dept.user || null);
     setFormError('');
     setShowForm(true);
   };
@@ -204,7 +199,7 @@ export const DepartmentPage = () => {
               {val}
             </span>
           ) : (
-            <span className="text-slate-400 font-normal italic">Unassigned</span>
+            '—'
           )
         ),
       },
@@ -312,24 +307,19 @@ export const DepartmentPage = () => {
             isLoading={saving}
             error={formError}
           >
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                HRBP (Manager)
-              </label>
-              <select
-                value={selectedUserId || ''}
-                onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                disabled={saving}
-                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-50 disabled:text-slate-400 transition-colors"
-              >
-                <option value="">Select HRBP...</option>
-                {users.map((u) => (
-                  <option key={u.user_id} value={u.user_id}>
-                    {u.user_name} ({u.user_role})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SingleSearchSelect
+              label="HRBP (Manager)"
+              placeholder="Search HRBP..."
+              initialItem={selectedUser}
+              searchApi={(search) => fetchUsersApi({ search })}
+              displayFn={(u: any) => u.user_name || ''}
+              keyProp="user_id"
+              onChange={(id, item) => {
+                setSelectedUserId(id);
+                setSelectedUser(item);
+              }}
+              disabled={saving}
+            />
           </MasterDataForm>
         </Modal>
       )}
