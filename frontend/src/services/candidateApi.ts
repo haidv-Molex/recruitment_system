@@ -171,6 +171,7 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
   if (formData.recruiterName) fd.append('recruiter_name', formData.recruiterName);
   if (formData.targetedCompanyName) fd.append('targeted_company_name', formData.targetedCompanyName);
   if (formData.referenceName) fd.append('reference_name', formData.referenceName);
+  if (formData.candidateLevelsName?.length) fd.append('candidate_levels_name', JSON.stringify(formData.candidateLevelsName));
   if (formData.jobCode) fd.append('job_code', formData.jobCode);
   if (formData.project) fd.append('project', formData.project);
 

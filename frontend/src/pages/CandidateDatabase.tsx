@@ -16,6 +16,7 @@ import {
   batchImportCandidatesApi,
   parseCVApi,
 } from '@/services/candidateApi';
+import { mapParsedCandidatesToBatchPayload } from '@/services/candidateImportMapper';
 import { FileBadge, FilePreviewModal } from '@/components/common/FilePreview';
 import CandidateExcelImport from '@/components/candidate/CandidateExcelImport';
 import { useHeader } from '@/contexts/HeaderContext';
@@ -224,62 +225,40 @@ export const CandidateDatabasePage = ({
   const handleImportCandidatesBatch = async (
     parsedCandidates: any[]
   ): Promise<{ success: boolean; importedCount: number; errors: any[] }> => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const formatApiDate = (val: any) => {
-      if (!val) return '';
-      try {
-        const d = new Date(val);
-        if (isNaN(d.getTime())) return '';
-        return d.toISOString().slice(0, 10);
-      } catch {
-        return '';
-      }
-    };
-
-    const candidatesPayload = parsedCandidates.map((c) => {
-      const validEmail = c.candidate_email && emailRegex.test(c.candidate_email) ? c.candidate_email : '';
-      const recruiterId = c.recruiter?.user_id || null;
-      const recruiterName = c.recruiter?.user_id === null ? (c.recruiter?.user_name || '') : '';
-      const targetedCompanyName = c.targeted_company === 'Yes' ? (c.targeted_company_name || '') : '';
-
+    const { candidatesPayload, errors: validationErrors } = mapParsedCandidatesToBatchPayload(parsedCandidates);
+    if (candidatesPayload.length === 0) {
+      toast.error('No candidates imported. Please fix invalid email values in the sheet.');
       return {
-        candidate_name: c.candidate_name || '',
-        status: c.status || '',
-        candidate_code: c.employee_code || '',
-        candidate_email: validEmail,
-        candidate_phone: c.candidate_phone || '',
-        agency: c.agency || '',
-        offer_date: formatApiDate(c.offer_date),
-        onboard_date: formatApiDate(c.onboard_date),
-        expected_onboard_date: '',
-        feedback_date: formatApiDate(c.feedback_date),
-        current_salary: c.current_salary || '',
-        expected_salary: c.expected_salary || '',
-        note: c.note || '',
-        recruiter: recruiterId,
-        recruiter_name: recruiterName,
-        targeted_company_name: targetedCompanyName,
-        reference_name: c.reference_name || '',
-        job_code: c.job_code || '',
-        project: c.project || '',
+        success: false,
+        importedCount: 0,
+        errors: validationErrors,
       };
-    });
+    }
 
     try {
       const result = await batchImportCandidatesApi(candidatesPayload);
-      if (result.success) {
+      const combinedErrors = [...validationErrors, ...(result.errors || [])];
+
+      if (combinedErrors.length === 0) {
         toast.success(`Imported ${result.importedCount} candidates successfully!`);
       } else {
-        toast.warning(`Imported ${result.importedCount} candidates, but encountered ${result.errors.length} error(s).`);
+        toast.warning(`Imported ${result.importedCount} candidates, but encountered ${combinedErrors.length} error(s).`);
       }
-      return result;
+      return {
+        ...result,
+        success: result.success && combinedErrors.length === 0,
+        errors: combinedErrors,
+      };
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.message || 'Batch import failed';
       toast.error('Batch import failed: ' + errMsg);
       return {
         success: false,
         importedCount: 0,
-        errors: parsedCandidates.map(c => ({ candidate_name: c.candidate_name, message: errMsg }))
+        errors: [
+          ...validationErrors,
+          ...candidatesPayload.map(c => ({ candidate_name: c.candidate_name, message: errMsg }))
+        ]
       };
     }
   };

@@ -26,6 +26,14 @@ The repair must preserve existing route paths, HTTP methods, response shapes, da
   - Added parser service coverage for exact sample `Database` headers, `Source`, `EE Level`, and blank `Email`.
   - Added controller coverage for multi-sheet workbook uploads to prove `/file/parse-candidate-sheet` reads `Database`, not `IDL tracking`.
   - Verification passed: `parseCandidateSheet.test.ts` 9 passing, `parseCandidateSheetController.test.ts` 5 passing, `npm run check` passing.
+- Phase 2 completed on 2026-06-18:
+  - Added `frontend/src/services/candidateImportMapper.ts` as the shared mapper for candidate Excel import payloads.
+  - Refactored `CandidateDatabase` batch import and `CandidateExcelImport` fallback import to use the shared mapper.
+  - Candidate import now maps blank email to `null`, returns row-level errors for non-empty invalid email, maps `Source` to `platform_name`, and maps `EE Level` to `candidate_levels_name`.
+  - Revised after manual feedback: invalid email rows no longer block all valid rows in the selected batch. Valid rows are sent to `/candidate/batch`; invalid email rows are returned as HR-facing errors.
+  - Revised after manual feedback: invalid email messages now include the expected email format, for example `name@example.com`, and explain that spaces are not allowed.
+  - Updated `createCandidateExtendedApi` fallback support for `candidate_levels_name`.
+  - Verification passed: frontend service Vitest suite 22 passing, `CandidateExcelImport.test.tsx` 1 passing, `npm run build` passing with the existing Vite chunk-size warning. After the partial-import and email-format-message revisions, frontend service Vitest suite still passed 22 tests and `npm run build` still passed.
 - Inputs reviewed first:
   - `backend/.agent/guide.md`
   - `backend/.agent/testGuide.md`
@@ -192,22 +200,24 @@ Problem:
 - `EE Level` from the sample workbook is parsed as `ee_level` but is not currently mapped into candidate batch payload.
 
 Plan:
-- [ ] Extract a shared candidate import payload mapper, preferably under `frontend/src/services/` if service-layer ownership is desired for API DTO conversion.
-- [ ] Make both `CandidateDatabase` batch import and `CandidateExcelImport` reuse the same mapper.
-- [ ] Normalize `candidate_email` by trimming it.
-- [ ] If `candidate_email` is blank or missing, send `null` or omit it so backend stores `candidate_email` as `null`.
-- [ ] Avoid treating blank email as an error.
-- [ ] For a non-empty invalid email string, surface a row-level validation message for HR and do not send a silently blanked value.
-- [ ] Map parsed `source` to `platform_name` when no `platform_id` exists. UI and export labels stay `Source`.
-- [ ] Map parsed `ee_level` to `candidate_levels_name` because the sample workbook includes `EE Level` in the candidate `Database` sheet.
-- [ ] Preserve current fields already mapped correctly: `candidate_name`, `status`, `candidate_code`, phone, dates, salaries, recruiter, reference, targeted company, job code, project, and note.
-- [ ] Add frontend tests for the mapper with valid email, blank email, invalid email error, source/platform, `EE Level`, recruiter placeholder, reference name, and job code.
-- [ ] Keep `batchImportCandidatesApi(candidates)` as a thin transport function that posts `{ candidates }` to `/candidate/batch`.
+- [x] Extract a shared candidate import payload mapper, preferably under `frontend/src/services/` if service-layer ownership is desired for API DTO conversion.
+- [x] Make both `CandidateDatabase` batch import and `CandidateExcelImport` reuse the same mapper.
+- [x] Normalize `candidate_email` by trimming it.
+- [x] If `candidate_email` is blank or missing, send `null` or omit it so backend stores `candidate_email` as `null`.
+- [x] Avoid treating blank email as an error.
+- [x] For a non-empty invalid email string, surface a row-level validation message for HR and do not send a silently blanked value.
+- [x] Allow valid selected rows to import even when other selected rows have invalid email values.
+- [x] Include the expected email format in invalid email messages for HR: `name@example.com`, no spaces, with `@` and a domain.
+- [x] Map parsed `source` to `platform_name` when no `platform_id` exists. UI and export labels stay `Source`.
+- [x] Map parsed `ee_level` to `candidate_levels_name` because the sample workbook includes `EE Level` in the candidate `Database` sheet.
+- [x] Preserve current fields already mapped correctly: `candidate_name`, `status`, `candidate_code`, phone, dates, salaries, recruiter, reference, targeted company, job code, project, and note.
+- [x] Add frontend tests for the mapper with valid email, blank email, invalid email error, source/platform, `EE Level`, recruiter placeholder, reference name, and job code.
+- [x] Keep `batchImportCandidatesApi(candidates)` as a thin transport function that posts `{ candidates }` to `/candidate/batch`.
 
 Verification:
-- [ ] `npx vitest run src/services/__tests__`
-- [ ] `npx vitest run src/components/candidate/__tests__/CandidateExcelImport.test.tsx`
-- [ ] `npm run build` from `frontend/`
+- [x] `npx vitest run src/services/__tests__` - 4 files passed, 22 tests passed. Re-runs after partial-import and email-format-message adjustments also passed 22 tests.
+- [x] `npx vitest run src/components/candidate/__tests__/CandidateExcelImport.test.tsx` - 1 passing.
+- [x] `npm run build` from `frontend/` - passing; Vite emitted the existing chunk-size warning. Re-runs after partial-import and email-format-message adjustments also passed with the same warning.
 
 ## Phase 3 - Backend Candidate Batch Guardrails
 

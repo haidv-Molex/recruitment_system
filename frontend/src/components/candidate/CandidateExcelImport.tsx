@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { X, Upload, FileSpreadsheet, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { parseCandidateSheetApi, createCandidateExtendedApi } from '../../services/candidateApi';
-import Modal from '../ui/Modal';
-import Button from '../common/Button';
-import ExcelImportTable from '../ui/ExcelImportTable';
+import { parseCandidateSheetApi, createCandidateExtendedApi } from '@/services/candidateApi';
+import { mapParsedCandidateToExtendedFormPayload } from '@/services/candidateImportMapper';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/common/Button';
+import ExcelImportTable from '@/components/ui/ExcelImportTable';
 
 
 const STEPS = {
@@ -111,51 +112,17 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
         const idx = indicesToImport[pos];
         const c = parsedCandidates[idx];
         setImportProgress((prev) => ({ ...prev, current: pos + 1 }));
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const validEmail = c.candidate_email && emailRegex.test(c.candidate_email) ? c.candidate_email : '';
-
-        const formatApiDate = (val: any) => {
-          if (!val) return '';
-          try {
-            const d = new Date(val);
-            if (isNaN(d.getTime())) return '';
-            return d.toISOString().slice(0, 10);
-          } catch {
-            return '';
-          }
-        };
-
-        const formData = {
-          candidateCode: c.employee_code || '',
-          candidateName: c.candidate_name || '',
-          candidateEmail: validEmail,
-          candidatePhone: c.candidate_phone || '',
-          agency: c.agency || '',
-          offerDate: formatApiDate(c.offer_date),
-          onboardDate: formatApiDate(c.onboard_date),
-          expectedOnboardDate: '',
-          feedbackDate: formatApiDate(c.feedback_date),
-          currentSalary: c.current_salary || '',
-          expectedSalary: c.expected_salary || '',
-          status: c.status || '',
-          note: c.note || '',
-          file: null,
-          platformId: '',
-          recruiterId: c.recruiter?.user_id || '',
-          jobId: '',
-          targetedCompanyId: '',
-          referenceId: '',
-          platformName: c.source || '',
-          recruiterName: c.recruiter?.user_id === null ? (c.recruiter?.user_name || '') : '',
-          targetedCompanyName: c.targeted_company === 'Yes' ? (c.targeted_company_name || '') : '',
-          referenceName: c.reference_name || '',
-          jobCode: c.job_code || '',
-          project: c.project || '',
-        };
+        const mapped = mapParsedCandidateToExtendedFormPayload(c, idx);
+        if (mapped.error || !mapped.payload) {
+          errors.push({
+            name: mapped.error?.candidate_name || c.candidate_name || `Row ${idx + 1}`,
+            message: mapped.error?.message || 'Invalid candidate data',
+          });
+          continue;
+        }
 
         try {
-          await createCandidateExtendedApi(formData);
+          await createCandidateExtendedApi(mapped.payload);
         } catch (err: any) {
           errors.push({
             name: c.candidate_name || `Row ${idx + 1}`,
