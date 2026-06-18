@@ -93,6 +93,41 @@ REDIS_TIME_OUT=3600
 PATH_SAVE_FILE=./uploads
 ```
 
+### Outlook Email Smoke Test
+
+To test sending an email through the company Outlook account, configure these local-only variables in `.env`:
+
+```ini
+OUTLOOK_SMTP_USER=thinh.vu@molex.com
+OUTLOOK_SMTP_PASSWORD=your_app_password_or_it_approved_password
+OUTLOOK_SMTP_FROM=thinh.vu@molex.com
+TEST_EMAIL_TO=hai.do@molex.com
+TEST_EMAIL_ENABLED=true
+```
+
+Then run:
+
+```bash
+npm run test:email
+```
+
+Or test through Postman after starting the backend:
+
+```text
+POST http://localhost:3000/email/test
+Content-Type: application/json
+```
+
+```json
+{
+       "to": "hai.do@molex.com",
+       "subject": "Test email from Recruitment System",
+       "text": "Hello, this email was sent from Postman through the backend."
+}
+```
+
+If the company blocks SMTP authentication for this mailbox, use Microsoft Graph API instead of a normal Outlook password.
+
 ### 3. Initialize & Seed Database
 
 The database setup uses dynamic SQL compilation based on model schemas:
