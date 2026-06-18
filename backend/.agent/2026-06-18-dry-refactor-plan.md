@@ -15,6 +15,7 @@ The refactor must preserve existing API response shapes, route behavior, databas
 - Phase 1 revised on 2026-06-18 after user feedback: use Facade class calls such as `User.findById(...)` and `Department.getById(...)`, not direct function imports or SQL fragment/mapper helpers.
 - Phase 2 revised on 2026-06-18 after user feedback: extracted query helpers under `utilities/query`, refactored dashboard services, refactored `getAll` services so they query ids and call domain Facade methods such as `Site.getById(...)`, `Candidate.getById(...)`, and `Job.getById(...)`, and kept Facade classes in the concise static-assignment style.
 - Phase 3 completed on 2026-06-18: extracted entity lookup/resolution helpers under `utilities/entity`, refactored candidate/job batch import, and refactored file parsers to share lookup-map and placeholder resolution logic.
+- Phase 4 completed on 2026-06-18: extracted file row string/date helpers under `utilities/file` and refactored parser services to use them.
 - Existing documentation changes: `.agent/guide.md` now contains DRY rules; `.github/instructions/agent-workflow.instructions.md` now requires future plans to be stored in `.agent/`.
 
 ## Scope
@@ -196,15 +197,17 @@ Known affected files:
 - Existing helper area: `utilities/file/`
 
 Plan:
-- [ ] Add `utilities/file/getRowString.ts` or `utilities/file/parseRowField.ts`.
-- [ ] Add `utilities/file/getRowDate.ts`.
-- [ ] Add optional batch field mapper only if it reduces real repetition without hiding meaning.
-- [ ] Refactor parser services to use these helpers.
+- [x] Add `utilities/file/getRowString.ts` or `utilities/file/parseRowField.ts`.
+- [x] Add `utilities/file/getRowDate.ts`.
+- [x] Add optional batch field mapper only if it reduces real repetition without hiding meaning. Skipped; explicit field-by-field calls stayed clearer.
+- [x] Refactor parser services to use these helpers.
 
 Verification:
-- [ ] Add tests under `test/utilities/file/` for whitespace, null, undefined, empty strings, dates, and numeric-looking strings.
-- [ ] `npm run test:file 'test/services/file/parseCandidateSheet.test.ts'`
-- [ ] `npm run test:file 'test/services/file/parseJobSheet.test.ts'`
+- [x] Add tests under `test/utilities/file/` for whitespace, null, undefined, empty strings, dates, and numeric-looking strings.
+- [x] `npm run test:file 'test/utilities/file/getRowString.test.ts' 'test/utilities/file/getRowDate.test.ts'` - 11 passing.
+- [x] `npm run test:file 'test/services/file/parseCandidateSheet.test.ts' 'test/services/file/parseJobSheet.test.ts'` - 11 passing; pre-existing `pg` deprecation warning in parser path.
+- [x] `npm run check` - passing.
+- [x] `grep` check for repeated `String(row[...]).trim()` and `new Date(row[...])` patterns in `services/file/parse*Sheet.ts` - no matches.
 
 ## Phase 5 - Linking Helpers For Many-To-Many Tables
 

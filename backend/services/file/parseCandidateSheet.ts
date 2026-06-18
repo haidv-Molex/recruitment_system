@@ -3,6 +3,8 @@ import type { userOutputModel } from "@model/user/userModel";
 import User from "@services/user/_User";
 import buildEntityMap from "@utilities/entity/buildEntityMap";
 import { resolveEntity } from "@utilities/entity/resolveEntity";
+import getRowDate from "@utilities/file/getRowDate";
+import getRowString from "@utilities/file/getRowString";
 
 // ─── Helper: resolve a text value against a Map, returning a placeholder if not found ───
 
@@ -71,104 +73,33 @@ export default async function parseCandidateSheet(
   const result: ParsedCandidateRow[] = [];
 
   for (const row of rows) {
-    const candidate_name = row["Name"] !== undefined && row["Name"] !== null
-      ? String(row["Name"]).trim()
-      : "";
+    const candidate_name = getRowString(row, "Name", { defaultValue: "" });
+    const candidate_email = getRowString(row, "Email");
+    const candidate_phone = getRowString(row, "Phone number");
+    const agency = getRowString(row, "Headhunt Agency");
+    const status = getRowString(row, "Status");
+    const note = getRowString(row, "Note");
+    const current_salary = getRowString(row, "Current salary \n(Gross M VND)");
+    const expected_salary = getRowString(row, "Expected salary\n(Gross M VND)");
+    const targeted_company = getRowString(row, "Targeted company");
+    const targeted_company_name = getRowString(row, "Targeted company name");
 
-    const candidate_email = row["Email"] !== undefined && row["Email"] !== null
-      ? String(row["Email"]).trim() || null
-      : null;
+    const input_date = getRowDate(row, "Input date (dd/mm/yyyy)");
+    const offer_date = getRowDate(row, "Offer Sent date\n(DD/MM/YYYY)");
+    const onboard_date = getRowDate(row, "Onboarding Date (DD/MM/YYYY)");
+    const feedback_date = getRowDate(row, "Candidate result feedback date");
 
-    const candidate_phone = row["Phone number"] !== undefined && row["Phone number"] !== null
-      ? String(row["Phone number"]).trim() || null
-      : null;
+    const department_code = getRowString(row, "Department");
+    const job_code = getRowString(row, "Job code");
+    const job_title = getRowString(row, "Job title");
+    const ee_level = getRowString(row, "EE Level");
+    const project = getRowString(row, "Project");
+    const dl_idl = getRowString(row, "DL/IDL");
+    const source = getRowString(row, "Source");
 
-    const agency = row["Headhunt Agency"] !== undefined && row["Headhunt Agency"] !== null
-      ? String(row["Headhunt Agency"]).trim() || null
-      : null;
-
-    const status = row["Status"] !== undefined && row["Status"] !== null
-      ? String(row["Status"]).trim() || null
-      : null;
-
-    const note = row["Note"] !== undefined && row["Note"] !== null
-      ? String(row["Note"]).trim() || null
-      : null;
-
-    const current_salary = row["Current salary \n(Gross M VND)"] !== undefined && row["Current salary \n(Gross M VND)"] !== null
-      ? String(row["Current salary \n(Gross M VND)"]).trim() || null
-      : null;
-
-    const expected_salary = row["Expected salary\n(Gross M VND)"] !== undefined && row["Expected salary\n(Gross M VND)"] !== null
-      ? String(row["Expected salary\n(Gross M VND)"]).trim() || null
-      : null;
-
-    const targeted_company = row["Targeted company"] !== undefined && row["Targeted company"] !== null
-      ? String(row["Targeted company"]).trim() || null
-      : null;
-
-    const targeted_company_name = row["Targeted company name"] !== undefined && row["Targeted company name"] !== null
-      ? String(row["Targeted company name"]).trim() || null
-      : null;
-
-    // Date fields — ExcelJS already parses dates as Date objects
-    const input_date = row["Input date (dd/mm/yyyy)"]
-      ? new Date(row["Input date (dd/mm/yyyy)"])
-      : null;
-
-    const offer_date = row["Offer Sent date\n(DD/MM/YYYY)"]
-      ? new Date(row["Offer Sent date\n(DD/MM/YYYY)"])
-      : null;
-
-    const onboard_date = row["Onboarding Date (DD/MM/YYYY)"]
-      ? new Date(row["Onboarding Date (DD/MM/YYYY)"])
-      : null;
-
-    const feedback_date = row["Candidate result feedback date"]
-      ? new Date(row["Candidate result feedback date"])
-      : null;
-
-    // Raw classification fields
-    const department_code = row["Department"] !== undefined && row["Department"] !== null
-      ? String(row["Department"]).trim() || null
-      : null;
-
-    const job_code = row["Job code"] !== undefined && row["Job code"] !== null
-      ? String(row["Job code"]).trim() || null
-      : null;
-
-    const job_title = row["Job title"] !== undefined && row["Job title"] !== null
-      ? String(row["Job title"]).trim() || null
-      : null;
-
-    const ee_level = row["EE Level"] !== undefined && row["EE Level"] !== null
-      ? String(row["EE Level"]).trim() || null
-      : null;
-
-    const project = row["Project"] !== undefined && row["Project"] !== null
-      ? String(row["Project"]).trim() || null
-      : null;
-
-    const dl_idl = row["DL/IDL"] !== undefined && row["DL/IDL"] !== null
-      ? String(row["DL/IDL"]).trim() || null
-      : null;
-
-    const source = row["Source"] !== undefined && row["Source"] !== null
-      ? String(row["Source"]).trim() || null
-      : null;
-
-    // Vietnamese columns
-    const employee_code = row["Mã nhân viên"] !== undefined && row["Mã nhân viên"] !== null
-      ? String(row["Mã nhân viên"]).trim() || null
-      : null;
-
-    const reference_name = row["Người giới thiệu"] !== undefined && row["Người giới thiệu"] !== null
-      ? String(row["Người giới thiệu"]).trim() || null
-      : null;
-
-    const reference_department = row["Bộ phận"] !== undefined && row["Bộ phận"] !== null
-      ? String(row["Bộ phận"]).trim() || null
-      : null;
+    const employee_code = getRowString(row, "Mã nhân viên");
+    const reference_name = getRowString(row, "Người giới thiệu");
+    const reference_department = getRowString(row, "Bộ phận");
 
     // Resolve user relations
     const recruiter = resolveEntity(row["Recruiter"], userMap, createUserPlaceholder);

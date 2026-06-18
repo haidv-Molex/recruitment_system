@@ -7,6 +7,8 @@ import type { levelModel } from "@model/level/levelModel";
 import User from "@services/user/_User";
 import buildEntityMap from "@utilities/entity/buildEntityMap";
 import { resolveEntities } from "@utilities/entity/resolveEntity";
+import getRowDate from "@utilities/file/getRowDate";
+import getRowString from "@utilities/file/getRowString";
 
 function createUserPlaceholder(name: string): userOutputModel {
   return {
@@ -58,24 +60,23 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
   const formattedJobs: any[] = [];
 
   for (const row of rows) {
-    // Basic mapping
-    const job_code = row["Job Code"] !== undefined && row["Job Code"] !== null ? String(row["Job Code"]).trim() : "";
-    const project = row["Project"] !== undefined && row["Project"] !== null ? String(row["Project"]).trim() : "";
+    const job_code = getRowString(row, "Job Code", { defaultValue: "" });
+    const project = getRowString(row, "Project", { defaultValue: "" });
 
-    // Parse candidate_required
     let candidate_required = 0;
-    if (row["HC Requested"] !== undefined && row["HC Requested"] !== null) {
-      const parsed = parseInt(row["HC Requested"], 10);
+    const hcRequested = getRowString(row, "HC Requested");
+    if (hcRequested !== null) {
+      const parsed = parseInt(hcRequested, 10);
       if (!isNaN(parsed)) {
         candidate_required = parsed;
       }
     }
 
-    const note = row["Note"] !== undefined && row["Note"] !== null ? String(row["Note"]).trim() : null;
+    const note = getRowString(row, "Note", { emptyValue: "" });
 
     const partners = resolveEntities(row["HRBP"], userMap, createUserPlaceholder);
 
-    const partnerName = row["HRBP"] ? String(row["HRBP"]).trim() : null;
+    const partnerName = getRowString(row, "HRBP");
     const partnerUser = partners[0];
 
     const resolvedDepts = resolveEntities(row["Dept."], deptMap, (name) => ({
@@ -140,13 +141,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
 
     const managers = resolveEntities(row["Hiring manager"], userMap, createUserPlaceholder);
 
-    let request_date: Date | null = null;
-    if (row["MyHR request date"]) {
-      const parsedDate = new Date(row["MyHR request date"]);
-      if (!isNaN(parsedDate.getTime())) {
-        request_date = parsedDate;
-      }
-    }
+    const request_date = getRowDate(row, "MyHR request date", { validate: true });
 
     formattedJobs.push({
       job_code,
