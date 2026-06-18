@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import CandidateForm from '@/components/candidate/CandidateForm';
 import CVUploadModal from '@/components/candidate/CVUploadModal';
-import CVParseResultModal from '@/components/candidate/CVParseResultModal';
+import CVParseResultModal from '../components/candidate/CVParseResultModal';
+import ParsedCVDisplay from '@/components/candidate/ParsedCVDisplay';
 import ExcelTable, { formatDate } from '@/components/ui/ExcelTable';
 import Pagination from '@/components/ui/Pagination';
 import { masterData } from '@/services/mockData';
@@ -21,12 +22,303 @@ import CandidateExcelImport from '@/components/candidate/CandidateExcelImport';
 import { useHeader } from '@/contexts/HeaderContext';
 import DatabaseFilters from '@/components/candidate-database/DatabaseFilters';
 import { useItem, setItem } from '@/config/zustandStore';
-import { FileUp, Download, Plus, Upload, Edit2, Trash2 } from 'lucide-react';
+import { FileUp, Download, Plus, Upload, Edit2, Trash2, Eye, Mail, Phone, User } from 'lucide-react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import Modal from '@/components/ui/Modal';
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
+
+type CandidateDetailTab = 'candidate-info' | 'recruitment-history' | 'interaction-history';
+
+const candidateDetailTabs: { key: CandidateDetailTab; label: string }[] = [
+  { key: 'candidate-info', label: 'Thông tin ứng viên' },
+  { key: 'recruitment-history', label: 'Lịch sử tuyển' },
+  { key: 'interaction-history', label: 'Lịch sử tương tác' },
+];
+
+const displayCandidateValue = (value: any): string => {
+  if (Array.isArray(value)) {
+    const text = value.filter(Boolean).join(', ');
+    return text || 'None';
+  }
+
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+
+  if (value === null || value === undefined || value === '') {
+    return 'None';
+  }
+
+  return String(value);
+};
+
+const firstAvailable = (...values: any[]) => values.find((value) => {
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== null && value !== undefined && value !== '';
+});
+
+const toRecord = (value: any): Record<string, any> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value;
+};
+
+const formatLinks = (links: any) => {
+  const record = toRecord(links);
+  const values = [
+    record.github,
+    record.linkedin,
+    record.portfolio,
+    ...(Array.isArray(record.other) ? record.other : []),
+  ].filter(Boolean);
+
+  return values;
+};
+
+const formatLanguageDetails = (languages: any) => {
+  if (!Array.isArray(languages)) return [];
+
+  return languages
+    .map((language) => {
+      if (typeof language === 'string') return language;
+      const record = toRecord(language);
+      return [record.language, record.proficiency].filter(Boolean).join(' - ');
+    })
+    .filter(Boolean);
+};
+
+const formatEducationDetails = (education: any) => {
+  if (!Array.isArray(education)) return [];
+
+  return education
+    .map((item) => {
+      const record = toRecord(item);
+      const title = [record.institution, record.degree, record.field].filter(Boolean).join(' | ');
+      const period = [record.start_date, record.end_date].filter(Boolean).join(' - ');
+      return [title, period ? `(${period})` : ''].filter(Boolean).join(' ');
+    })
+    .filter(Boolean);
+};
+
+const formatWorkExperienceDetails = (experiences: any) => {
+  if (!Array.isArray(experiences)) return [];
+
+  return experiences
+    .map((item) => {
+      const record = toRecord(item);
+      const title = [record.title, record.company].filter(Boolean).join(' @ ');
+      const period = [record.start_date, record.is_current ? 'Hiện tại' : record.end_date].filter(Boolean).join(' - ');
+      const responsibilities = Array.isArray(record.responsibilities)
+        ? record.responsibilities.filter(Boolean).join(' ')
+        : '';
+      return [title, period ? `(${period})` : '', responsibilities].filter(Boolean).join(': ');
+    })
+    .filter(Boolean);
+};
+
+const formatFieldConfidences = (confidences: any) => {
+  const record = toRecord(confidences);
+  return Object.entries(record).map(([field, confidence]) => {
+    const percent = typeof confidence === 'number' ? `${Math.round(confidence * 100)}%` : String(confidence);
+    return `${field.replace(/_/g, ' ')}: ${percent}`;
+  });
+};
+
+function CandidateInfoRow({ label, value }: { label: string; value: any }) {
+  const displayValue = displayCandidateValue(value);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-[240px_minmax(0,1fr)] gap-1 sm:gap-6 py-1.5 text-sm">
+      <div className="font-semibold text-slate-800">{label}</div>
+      <div className={displayValue === 'None' ? 'text-slate-400' : 'text-slate-700'}>{displayValue}</div>
+    </div>
+  );
+}
+
+function CandidateDetailModal({
+  candidate,
+  activeTab,
+  onTabChange,
+  onClose,
+  onPreviewFile,
+}: {
+  candidate: any;
+  activeTab: CandidateDetailTab;
+  onTabChange: (tab: CandidateDetailTab) => void;
+  onClose: () => void;
+  onPreviewFile: (file: any) => void;
+}) {
+  const apiData = candidate?._apiData || candidate || {};
+  const parsedCV = toRecord(firstAvailable(apiData.parsed_cv, apiData.parsedCV, apiData.cv_parse_result, apiData.cvParseResult, candidate?.parsed_cv, candidate?.parsedCV));
+  const parsedField = (key: string, ...fallbackValues: any[]) => firstAvailable(parsedCV[key], apiData[key], candidate?.[key], ...fallbackValues);
+  const candidateName = firstAvailable(apiData.candidate_name, candidate?.name, candidate?.fullName);
+  const email = firstAvailable(apiData.candidate_email, candidate?.email);
+  const phone = firstAvailable(apiData.candidate_phone, candidate?.phone);
+  const parsedName = parsedField('name', candidateName);
+  const parsedEmail = parsedField('email', email);
+  const parsedPhone = parsedField('phone', phone);
+  const parsedGender = parsedField('gender');
+  const parsedSummary = parsedField('summary');
+  const parsedLocation = parsedField('location');
+  const parsedLinks = parsedField('links');
+  const parsedSkills = parsedField('skills');
+  const parsedLanguages = parsedField('languages');
+  const parsedLanguageDetails = parsedField('language_details');
+  const parsedExperienceYears = parsedField('experience_years');
+  const parsedEducation = parsedField('education');
+  const parsedEducationDetails = parsedField('education_details');
+  const parsedCurrentPosition = parsedField('current_position', candidate?.jobTitle);
+  const parsedWorkExperience = parsedField('work_experience');
+  const parsedWorkExperienceDetails = parsedField('work_experience_details');
+  const parsedReferences = parsedField('references');
+  const parsedNationalId = parsedField('national_id');
+  const parsedNationality = parsedField('nationality');
+  const parsedDateOfBirth = parsedField('date_of_birth');
+  const parsedQualityGrade = parsedField('quality_grade');
+  const parsedCertifications = parsedField('certifications');
+  const parsedDetectedLanguage = parsedField('detected_language');
+  const parsedFieldConfidences = parsedField('field_confidences');
+  const parsedExtractionWarnings = parsedField('extraction_warnings');
+  const file = candidate?.file || apiData.file;
+  const status = firstAvailable(apiData.status, candidate?.status);
+  const source = firstAvailable(apiData.platform?.platform_name, candidate?.source);
+  const jobCode = firstAvailable(apiData.job?.job_code, candidate?.jobCode);
+  const recruiter = firstAvailable(apiData.recruiter?.user_name, candidate?.recruiter);
+  const note = firstAvailable(apiData.note, candidate?.note);
+  const feedbackDate = firstAvailable(apiData.feedback_date, candidate?.candidateResultFeedbackDate);
+  const inputDate = firstAvailable(apiData.create_at, candidate?.inputDate);
+
+  const candidateParsedCV = {
+    name: displayCandidateValue(parsedName) === 'None' ? '' : String(parsedName),
+    email: displayCandidateValue(parsedEmail) === 'None' ? '' : String(parsedEmail),
+    phone: displayCandidateValue(parsedPhone) === 'None' ? '' : String(parsedPhone),
+    gender: displayCandidateValue(parsedGender) === 'None' ? '' : String(parsedGender),
+    summary: displayCandidateValue(parsedSummary) === 'None' ? '' : String(parsedSummary),
+    location: displayCandidateValue(parsedLocation) === 'None' ? '' : String(parsedLocation),
+    links: toRecord(parsedLinks),
+    skills: Array.isArray(parsedSkills) ? parsedSkills : [],
+    languages: Array.isArray(parsedLanguages) ? parsedLanguages : [],
+    language_details: Array.isArray(parsedLanguageDetails) ? parsedLanguageDetails : [],
+    experience_years: displayCandidateValue(parsedExperienceYears) === 'None' ? '' : String(parsedExperienceYears),
+    education: displayCandidateValue(parsedEducation) === 'None' ? '' : String(parsedEducation),
+    education_details: Array.isArray(parsedEducationDetails) ? parsedEducationDetails : [],
+    current_position: displayCandidateValue(parsedCurrentPosition) === 'None' ? '' : String(parsedCurrentPosition),
+    work_experience: displayCandidateValue(parsedWorkExperience) === 'None' ? '' : String(parsedWorkExperience),
+    work_experience_details: Array.isArray(parsedWorkExperienceDetails) ? parsedWorkExperienceDetails : [],
+    references: Array.isArray(parsedReferences) ? parsedReferences : [],
+    national_id: displayCandidateValue(parsedNationalId) === 'None' ? '' : String(parsedNationalId),
+    nationality: displayCandidateValue(parsedNationality) === 'None' ? '' : String(parsedNationality),
+    date_of_birth: displayCandidateValue(parsedDateOfBirth) === 'None' ? '' : String(parsedDateOfBirth),
+    quality_grade: displayCandidateValue(parsedQualityGrade) === 'None' ? '' : String(parsedQualityGrade),
+    certifications: Array.isArray(parsedCertifications) ? parsedCertifications : [],
+    detected_language: displayCandidateValue(parsedDetectedLanguage) === 'None' ? '' : String(parsedDetectedLanguage),
+    field_confidences: toRecord(parsedFieldConfidences),
+    extraction_warnings: Array.isArray(parsedExtractionWarnings) ? parsedExtractionWarnings : [],
+  };
+
+  return (
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Candidate Profile"
+      maxWidthClass="max-w-5xl"
+    >
+      <div className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 rounded-xl bg-white">
+          <div className="flex md:block items-center gap-4 border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-5">
+            <div className="h-24 w-24 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+              <User className="h-12 w-12 text-slate-300" />
+            </div>
+            <div className="md:mt-4 space-y-3">
+              <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+                Hồ sơ {displayCandidateValue(source)}
+              </span>
+              <div className="text-xs text-slate-500">
+                <div className="font-semibold text-slate-700">Cập nhật:</div>
+                <div>{formatDate(inputDate)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="min-w-0 space-y-3">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">{displayCandidateValue(parsedName)}</h2>
+              <div className="mt-1 text-sm text-slate-500">{displayCandidateValue(parsedCurrentPosition)}</div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+              <span className="inline-flex items-center gap-1.5"><Mail size={14} />{displayCandidateValue(parsedEmail)}</span>
+              <span className="inline-flex items-center gap-1.5"><Phone size={14} />{displayCandidateValue(parsedPhone)}</span>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className={statusClass(status)}>{displayCandidateValue(status)}</span>
+              {file && (
+                <button
+                  type="button"
+                  onClick={() => onPreviewFile(file)}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Xem CV
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
+          <div className="flex flex-wrap gap-1 border-b border-slate-100 px-4 pt-4">
+            {candidateDetailTabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => onTabChange(tab.key)}
+                className={`border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-5">
+            {activeTab === 'candidate-info' && (
+              <ParsedCVDisplay parsedData={candidateParsedCV} />
+            )}
+
+            {activeTab === 'recruitment-history' && (
+              <div className="space-y-1">
+                <h3 className="mb-4 border-b border-slate-200 pb-2 text-base font-bold text-slate-900">Lịch sử tuyển</h3>
+                <CandidateInfoRow label="Job Code" value={jobCode} />
+                <CandidateInfoRow label="Project" value={candidate?.project} />
+                <CandidateInfoRow label="Trạng thái" value={status} />
+                <CandidateInfoRow label="Recruiter" value={recruiter} />
+                <CandidateInfoRow label="Nguồn ứng viên" value={source} />
+                <CandidateInfoRow label="Offer Sent Date" value={candidate?.offerSentDate ? formatDate(candidate.offerSentDate) : candidate?.offerSentDate} />
+                <CandidateInfoRow label="Onboarding Date" value={candidate?.onboardingDate ? formatDate(candidate.onboardingDate) : candidate?.onboardingDate} />
+              </div>
+            )}
+
+            {activeTab === 'interaction-history' && (
+              <div className="space-y-1">
+                <h3 className="mb-4 border-b border-slate-200 pb-2 text-base font-bold text-slate-900">Lịch sử tương tác</h3>
+                <CandidateInfoRow label="Feedback Date" value={feedbackDate ? formatDate(feedbackDate) : feedbackDate} />
+                <CandidateInfoRow label="Ghi chú" value={note} />
+                <CandidateInfoRow label="Reference" value={candidate?.referrerName} />
+                <CandidateInfoRow label="Agency" value={candidate?.headhuntAgency} />
+                <CandidateInfoRow label="Targeted Company" value={candidate?.targetedCompanyName} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 const mapCandidateToRow = (c: any) => ({
   id: c.candidate_id,
@@ -81,6 +373,8 @@ export const CandidateDatabasePage = ({
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
+  const [selectedCandidateForView, setSelectedCandidateForView] = useState<any | null>(null);
+  const [candidateDetailTab, setCandidateDetailTab] = useState<CandidateDetailTab>('candidate-info');
 
   const [parsedCVInfo, setParsedCVInfo] = useState<{ data: any; file: File } | null>(null);
 
@@ -348,6 +642,14 @@ export const CandidateDatabasePage = ({
 
   const tableActions = [
     {
+      label: 'View',
+      icon: <Eye size={14} className="text-emerald-600" />,
+      onClick: (candidate: any) => {
+        setSelectedCandidateForView(candidate);
+        setCandidateDetailTab('candidate-info');
+      },
+    },
+    {
       label: 'Edit',
       icon: <Edit2 size={14} />,
       onClick: (candidate: any) => {
@@ -459,6 +761,17 @@ export const CandidateDatabasePage = ({
             setParsedCVInfo({ data, file });
           }}
           onClose={() => setShowCVUploadModal(false)}
+        />
+      )}
+
+      {/* Candidate Detail View Modal */}
+      {selectedCandidateForView && (
+        <CandidateDetailModal
+          candidate={selectedCandidateForView}
+          activeTab={candidateDetailTab}
+          onTabChange={setCandidateDetailTab}
+          onClose={() => setSelectedCandidateForView(null)}
+          onPreviewFile={(file) => setPreviewFile(file)}
         />
       )}
 
