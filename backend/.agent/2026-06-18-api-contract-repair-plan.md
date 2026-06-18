@@ -34,6 +34,11 @@ The repair must preserve existing route paths, HTTP methods, response shapes, da
   - Revised after manual feedback: invalid email messages now include the expected email format, for example `name@example.com`, and explain that spaces are not allowed.
   - Updated `createCandidateExtendedApi` fallback support for `candidate_levels_name`.
   - Verification passed: frontend service Vitest suite 22 passing, `CandidateExcelImport.test.tsx` 1 passing, `npm run build` passing with the existing Vite chunk-size warning. After the partial-import and email-format-message revisions, frontend service Vitest suite still passed 22 tests and `npm run build` still passed.
+- Phase 3 completed on 2026-06-18:
+  - Aligned candidate batch import email Joi behavior with create/update: blank/`null` email normalizes to `null`; non-empty invalid email returns a clear `name@example.com` format error.
+  - Added service coverage proving `Candidate.batchImport(...)` persists valid email, stores blank email as `null`, creates/links `platform_name`, and creates/links `candidate_levels_name`.
+  - Added controller coverage for `POST /candidate/batch` valid email/source/levels, blank email, and invalid email rejection before service call.
+  - Verification passed: `test/services/candidate/batchImport.test.ts` 5 passing, `test/controller/candidate/candidateController.test.ts` 12 passing, `npm run check` passing.
 - Inputs reviewed first:
   - `backend/.agent/guide.md`
   - `backend/.agent/testGuide.md`
@@ -227,20 +232,20 @@ Problem:
 - Batch import should also prove that missing/blank `candidate_email` is accepted.
 
 Plan:
-- [ ] Align `candidate_email` Joi behavior in `batchImportCandidatesController` with create/update schemas where appropriate: `.email().max(255).empty(["", "null"]).allow(null)`.
-- [ ] Add a backend batch import service test proving `candidate_email` is persisted.
-- [ ] Add a backend batch import service test proving blank/missing `candidate_email` imports successfully as `null`.
-- [ ] Add a controller-level test for `POST /candidate/batch` with `candidate_email`.
-- [ ] Add a controller-level test for `POST /candidate/batch` with blank/missing `candidate_email`.
-- [ ] Add a negative test for non-empty invalid email returning a clear validation error.
-- [ ] Add a test for `platform_name` in batch import because sample workbook `Source` maps to backend platform.
-- [ ] Add a test for `candidate_levels_name` in batch import because sample workbook `EE Level` maps to candidate levels.
-- [ ] Keep service ownership visible through existing `Candidate` facade from controllers.
+- [x] Align `candidate_email` Joi behavior in `batchImportCandidatesController` with create/update schemas where appropriate: `.email().max(255).empty(["", "null"]).allow(null)`.
+- [x] Add a backend batch import service test proving `candidate_email` is persisted.
+- [x] Add a backend batch import service test proving blank/missing `candidate_email` imports successfully as `null`.
+- [x] Add a controller-level test for `POST /candidate/batch` with `candidate_email`.
+- [x] Add a controller-level test for `POST /candidate/batch` with blank/missing `candidate_email`.
+- [x] Add a negative test for non-empty invalid email returning a clear validation error.
+- [x] Add a test for `platform_name` in batch import because sample workbook `Source` maps to backend platform.
+- [x] Add a test for `candidate_levels_name` in batch import because sample workbook `EE Level` maps to candidate levels.
+- [x] Keep service ownership visible through existing `Candidate` facade from controllers.
 
 Verification:
-- [ ] `npm run test:file 'test/services/candidate/batchImport.test.ts'`
-- [ ] `npm run test:file 'test/controller/candidate/candidateController.test.ts'`
-- [ ] `npm run check`
+- [x] `npm run test:file 'test/services/candidate/batchImport.test.ts'` - 5 passing; pre-existing `pg` deprecation warning about concurrent `client.query()`.
+- [x] `npm run test:file 'test/controller/candidate/candidateController.test.ts'` - 12 passing; expected validation-error logs in negative tests.
+- [x] `npm run check` - passing.
 
 ## Phase 4 - Job Import/Export Contract Preservation
 

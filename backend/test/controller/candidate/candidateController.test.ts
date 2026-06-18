@@ -30,6 +30,7 @@ describe("CandidateController API", () => {
   let getByIdStub: sinon.SinonStub;
   let updateStub: sinon.SinonStub;
   let deleteStub: sinon.SinonStub;
+  let batchImportStub: sinon.SinonStub;
 
   before(async () => {
     const { expect: localExpect } = await new Function('specifier', 'return import(specifier)')('chai');
@@ -69,6 +70,7 @@ describe("CandidateController API", () => {
     getByIdStub = sinon.stub(Candidate, "getById");
     updateStub = sinon.stub(Candidate, "update");
     deleteStub = sinon.stub(Candidate, "delete");
+    batchImportStub = sinon.stub(Candidate, "batchImport");
   });
 
   afterEach(() => {
@@ -80,6 +82,7 @@ describe("CandidateController API", () => {
     getByIdStub.restore();
     updateStub.restore();
     deleteStub.restore();
+    batchImportStub.restore();
   });
 
   after((done) => {
@@ -402,5 +405,97 @@ describe("CandidateController API", () => {
       });
 
     expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
+  });
+
+  it("POST /candidate/batch - should import candidates with email, source platform, and candidate level names", async () => {
+    const mockResult = { success: true, importedCount: 1, errors: [] };
+    batchImportStub.resolves(mockResult);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "Nguyen Van A",
+            status: "CV Sent",
+            candidate_email: "nguyen.van.a@example.com",
+            platform_name: "Vietnamworks Job Post",
+            candidate_levels_name: ["Engineer"],
+          }
+        ]
+      })
+      .expectStatus(200)
+      .expectJson({
+        result: true,
+        message: "Thực hiện import loạt ứng viên thành công",
+        data: mockResult,
+      });
+
+    expectLocal(batchImportStub.calledOnce).to.be.true;
+    expectLocal(batchImportStub.firstCall.args[0]).to.deep.equal([
+      {
+        candidate_name: "Nguyen Van A",
+        status: "CV Sent",
+        candidate_email: "nguyen.van.a@example.com",
+        platform_name: "Vietnamworks Job Post",
+        candidate_levels_name: ["Engineer"],
+      }
+    ]);
+  });
+
+  it("POST /candidate/batch - should allow blank email", async () => {
+    const mockResult = { success: true, importedCount: 1, errors: [] };
+    batchImportStub.resolves(mockResult);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "No Email Candidate",
+            status: "CV Sent",
+            candidate_email: "",
+          }
+        ]
+      })
+      .expectStatus(200);
+
+    expectLocal(batchImportStub.calledOnce).to.be.true;
+    expectLocal(batchImportStub.firstCall.args[0][0]).to.include({
+      candidate_name: "No Email Candidate",
+      status: "CV Sent",
+      candidate_email: null,
+    });
+  });
+
+  it("POST /candidate/batch - should reject invalid email with format guidance", async () => {
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "Bad Email Candidate",
+            status: "CV Sent",
+            candidate_email: "n Van A@gmail.com",
+          }
+        ]
+      })
+      .expectStatus(400)
+      .expectJsonLike({
+        result: false,
+        message: "Dữ liệu không hợp lệ",
+        details: ["Email ứng viên không đúng định dạng chuẩn name@example.com"],
+      });
+
+    expectLocal(batchImportStub.notCalled).to.be.true;
   });
 });

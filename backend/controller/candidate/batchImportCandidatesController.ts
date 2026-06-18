@@ -18,7 +18,10 @@ const candidateItemSchema = Joi.object({
     "string.empty": "Trạng thái ứng viên không được để trống",
   }),
   candidate_code: Joi.string().max(255).allow("", null).optional(),
-  candidate_email: Joi.string().email().max(255).allow("", null).optional(),
+  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).default(null).optional().messages({
+    "string.email": "Email ứng viên không đúng định dạng chuẩn name@example.com",
+    "string.max": "Email không được vượt quá 255 ký tự",
+  }),
   candidate_phone: Joi.string().max(50).allow("", null).optional(),
   agency: Joi.string().max(255).allow("", null).optional(),
   offer_date: Joi.date().iso().empty(["", "null"]).allow(null).optional(),
