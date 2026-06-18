@@ -52,7 +52,6 @@ const bodySchema = Joi.object({
     "date.format": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)",
     "date.base": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"
   }),
-  partners: numberArray().optional(),
   departments: departmentArray().optional(),
   segments: numberArray().optional(),
   sites: numberArray().optional(),
@@ -81,7 +80,6 @@ createJobController.post(
           note: body.note || null,
           request_date: body.request_date || null,
           file,
-          partners: body.partners ?? [],
           departments: body.departments ?? [],
           segments: body.segments ?? [],
           sites: body.sites ?? [],

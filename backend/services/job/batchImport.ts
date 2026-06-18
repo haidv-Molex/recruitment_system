@@ -14,14 +14,14 @@ export type JobImportItem = {
   note?: string | null;
   request_date?: string | Date | null;
   partners?: number[];
-  departments?: { department_id: number; candidate_required: number }[];
+  departments?: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
   managers?: number[];
   employee_levels?: number[];
   partners_name?: string[];
-  departments_name?: { name: string; candidate_required: number }[];
+  departments_name?: { name: string; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
   segments_name?: string[];
   sites_name?: string[];
   titles_name?: string[];
@@ -206,14 +206,34 @@ async function batchImport(
         ...(job.managers || []),
         ...(job.managers_name || []).map(n => managerMap.get(n.trim().toLowerCase())).filter(Boolean) as number[]
       ];
-      const mergedDepartments: { department_id: number; candidate_required: number }[] = [
-        ...(job.departments || []),
-      ];
+      const mergedDepartments: { department_id: number; candidate_required: number }[] = [];
+      if (job.departments) {
+        for (const dept of job.departments) {
+          const departmentId = dept.department_id;
+          const hrbpId = dept.user_id || (dept.partner_name ? partnerMap.get(dept.partner_name.trim().toLowerCase()) : null) || null;
+          await pool.query(
+            `UPDATE department SET user_id = $1 WHERE department_id = $2`,
+            [hrbpId, departmentId]
+          );
+          mergedDepartments.push({
+            department_id: departmentId,
+            candidate_required: dept.candidate_required
+          });
+        }
+      }
       if (job.departments_name) {
         for (const item of job.departments_name) {
           const did = deptMap.get(item.name.trim().toLowerCase());
           if (did) {
-            mergedDepartments.push({ department_id: did, candidate_required: item.candidate_required });
+            const hrbpId = item.user_id || (item.partner_name ? partnerMap.get(item.partner_name.trim().toLowerCase()) : null) || null;
+            await pool.query(
+              `UPDATE department SET user_id = $1 WHERE department_id = $2`,
+              [hrbpId, did]
+            );
+            mergedDepartments.push({
+              department_id: did,
+              candidate_required: item.candidate_required
+            });
           }
         }
       }
@@ -245,7 +265,6 @@ async function batchImport(
           note: job.note || null,
           request_date: job.request_date || null,
           file: null,
-          partners: Array.from(new Set(mergedPartners)),
           departments: mergedDepartments,
           segments: Array.from(new Set(mergedSegments)),
           sites: Array.from(new Set(mergedSites)),

@@ -183,7 +183,6 @@ async function createWithAll(
       note,
       file,
       request_date: data.request_date,
-      partners: mergedPartners,
       departments: mergedDepartments,
       segments: mergedSegments,
       sites: mergedSites,

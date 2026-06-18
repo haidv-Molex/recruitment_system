@@ -15,8 +15,7 @@ type CreateJobData = {
     originalname: string;
     buffer: Buffer;
   } | null;
-  partners?: number[];
-  departments?: { department_id: number; candidate_required: number; user_id?: number | null }[];
+  departments?: { department_id: number; candidate_required: number }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
@@ -34,7 +33,6 @@ async function create(
     note = null,
     request_date = null,
     file = null,
-    partners = [],
     departments = [],
     segments = [],
     sites = [],
@@ -110,7 +108,6 @@ async function create(
         create_at: depRow.create_at,
         update_at: depRow.update_at,
         candidate_required: candidateRequired,
-        user_id: depRow.user_id,
         user: userCheckRow
       };
       departmentsList.push(deptData);

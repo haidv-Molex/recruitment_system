@@ -9,7 +9,8 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     WHERE jd.job_id = $1
   `;
   const departmentsQuery = `
-    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, jd.candidate_required, d.user_id, u.user_name
+    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, jd.candidate_required, d.user_id,
+           u.user_name, u.user_description AS u_description, u.user_role, u.create_at AS u_create_at, u.update_at AS u_update_at
     FROM job_department jd
     JOIN department d ON jd.department_id = d.department_id
     LEFT JOIN "user" u ON d.user_id = u.user_id
@@ -64,9 +65,31 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     pool.query(employeeLevelsQuery, [jobId])
   ]);
 
+  const departmentsList = departmentsRes.rows.map((row) => {
+    const user = row.user_id ? {
+      user_id: row.user_id,
+      user_name: row.user_name,
+      user_description: row.u_description,
+      user_role: row.user_role,
+      create_at: row.u_create_at,
+      update_at: row.u_update_at
+    } : null;
+
+    return {
+      department_id: row.department_id,
+      department_code: row.department_code,
+      department_name: row.department_name,
+      department_description: row.department_description,
+      create_at: row.create_at,
+      update_at: row.update_at,
+      candidate_required: row.candidate_required,
+      user
+    };
+  });
+
   return {
     partners: partnersRes.rows,
-    departments: departmentsRes.rows,
+    departments: departmentsList,
     segments: segmentsRes.rows,
     sites: sitesRes.rows,
     titles: titlesRes.rows,

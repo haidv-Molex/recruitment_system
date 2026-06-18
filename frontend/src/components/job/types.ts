@@ -10,7 +10,6 @@ export const emptyJob = {
   sites: [] as any[],
   titles: [] as any[],
   employeeLevels: [] as any[],
-  partners: [] as any[],
   managers: [] as any[],
 };
 

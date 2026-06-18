@@ -16,7 +16,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
   const [selectedSites, setSelectedSites] = useState<any[]>([]);
   const [selectedTitles, setSelectedTitles] = useState<any[]>([]);
   const [selectedEmpLevels, setSelectedEmpLevels] = useState<any[]>([]);
-  const [selectedPartners, setSelectedPartners] = useState<any[]>([]);
   const [selectedManagers, setSelectedManagers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -43,9 +42,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
         employeeLevels: Array.isArray(job.employee_levels)
           ? job.employee_levels.map((el: any) => (typeof el === 'object' ? el.level_id : el))
           : [],
-        partners: Array.isArray(job.partners)
-          ? job.partners.map((p: any) => (typeof p === 'object' ? p.user_id : p))
-          : [],
         managers: Array.isArray(job.managers)
           ? job.managers.map((m: any) => (typeof m === 'object' ? m.user_id : m))
           : [],
@@ -55,7 +51,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
       setSelectedSites(Array.isArray(job.sitesData || job.sites) ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])) : []);
       setSelectedTitles(Array.isArray(job.titles) ? job.titles : []);
       setSelectedEmpLevels(Array.isArray(job.employee_levels) ? job.employee_levels : []);
-      setSelectedPartners(Array.isArray(job.partners) ? job.partners : []);
       setSelectedManagers(Array.isArray(job.managers) ? job.managers : []);
     } else {
       setFormData(emptyJob);
@@ -64,7 +59,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
       setSelectedSites([]);
       setSelectedTitles([]);
       setSelectedEmpLevels([]);
-      setSelectedPartners([]);
       setSelectedManagers([]);
     }
   }, [job]);
@@ -110,7 +104,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
         department_id: isExisting ? d.department_id : null,
         name: isExisting ? null : (d.department_name || d.department_id),
         candidate_required: d.candidate_required !== undefined ? d.candidate_required : 1,
-        user_id: d.user_id || null,
       };
     });
 
@@ -204,8 +197,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
           setSelectedTitles={setSelectedTitles}
           selectedEmpLevels={selectedEmpLevels}
           setSelectedEmpLevels={setSelectedEmpLevels}
-          selectedPartners={selectedPartners}
-          setSelectedPartners={setSelectedPartners}
           selectedManagers={selectedManagers}
           setSelectedManagers={setSelectedManagers}
         />

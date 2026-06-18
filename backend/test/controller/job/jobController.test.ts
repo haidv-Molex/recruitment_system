@@ -121,7 +121,6 @@ describe("JobController API", () => {
         project: "Project X",
         note: "Urgent",
         request_date: "2026-06-11",
-        partners: "[1, 2]",
         departments: '[{"department_id":3,"candidate_required":5},{"department_id":4,"candidate_required":2}]'
       })
       .withMultiPartFormData("file", Buffer.from("dummy pdf content"), {
@@ -145,7 +144,6 @@ describe("JobController API", () => {
     expectLocal(args.job_code).to.equal("JOB001");
     expectLocal(args.project).to.equal("Project X");
     expectLocal(args.request_date.toISOString().slice(0, 10)).to.equal("2026-06-11");
-    expectLocal(args.partners).to.deep.equal([1, 2]);
     expectLocal(args.departments).to.deep.equal([{ department_id: 3, candidate_required: 5 }, { department_id: 4, candidate_required: 2 }]);
     expectLocal(args.file).to.not.be.null;
     expectLocal(args.file.originalname).to.equal("jd.pdf");

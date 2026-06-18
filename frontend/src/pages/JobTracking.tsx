@@ -52,9 +52,7 @@ const mapApiJobToRow = (j: any) => ({
   projectSegment: (j.segments || []).map((sg: any) => sg.segment_name).join(', '),
   hiringManager: (j.managers || []).map((m: any) => m.user_name).join(', '),
   hrbp: (j.departments || [])
-    .map((d: any) => d.user_name)
-    .filter(Boolean)
-    .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index)
+    .map((d: any) => d.user?.user_name || '—')
     .join(', '),
   recruiter: '',
   myhrRequestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
@@ -131,7 +129,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       request_date: formData.requestDate,
       file: formData.file,
       // Existing IDs
-      partners: (formData.partners || []).filter((p: any) => typeof p === 'number' || !isNaN(Number(p))).map(Number),
       departments: (formData.departments || [])
         .filter((d: any) => d && (typeof d === 'object' ? d.department_id !== null && d.department_id !== undefined : !isNaN(Number(d))))
         .map((d: any) => {
@@ -139,15 +136,11 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             return {
               department_id: Number(d.department_id),
               candidate_required: Number(d.candidate_required || 1),
-              user_id: d.user_id ? Number(d.user_id) : null,
-              partner_name: d.partner_name || null,
             };
           }
           return {
             department_id: Number(d),
             candidate_required: 1,
-            user_id: null,
-            partner_name: null,
           };
         }),
       segments: (formData.segments || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
@@ -157,7 +150,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       employee_levels: (formData.employeeLevels || []).filter((el: any) => typeof el === 'number' || !isNaN(Number(el))).map(Number),
 
       // New Names to auto-create on backend
-      partners_name: (formData.partners || []).filter((p: any) => typeof p === 'string' && isNaN(Number(p))),
       departments_name: (formData.departments || [])
         .filter((d: any) => d && (typeof d === 'object' ? d.department_id === null || d.department_id === undefined : isNaN(Number(d))))
         .map((d: any) => {
@@ -165,15 +157,11 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             return {
               name: String(d.name || d.department_name),
               candidate_required: Number(d.candidate_required || 1),
-              user_id: d.user_id ? Number(d.user_id) : null,
-              partner_name: d.partner_name || null,
             };
           }
           return {
             name: String(d),
             candidate_required: 1,
-            user_id: null,
-            partner_name: null,
           };
         }),
       segments_name: (formData.segments || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
@@ -305,14 +293,18 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         .filter((d: any) => d.department_id !== null && d.department_id !== undefined)
         .map((d: any) => ({
           department_id: Number(d.department_id),
-          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1)
+          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1),
+          user_id: d.user_id !== undefined ? d.user_id : null,
+          partner_name: d.partner_name || null
         }));
 
       const depts_name = (parsedJob.departments || [])
         .filter((d: any) => d.department_id === null || d.department_id === undefined)
         .map((d: any) => ({
           name: String(d.department_name || d.name),
-          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1)
+          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1),
+          user_id: d.user_id !== undefined ? d.user_id : null,
+          partner_name: d.partner_name || null
         }));
 
       return {

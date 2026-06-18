@@ -22,7 +22,7 @@ export type jobOutputModel = Omit<jobModel, 'file_id'> & {
     file_url: string;
   } | null;
   partners?: userOutputModel[];
-  departments?: (departmentModel & { candidate_required: number; user_id?: number | null })[];
+  departments?: (departmentModel & { candidate_required: number })[];
   segments?: segmentModel[];
   sites?: siteModel[];
   titles?: levelModel[];

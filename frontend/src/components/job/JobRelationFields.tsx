@@ -27,9 +27,6 @@ interface JobRelationFieldsProps {
   selectedEmpLevels: any[];
   setSelectedEmpLevels: (items: any[]) => void;
 
-  selectedPartners: any[];
-  setSelectedPartners: (items: any[]) => void;
-
   selectedManagers: any[];
   setSelectedManagers: (items: any[]) => void;
 }
@@ -47,8 +44,6 @@ export default function JobRelationFields({
   setSelectedTitles,
   selectedEmpLevels,
   setSelectedEmpLevels,
-  selectedPartners,
-  setSelectedPartners,
   selectedManagers,
   setSelectedManagers,
 }: JobRelationFieldsProps) {

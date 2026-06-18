@@ -37,7 +37,7 @@ describe("parseJobSheet service", () => {
 
     const d = await client.query(
       `INSERT INTO department (department_code, department_name) VALUES ($1, $2) RETURNING department_id`,
-      ["AS_CODE", "AS"]
+      ["AS_TEST_CODE", "AS_TEST"]
     );
     seededDeptId = d.rows[0].department_id;
 
@@ -76,7 +76,7 @@ describe("parseJobSheet service", () => {
       {
         "Job Code": "J001",
         "Project": "DSS Talent Connector",
-        "Dept.": "AS",
+        "Dept.": "AS_TEST",
         "HC Requested": 1,
         "Job title": "Engineer, Production",
         "EE Level": "Engineer",
@@ -101,7 +101,7 @@ describe("parseJobSheet service", () => {
     // Verify relations resolved by name
     expect(job.departments).to.be.an("array").with.lengthOf(1);
     expect(job.departments[0].department_id).to.equal(seededDeptId);
-    expect(job.departments[0].department_name).to.equal("AS");
+    expect(job.departments[0].department_name).to.equal("AS_TEST");
     expect(job.departments[0].candidate_required).to.equal(1);
 
     expect(job.segments).to.be.an("array").with.lengthOf(1);
@@ -208,5 +208,33 @@ describe("parseJobSheet service", () => {
 
     expect(job.managers[2].user_id).to.equal(seededBPId);
     expect(job.managers[2].user_name).to.equal("Thanh");
+  });
+
+  it("should map multiple departments to multiple partners 1-to-1 in order", async () => {
+    const rawRows = [
+      {
+        "Job Code": "J003",
+        "Project": "Multi Dept/Partner Project",
+        "Dept.": "AS_TEST, Unknown Dept",
+        "HC Requested": 4,
+        "HRBP": "Thanh, New HRBP"
+      }
+    ];
+
+    const result = await parseJobSheet(rawRows, client);
+
+    expect(result).to.be.an("array").with.lengthOf(1);
+    const job = result[0];
+
+    expect(job.departments).to.be.an("array").with.lengthOf(2);
+    
+    // First department "AS_TEST" should map to the first HRBP "Thanh"
+    expect(job.departments[0].department_name).to.equal("AS_TEST");
+    expect(job.departments[0].user_id).to.equal(seededBPId);
+
+    // Second department "Unknown Dept" should map to the second HRBP "New HRBP"
+    expect(job.departments[1].department_name).to.equal("Unknown Dept");
+    expect(job.departments[1].user_id).to.be.null;
+    expect(job.departments[1].partner_name).to.equal("New HRBP");
   });
 });

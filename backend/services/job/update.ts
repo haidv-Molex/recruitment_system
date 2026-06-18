@@ -20,16 +20,14 @@ type UpdateJobData = {
     originalname: string;
     buffer: Buffer;
   } | null;
-  partners?: number[];
-  departments?: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
+  departments?: { department_id: number; candidate_required: number }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
   managers?: number[];
   employee_levels?: number[];
 
-  partners_name?: string[];
-  departments_name?: { name: string; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
+  departments_name?: { name: string; candidate_required: number }[];
   segments_name?: string[];
   sites_name?: string[];
   titles_name?: string[];
@@ -100,94 +98,43 @@ async function update(
 
     // 3. Update linking records if provided
     const isDeptUpdated = data.departments !== undefined || data.departments_name !== undefined;
-    const isPartnerUpdated = data.partners !== undefined || data.partners_name !== undefined;
 
-    if (isDeptUpdated || isPartnerUpdated) {
-      // 1. Resolve all partner IDs (both existing and newly created)
-      const newPartnerIds: number[] = [];
-      if (data.partners_name) {
-        for (const name of data.partners_name) {
-          const user = await User.create({ username: name }, pool);
-          newPartnerIds.push(user.user_id);
-        }
-      }
-      const existingPartnersList = data.partners || [];
-      const allPartnerUserIds = [...existingPartnersList, ...newPartnerIds];
-
-      // Get existing departments for this job
-      const existingDeptsRes = await pool.query(
-        `SELECT department_id, candidate_required FROM job_department WHERE job_id = $1`,
-        [id]
-      );
-      const existingDepts = existingDeptsRes.rows;
-
+    if (isDeptUpdated) {
       // Resolve departments list
-      let targetDepts: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[] = [];
-      if (isDeptUpdated) {
-        const deptsList = data.departments || [];
-        const resolvedDeptsList = [];
-        for (const dept of deptsList) {
-          resolvedDeptsList.push({
-            department_id: dept.department_id,
-            candidate_required: dept.candidate_required,
-            user_id: dept.user_id,
-            partner_name: dept.partner_name
+      let targetDepts: { department_id: number; candidate_required: number; name?: string }[] = [];
+      const deptsList = data.departments || [];
+      const resolvedDeptsList = [];
+      for (const dept of deptsList) {
+        resolvedDeptsList.push({
+          department_id: dept.department_id,
+          candidate_required: dept.candidate_required
+        });
+      }
+
+      const newDepts: { department_id: number; candidate_required: number; name?: string }[] = [];
+      if (data.departments_name) {
+        for (const item of data.departments_name) {
+          newDepts.push({
+            department_id: 0,
+            candidate_required: item.candidate_required,
+            name: item.name
           });
         }
-
-        const newDepts: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[] = [];
-        if (data.departments_name) {
-          for (const item of data.departments_name) {
-            newDepts.push({
-              department_id: 0,
-              candidate_required: item.candidate_required,
-              user_id: item.user_id,
-              partner_name: item.partner_name,
-              name: item.name
-            } as any);
-          }
-        }
-        targetDepts = [...resolvedDeptsList, ...newDepts];
-      } else {
-        targetDepts = existingDepts.map(d => ({
-          department_id: d.department_id,
-          candidate_required: d.candidate_required,
-        }));
       }
+      targetDepts = [...resolvedDeptsList, ...newDepts];
 
-      // Now distribute partners to targetDepts
-      let partnerIdx = 0;
       const finalDeptsToInsert = [];
 
       for (const item of targetDepts) {
-        let uId = item.user_id;
-        if (item.partner_name) {
-          const user = await User.create({ username: item.partner_name }, pool);
-          uId = user.user_id;
-        }
-
-        if (isPartnerUpdated && allPartnerUserIds.length > 0) {
-          uId = allPartnerUserIds[partnerIdx % allPartnerUserIds.length];
-          partnerIdx++;
-        }
-
         let deptId = item.department_id;
         if (deptId === 0) {
           // Create new department
           const dept = await Department.create({
-            department_code: (item as any).name.toUpperCase(),
-            department_name: (item as any).name,
-            user_id: uId || null,
+            department_code: item.name!.toUpperCase(),
+            department_name: item.name!,
+            user_id: null,
           }, pool);
           deptId = dept.department_id;
-        } else {
-          // Update existing department's user_id if needed
-          if (uId !== undefined) {
-            await pool.query(
-              `UPDATE department SET user_id = $1 WHERE department_id = $2`,
-              [uId, deptId]
-            );
-          }
         }
 
         finalDeptsToInsert.push({

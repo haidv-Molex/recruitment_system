@@ -156,12 +156,15 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     const baseRequired = deptsCount > 0 ? Math.floor(candidate_required / deptsCount) : 0;
     const remainderRequired = deptsCount > 0 ? candidate_required % deptsCount : 0;
 
-    const departments = resolvedDepts.map((d, index) => ({
-      ...d,
-      candidate_required: baseRequired + (index < remainderRequired ? 1 : 0),
-      user_id: partnerUser?.user_id || null,
-      partner_name: partnerUser?.user_id ? null : (partnerName || null)
-    }));
+    const departments = resolvedDepts.map((d, index) => {
+      const p = partners[index] || partners[partners.length - 1] || null;
+      return {
+        ...d,
+        candidate_required: baseRequired + (index < remainderRequired ? 1 : 0),
+        user_id: p ? p.user_id : null,
+        partner_name: p && p.user_id ? null : (p ? p.user_name : null)
+      };
+    });
 
     const segments = resolveRelationWithPlaceholder(row["Project Segment"], segmentMap, (name) => ({
       segment_id: null,
