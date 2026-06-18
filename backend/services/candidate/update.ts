@@ -2,6 +2,7 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
 import { populateCandidateRelations } from "./populate";
+import { replaceLinkRows } from "@utilities/db/linking";
 
 export interface UpdateCandidateInput {
   candidate_code?: string | null;
@@ -51,16 +52,13 @@ export async function update(
 
   try {
     if (data.candidate_levels !== undefined) {
-      await pool.query("DELETE FROM candidate_level WHERE candidate_id = $1", [id]);
-      if (data.candidate_levels.length > 0) {
-        const levelInsertQuery = `
-          INSERT INTO candidate_level (candidate_id, level_id)
-          VALUES ($1, $2)
-        `;
-        for (const levelId of data.candidate_levels) {
-          await pool.query(levelInsertQuery, [id, levelId]);
-        }
-      }
+      await replaceLinkRows(
+        pool,
+        "candidate_level",
+        "candidate_id",
+        id,
+        data.candidate_levels.map((levelId) => ({ candidate_id: id, level_id: levelId }))
+      );
     }
 
     const sets: string[] = [];

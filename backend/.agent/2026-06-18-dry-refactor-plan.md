@@ -16,6 +16,7 @@ The refactor must preserve existing API response shapes, route behavior, databas
 - Phase 2 revised on 2026-06-18 after user feedback: extracted query helpers under `utilities/query`, refactored dashboard services, refactored `getAll` services so they query ids and call domain Facade methods such as `Site.getById(...)`, `Candidate.getById(...)`, and `Job.getById(...)`, and kept Facade classes in the concise static-assignment style.
 - Phase 3 completed on 2026-06-18: extracted entity lookup/resolution helpers under `utilities/entity`, refactored candidate/job batch import, and refactored file parsers to share lookup-map and placeholder resolution logic.
 - Phase 4 completed on 2026-06-18: extracted file row string/date helpers under `utilities/file` and refactored parser services to use them.
+- Phase 5 completed on 2026-06-18: extracted small DB linking helpers under `utilities/db` and refactored candidate/job link insert/replace flows while keeping entity validation in domain Facade services.
 - Existing documentation changes: `.agent/guide.md` now contains DRY rules; `.github/instructions/agent-workflow.instructions.md` now requires future plans to be stored in `.agent/`.
 
 ## Scope
@@ -221,20 +222,22 @@ Known affected files:
 - `services/job/update.ts`
 
 Plan:
-- [ ] Create a small helper such as `utilities/db/linking.ts`.
-- [ ] Add `assertExistingIds` for FK validation.
-- [ ] Add `insertLinks` for simple two-column links.
-- [ ] Add `replaceLinks` for update paths that delete old rows then insert new rows.
-- [ ] Keep special columns such as `candidate_required` explicit and readable.
-- [ ] Refactor candidate levels first because it is simpler.
-- [ ] Refactor job relations after helper behavior is covered.
+- [x] Create a small helper such as `utilities/db/linking.ts`.
+- [x] Add `assertExistingIds` for FK validation. Skipped intentionally: FK/domain validation stays in Facade calls like `Department.getById(...)`, `Level.getById(...)`, and `User.findById(...)` to keep domain ownership visible.
+- [x] Add `insertLinks` for simple two-column links. Implemented as `insertLinkRows(...)`, which also supports explicit extra link columns such as `candidate_required`.
+- [x] Add `replaceLinks` for update paths that delete old rows then insert new rows. Implemented as `replaceLinkRows(...)`.
+- [x] Keep special columns such as `candidate_required` explicit and readable.
+- [x] Refactor candidate levels first because it is simpler.
+- [x] Refactor job relations after helper behavior is covered.
 
 Verification:
-- [ ] Add tests for linking utilities using real DB transactions where needed.
-- [ ] `npm run test:file 'test/services/candidate/create.test.ts'`
-- [ ] `npm run test:file 'test/services/candidate/update.test.ts'`
-- [ ] `npm run test:file 'test/services/job/createWithAll.test.ts'`
-- [ ] `npm run test:file 'test/services/job/updateWithAll.test.ts'`
+- [x] Add tests for linking utilities using real DB transactions where needed - `test/utilities/db/linking.test.ts`.
+- [x] `npm run test:file 'test/utilities/db/linking.test.ts'` - 5 passing.
+- [x] `npm run test:file 'test/services/candidate/create.test.ts' 'test/services/candidate/update.test.ts'` - 4 passing; pre-existing `pg` deprecation warning in candidate create path.
+- [x] `npm run test:file 'test/services/job/createWithAll.test.ts' 'test/services/job/updateWithAll.test.ts'` - 12 passing; pre-existing `pg` deprecation warning in job update path.
+- [x] `npm run test:file 'test/controller/candidate/candidateController.test.ts' 'test/controller/job/jobController.test.ts'` - 14 passing; expected validation-error logs in negative controller tests.
+- [x] `npm run check` - passing.
+- [x] `grep` check for raw link table `INSERT`/`DELETE` SQL in Phase 5 service targets - source targets clean; remaining match is test seed SQL in `test/services/candidate/populate.test.ts`.
 
 ## Phase 6 - Small CRUD Helpers After Coverage Exists
 

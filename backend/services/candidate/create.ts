@@ -2,6 +2,7 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
 import { populateCandidateRelations } from "./populate";
+import { insertLinkRows } from "@utilities/db/linking";
 
 export interface CreateCandidateInput {
   candidate_code?: string | null;
@@ -100,13 +101,11 @@ export async function create(
     const candidateId = candidateRow.candidate_id;
 
     if (data.candidate_levels && data.candidate_levels.length > 0) {
-      const levelInsertQuery = `
-        INSERT INTO candidate_level (candidate_id, level_id)
-        VALUES ($1, $2)
-      `;
-      for (const levelId of data.candidate_levels) {
-        await pool.query(levelInsertQuery, [candidateId, levelId]);
-      }
+      await insertLinkRows(
+        pool,
+        "candidate_level",
+        data.candidate_levels.map((levelId) => ({ candidate_id: candidateId, level_id: levelId }))
+      );
     }
 
     return await populateCandidateRelations(candidateRow, pool);

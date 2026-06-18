@@ -8,6 +8,7 @@ import Level from "@services/level/_Level";
 import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import User from "@services/user/_User";
+import { insertLinkRows, type LinkRow } from "@utilities/db/linking";
 import fs from "fs";
 import path from "path";
 
@@ -79,6 +80,7 @@ async function create(
     // 3. Insert and fetch linking records
     // departments -> job_department (job_id, department_id, candidate_required)
     const departmentsList = [];
+    const departmentLinkRows: LinkRow[] = [];
     for (let i = 0; i < departments.length; i++) {
       const dept = departments[i];
       const departmentId = dept.department_id;
@@ -96,11 +98,9 @@ async function create(
         candidate_required: candidateRequired,
       });
 
-      await pool.query(
-        `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
-        [jobId, departmentId, candidateRequired]
-      );
+      departmentLinkRows.push({ job_id: jobId, department_id: departmentId, candidate_required: candidateRequired });
     }
+    await insertLinkRows(pool, "job_department", departmentLinkRows);
 
     const partnersList = Array.from(new Map(
       departmentsList.map(d => d.user).filter(Boolean).map(u => [u!.user_id, u])
@@ -108,73 +108,68 @@ async function create(
 
     // segments -> job_segment (job_id, segment_id)
     const segmentsList = [];
+    const segmentLinkRows: LinkRow[] = [];
     for (const segmentId of segments) {
       try {
         segmentsList.push(await Segment.getById(segmentId, pool));
       } catch (error) {
         throw new AppError(`Phân khúc (segment_id = ${segmentId}) không tồn tại`, 400);
       }
-      await pool.query(
-        `INSERT INTO job_segment (job_id, segment_id) VALUES ($1, $2)`,
-        [jobId, segmentId]
-      );
+      segmentLinkRows.push({ job_id: jobId, segment_id: segmentId });
     }
+    await insertLinkRows(pool, "job_segment", segmentLinkRows);
 
     // sites -> job_site (job_id, site_id)
     const sitesList = [];
+    const siteLinkRows: LinkRow[] = [];
     for (const siteId of sites) {
       try {
         sitesList.push(await Site.getById(siteId, pool));
       } catch (error) {
         throw new AppError(`Địa điểm (site_id = ${siteId}) không tồn tại`, 400);
       }
-      await pool.query(
-        `INSERT INTO job_site (job_id, site_id) VALUES ($1, $2)`,
-        [jobId, siteId]
-      );
+      siteLinkRows.push({ job_id: jobId, site_id: siteId });
     }
+    await insertLinkRows(pool, "job_site", siteLinkRows);
 
     // titles -> job_title (job_id, level_id)
     const titlesList = [];
+    const titleLinkRows: LinkRow[] = [];
     for (const levelId of titles) {
       try {
         titlesList.push(await Level.getById(levelId, pool));
       } catch (error) {
         throw new AppError(`Chức danh (level_id = ${levelId}) không tồn tại`, 400);
       }
-      await pool.query(
-        `INSERT INTO job_title (job_id, level_id) VALUES ($1, $2)`,
-        [jobId, levelId]
-      );
+      titleLinkRows.push({ job_id: jobId, level_id: levelId });
     }
+    await insertLinkRows(pool, "job_title", titleLinkRows);
 
     // managers -> hiring_manager (job_id, user_id)
     const managersList = [];
+    const managerLinkRows: LinkRow[] = [];
     for (const userId of managers) {
       try {
         managersList.push(await User.findById(userId, pool));
       } catch (error) {
         throw new AppError(`Quản lý tuyển dụng (user_id = ${userId}) không tồn tại`, 400);
       }
-      await pool.query(
-        `INSERT INTO hiring_manager (job_id, user_id) VALUES ($1, $2)`,
-        [jobId, userId]
-      );
+      managerLinkRows.push({ job_id: jobId, user_id: userId });
     }
+    await insertLinkRows(pool, "hiring_manager", managerLinkRows);
 
     // employee_levels -> employee_level (job_id, level_id)
     const employeeLevelsList = [];
+    const employeeLevelLinkRows: LinkRow[] = [];
     for (const levelId of employee_levels) {
       try {
         employeeLevelsList.push(await Level.getById(levelId, pool));
       } catch (error) {
         throw new AppError(`Cấp bậc nhân viên (level_id = ${levelId}) không tồn tại`, 400);
       }
-      await pool.query(
-        `INSERT INTO employee_level (job_id, level_id) VALUES ($1, $2)`,
-        [jobId, levelId]
-      );
+      employeeLevelLinkRows.push({ job_id: jobId, level_id: levelId });
     }
+    await insertLinkRows(pool, "employee_level", employeeLevelLinkRows);
 
     // 4. Retrieve complete job output info
     let fileInfo: any = null;

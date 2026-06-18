@@ -10,6 +10,7 @@ import User from "@services/user/_User";
 import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import Level from "@services/level/_Level";
+import { replaceLinkRows, type LinkRow } from "@utilities/db/linking";
 
 type UpdateJobData = {
   job_code?: string;
@@ -143,24 +144,21 @@ async function update(
         });
       }
 
-      // Clear existing departments
-      await pool.query(`DELETE FROM job_department WHERE job_id = $1`, [id]);
-
-      // Insert new/updated departments
+      const departmentLinkRows: LinkRow[] = [];
       for (const item of finalDeptsToInsert) {
         const departmentId = item.department_id;
         const candidateRequired = item.candidate_required;
 
-        const depCheck = await pool.query(`SELECT department_id FROM department WHERE department_id = $1`, [departmentId]);
-        if (depCheck.rows.length === 0) {
+        try {
+          await Department.getById(departmentId, pool);
+        } catch (error) {
           throw new AppError(`Phòng ban (department_id = ${departmentId}) không tồn tại`, 400);
         }
 
-        await pool.query(
-          `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
-          [id, departmentId, candidateRequired]
-        );
+        departmentLinkRows.push({ job_id: id, department_id: departmentId, candidate_required: candidateRequired });
       }
+
+      await replaceLinkRows(pool, "job_department", "job_id", id, departmentLinkRows);
     }
 
     // segments
@@ -175,17 +173,17 @@ async function update(
       }
       const merged = [...segsList, ...newSegIds];
 
-      await pool.query(`DELETE FROM job_segment WHERE job_id = $1`, [id]);
+      const segmentLinkRows: LinkRow[] = [];
       for (const segmentId of merged) {
-        const segCheck = await pool.query(`SELECT segment_id FROM segment WHERE segment_id = $1`, [segmentId]);
-        if (segCheck.rows.length === 0) {
+        try {
+          await Segment.getById(segmentId, pool);
+        } catch (error) {
           throw new AppError(`Phân khúc (segment_id = ${segmentId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO job_segment (job_id, segment_id) VALUES ($1, $2)`,
-          [id, segmentId]
-        );
+        segmentLinkRows.push({ job_id: id, segment_id: segmentId });
       }
+
+      await replaceLinkRows(pool, "job_segment", "job_id", id, segmentLinkRows);
     }
 
     // sites
@@ -200,17 +198,17 @@ async function update(
       }
       const merged = [...sitesList, ...newSiteIds];
 
-      await pool.query(`DELETE FROM job_site WHERE job_id = $1`, [id]);
+      const siteLinkRows: LinkRow[] = [];
       for (const siteId of merged) {
-        const siteCheck = await pool.query(`SELECT site_id FROM site WHERE site_id = $1`, [siteId]);
-        if (siteCheck.rows.length === 0) {
+        try {
+          await Site.getById(siteId, pool);
+        } catch (error) {
           throw new AppError(`Địa điểm (site_id = ${siteId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO job_site (job_id, site_id) VALUES ($1, $2)`,
-          [id, siteId]
-        );
+        siteLinkRows.push({ job_id: id, site_id: siteId });
       }
+
+      await replaceLinkRows(pool, "job_site", "job_id", id, siteLinkRows);
     }
 
     // titles
@@ -225,17 +223,17 @@ async function update(
       }
       const merged = [...titlesList, ...newTitleIds];
 
-      await pool.query(`DELETE FROM job_title WHERE job_id = $1`, [id]);
+      const titleLinkRows: LinkRow[] = [];
       for (const levelId of merged) {
-        const lvlCheck = await pool.query(`SELECT level_id FROM level WHERE level_id = $1`, [levelId]);
-        if (lvlCheck.rows.length === 0) {
+        try {
+          await Level.getById(levelId, pool);
+        } catch (error) {
           throw new AppError(`Chức danh (level_id = ${levelId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO job_title (job_id, level_id) VALUES ($1, $2)`,
-          [id, levelId]
-        );
+        titleLinkRows.push({ job_id: id, level_id: levelId });
       }
+
+      await replaceLinkRows(pool, "job_title", "job_id", id, titleLinkRows);
     }
 
     // managers
@@ -250,17 +248,17 @@ async function update(
       }
       const merged = [...managersList, ...newManagerIds];
 
-      await pool.query(`DELETE FROM hiring_manager WHERE job_id = $1`, [id]);
+      const managerLinkRows: LinkRow[] = [];
       for (const userId of merged) {
-        const userCheck = await pool.query(`SELECT user_id FROM "user" WHERE user_id = $1`, [userId]);
-        if (userCheck.rows.length === 0) {
+        try {
+          await User.findById(userId, pool);
+        } catch (error) {
           throw new AppError(`Quản lý tuyển dụng (user_id = ${userId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO hiring_manager (job_id, user_id) VALUES ($1, $2)`,
-          [id, userId]
-        );
+        managerLinkRows.push({ job_id: id, user_id: userId });
       }
+
+      await replaceLinkRows(pool, "hiring_manager", "job_id", id, managerLinkRows);
     }
 
     // employee_levels
@@ -275,17 +273,17 @@ async function update(
       }
       const merged = [...elList, ...newElIds];
 
-      await pool.query(`DELETE FROM employee_level WHERE job_id = $1`, [id]);
+      const employeeLevelLinkRows: LinkRow[] = [];
       for (const levelId of merged) {
-        const lvlCheck = await pool.query(`SELECT level_id FROM level WHERE level_id = $1`, [levelId]);
-        if (lvlCheck.rows.length === 0) {
+        try {
+          await Level.getById(levelId, pool);
+        } catch (error) {
           throw new AppError(`Cấp bậc nhân viên (level_id = ${levelId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO employee_level (job_id, level_id) VALUES ($1, $2)`,
-          [id, levelId]
-        );
+        employeeLevelLinkRows.push({ job_id: id, level_id: levelId });
       }
+
+      await replaceLinkRows(pool, "employee_level", "job_id", id, employeeLevelLinkRows);
     }
 
     // 4. Retrieve complete job output info
