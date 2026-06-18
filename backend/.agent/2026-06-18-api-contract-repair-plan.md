@@ -46,6 +46,12 @@ The repair must preserve existing route paths, HTTP methods, response shapes, da
   - Added backend controller coverage proving base job routes reject unsupported partner fields, extended accepts partner fields, and batch preserves ordered HRBP/department payload.
   - Added backend service coverage proving batch import preserves HRBP-to-department mapping order from payload.
   - Verification passed: frontend service Vitest suite 26 passing, job controller suite 9 passing, job service focused suites 15 passing, backend `npm run check` passing, frontend `npm run build` passing with the existing Vite chunk-size warning.
+- Phase 5 completed on 2026-06-18:
+  - Made `createHRApi` require `password` in its TypeScript input type to match the backend `createHRController` schema.
+  - Allowed Level/Segment/Site create service calls to pass `undefined` code and normalize it to `""`, matching backend optional-code schemas.
+  - Updated `updateCandidateApi` so explicitly present empty optional fields are appended to `FormData`, allowing backend update schemas to clear values via `empty(["", "null"])`.
+  - Added frontend service tests for candidate clear-field behavior and optional code create calls.
+  - Verification passed: frontend service Vitest suite 30 passing and `npm run build` passing with the existing Vite chunk-size warning.
 - Inputs reviewed first:
   - `backend/.agent/guide.md`
   - `backend/.agent/testGuide.md`
@@ -288,15 +294,15 @@ Problem:
 - This is not the candidate email root cause, but it makes future API drift easier.
 
 Plan:
-- [ ] Make `createHRApi` require `password` in its TypeScript input type to match `createHRController`.
-- [ ] Decide whether `levelApi`, `segmentApi`, and `siteApi` should allow optional code params because backend create schemas allow empty/optional code.
-- [ ] Review candidate create/update FormData append behavior for optional fields that users may need to clear.
-- [ ] Add service tests for optional null/empty handling where the frontend should explicitly send a clear operation.
-- [ ] Avoid changing visible UI behavior unless required by API contract correctness.
+- [x] Make `createHRApi` require `password` in its TypeScript input type to match `createHRController`.
+- [x] Decide whether `levelApi`, `segmentApi`, and `siteApi` should allow optional code params because backend create schemas allow empty/optional code.
+- [x] Review candidate create/update FormData append behavior for optional fields that users may need to clear.
+- [x] Add service tests for optional null/empty handling where the frontend should explicitly send a clear operation.
+- [x] Avoid changing visible UI behavior unless required by API contract correctness.
 
 Verification:
-- [ ] `npx vitest run src/services/__tests__`
-- [ ] `npm run build` from `frontend/`
+- [x] `npx vitest run src/services/__tests__` - 7 files passed, 30 tests passed.
+- [x] `npm run build` from `frontend/` - passing; Vite emitted the existing chunk-size warning.
 
 ## Phase 6 - Browser E2E Smoke Test
 

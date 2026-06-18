@@ -184,27 +184,32 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
 
 export async function updateCandidateApi(id: number, formData: any): Promise<candidateModel> {
   const fd = new FormData();
+  const appendIfPresent = (field: string, value: any) => {
+    if (Object.prototype.hasOwnProperty.call(formData, value)) {
+      fd.append(field, formData[value] === null || formData[value] === undefined ? 'null' : String(formData[value]));
+    }
+  };
 
   // Text fields
   fd.append('candidate_name', formData.candidateName);
   fd.append('candidate_code', formData.candidateCode);
-  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
-  if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
-  if (formData.agency) fd.append('agency', formData.agency);
-  if (formData.offerDate) fd.append('offer_date', formData.offerDate);
-  if (formData.onboardDate) fd.append('onboard_date', formData.onboardDate);
-  if (formData.expectedOnboardDate) fd.append('expected_onboard_date', formData.expectedOnboardDate);
-  if (formData.feedbackDate) fd.append('feedback_date', formData.feedbackDate);
-  if (formData.currentSalary) fd.append('current_salary', formData.currentSalary);
-  if (formData.expectedSalary) fd.append('expected_salary', formData.expectedSalary);
-  if (formData.status) fd.append('status', formData.status);
-  if (formData.note) fd.append('note', formData.note);
+  appendIfPresent('candidate_email', 'candidateEmail');
+  appendIfPresent('candidate_phone', 'candidatePhone');
+  appendIfPresent('agency', 'agency');
+  appendIfPresent('offer_date', 'offerDate');
+  appendIfPresent('onboard_date', 'onboardDate');
+  appendIfPresent('expected_onboard_date', 'expectedOnboardDate');
+  appendIfPresent('feedback_date', 'feedbackDate');
+  appendIfPresent('current_salary', 'currentSalary');
+  appendIfPresent('expected_salary', 'expectedSalary');
+  appendIfPresent('status', 'status');
+  appendIfPresent('note', 'note');
 
   // FK fields
-  if (formData.platformId) fd.append('platform_id', String(formData.platformId));
-  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
-  if (formData.jobId) fd.append('job_id', String(formData.jobId));
-  if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
+  appendIfPresent('platform_id', 'platformId');
+  appendIfPresent('recruiter', 'recruiterId');
+  appendIfPresent('job_id', 'jobId');
+  appendIfPresent('targeted_company', 'targetedCompanyId');
 
   if (formData.referenceId) {
     fd.append('reference', String(formData.referenceId));

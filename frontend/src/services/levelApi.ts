@@ -2,7 +2,7 @@ import axiosInstance from '@/config/axiosInstance';
 import type { levelModel } from '@/types/levelModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
-export async function createLevelApi(code: string, name: string, description: string): Promise<levelModel> {
+export async function createLevelApi(code: string = '', name: string, description: string = ''): Promise<levelModel> {
   const response = await axiosInstance.post('/level', {
     level_code: code,
     level_name: name,

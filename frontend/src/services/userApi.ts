@@ -5,7 +5,7 @@ import type { PaginationMetadata } from '@/types/pagination';
 export async function createHRApi(body: {
   username: string;
   account: string;
-  password?: string;
+  password: string;
   description?: string;
 }): Promise<userOutputModel> {
   const response = await axiosInstance.post('/user/hr', body);
