@@ -49,7 +49,7 @@ const mapApiJobToRow = (j: any) => ({
   jobTitle: (j.titles || []).map((t: any) => t.level_name).join(', '),
   eeLevel: (j.employee_levels || []).map((el: any) => el.level_name).join(', '),
   sites: (j.sites || []).map((s: any) => s.site_code || s.site_name || '').filter(Boolean).join(', '),
-  projectSegment: (j.segments || []).map((sg: any) => sg.segment_name).join(', '),
+  projectSegment: (j.segments || []).map((sg: any) => sg.segment_code || sg.segment_name || '').filter(Boolean).join(', '),
   hiringManager: (j.managers || []).map((m: any) => m.user_name).join(', '),
   hrbp: (j.departments || [])
     .map((d: any) => d.user?.user_name || '—')

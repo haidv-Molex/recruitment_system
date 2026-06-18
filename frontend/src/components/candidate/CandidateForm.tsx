@@ -35,6 +35,7 @@ const emptyCandidate = {
 };
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+?\d+(?:\.\d+)*$/;
 
 export interface CandidateFormProps {
   candidate?: any;
@@ -177,8 +178,8 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
   };
 
   const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digitsOnly = e.target.value.replace(/\D/g, '');
-    setFormData((prev) => ({ ...prev, candidatePhone: digitsOnly }));
+    const phoneValue = e.target.value.replace(/[^\d+.]/g, '').replace(/(?!^)\+/g, '');
+    setFormData((prev) => ({ ...prev, candidatePhone: phoneValue }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,8 +199,8 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       setError('Email format is invalid.');
       return;
     }
-    if (formData.candidatePhone && !/^\d+$/.test(formData.candidatePhone)) {
-      setError('Phone number must contain numeric characters only.');
+    if (formData.candidatePhone && !phoneRegex.test(formData.candidatePhone)) {
+      setError('Phone number must contain digits, optional dot separators, and may start with +.');
       return;
     }
 
@@ -376,7 +377,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
               name="candidatePhone"
               value={formData.candidatePhone}
               onChange={handlePhoneInput}
-              placeholder="Numeric only"
+              placeholder="e.g. +084.123.412"
               disabled={saving}
             />
           </div>

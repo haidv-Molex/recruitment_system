@@ -12,6 +12,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
+const phoneNumberPattern = /^\+?\d+(?:\.\d+)*$/;
 
 const paramsSchema = Joi.object({
   id: Joi.number().integer().positive().required().messages({
@@ -31,7 +32,10 @@ const updateBodySchema = Joi.object({
   candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.email": "Email không hợp lệ"
   }),
-  candidate_phone: Joi.string().max(50).empty(["", "null"]).allow(null).optional(),
+  candidate_phone: Joi.string().trim().max(50).pattern(phoneNumberPattern).empty(["", "null"]).allow(null).optional().messages({
+    "string.max": "Số điện thoại không được vượt quá 50 ký tự",
+    "string.pattern.base": "Số điện thoại chỉ được chứa chữ số, dấu chấm phân tách nhóm số và có thể bắt đầu bằng dấu +"
+  }),
   agency: Joi.string().max(255).empty(["", "null"]).allow(null).optional(),
   offer_date: Joi.date().iso().empty(["", "null"]).allow(null).optional().messages({
     "date.format": "Trường offer_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)",

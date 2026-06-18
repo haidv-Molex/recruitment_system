@@ -25,6 +25,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
+const phoneNumberPattern = /^\+?\d+(?:\.\d+)*$/;
 
 const bodySchema = Joi.object({
   // --- Trường bắt buộc ---
@@ -49,8 +50,9 @@ const bodySchema = Joi.object({
     "string.email": "Email không hợp lệ",
     "string.max": "Email không được vượt quá 255 ký tự",
   }),
-  candidate_phone: Joi.string().max(50).empty(["", "null"]).allow(null).default(null).messages({
+  candidate_phone: Joi.string().trim().max(50).pattern(phoneNumberPattern).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Số điện thoại không được vượt quá 50 ký tự",
+    "string.pattern.base": "Số điện thoại chỉ được chứa chữ số, dấu chấm phân tách nhóm số và có thể bắt đầu bằng dấu +",
   }),
   agency: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Agency không được vượt quá 255 ký tự",

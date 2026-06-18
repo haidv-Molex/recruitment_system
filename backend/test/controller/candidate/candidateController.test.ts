@@ -152,6 +152,33 @@ describe("CandidateController API", () => {
     expectLocal(args.file.originalname).to.equal("cv.pdf");
   });
 
+  it("POST /candidate - should allow phone number with leading plus and dot separators", async () => {
+    const mockCandidate = {
+      candidate_id: 1,
+      candidate_name: "John Doe",
+      candidate_phone: "+084.123.412",
+      status: "Applied",
+      create_at: new Date(),
+      update_at: new Date()
+    };
+    createStub.resolves(mockCandidate);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        candidate_name: "John Doe",
+        candidate_phone: "+084.123.412",
+        status: "Applied"
+      })
+      .expectStatus(201);
+
+    expectLocal(createStub.calledOnce).to.be.true;
+    expectLocal(createStub.firstCall.args[0].candidate_phone).to.equal("+084.123.412");
+  });
+
   it("POST /candidate - should return 400 validation error for invalid dates", async () => {
     const token = generateTestToken(1, "Test User");
 
