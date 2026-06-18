@@ -39,6 +39,13 @@ The repair must preserve existing route paths, HTTP methods, response shapes, da
   - Added service coverage proving `Candidate.batchImport(...)` persists valid email, stores blank email as `null`, creates/links `platform_name`, and creates/links `candidate_levels_name`.
   - Added controller coverage for `POST /candidate/batch` valid email/source/levels, blank email, and invalid email rejection before service call.
   - Verification passed: `test/services/candidate/batchImport.test.ts` 5 passing, `test/controller/candidate/candidateController.test.ts` 12 passing, `npm run check` passing.
+- Phase 4 completed on 2026-06-18:
+  - Updated frontend `jobApi` so base `POST /job` no longer sends unsupported `partners`, and `PUT /job` no longer sends unsupported `partners` or `partners_name`.
+  - Kept `partners` and `partners_name` support in `POST /job/extended` and `POST /job/batch`.
+  - Added frontend service contract tests for job create/update/extended/batch API payloads.
+  - Added backend controller coverage proving base job routes reject unsupported partner fields, extended accepts partner fields, and batch preserves ordered HRBP/department payload.
+  - Added backend service coverage proving batch import preserves HRBP-to-department mapping order from payload.
+  - Verification passed: frontend service Vitest suite 26 passing, job controller suite 9 passing, job service focused suites 15 passing, backend `npm run check` passing, frontend `npm run build` passing with the existing Vite chunk-size warning.
 - Inputs reviewed first:
   - `backend/.agent/guide.md`
   - `backend/.agent/testGuide.md`
@@ -256,23 +263,23 @@ Problem:
 - The job workflow should keep the sample workbook's ordering contract: data exported in order should be importable in the same order.
 
 Plan:
-- [ ] Preserve job Excel labels and ordering from the sample workbook, especially `Dept.`, `HC Requested`, `Hiring manager`, `HRBP`, and `Recruiter`.
-- [ ] Keep `parseJobSheetController` preferring `IDL tracking` and keep job import reading HRBP/department relationships in workbook order.
-- [ ] Confirm whether `createJobApi` is still used anywhere. Current page code uses `createJobExtendedApi` for new jobs.
-- [ ] If `createJobApi` is dead, remove it or make it match `backend/controller/job/createJobController.ts` exactly without changing the Excel import/export contract.
-- [ ] If `createJobApi` must stay and callers need partner/HRBP fields, align the backend route or route callers through `createJobExtendedApi` without changing workbook-order behavior.
-- [ ] For `updateJobApi`, align unsupported `partners` and `partners_name` handling with the backend route or explicitly keep update paths away from those fields; do not change batch import ordering.
-- [ ] Keep `partners` and `partners_name` in `createJobExtendedApi` and `batchImportJobsApi` because those controllers accept them.
-- [ ] Clarify in code/tests that job HRBP/partner values from Excel are mapped in order to department ownership fields such as `department.user_id` and batch payload `partner_name`.
-- [ ] Add/update frontend service tests for job create/update payload field filtering.
-- [ ] Add/update backend controller tests around `POST /job`, `POST /job/extended`, `PUT /job`, and `POST /job/batch` so the accepted field set and order-based import contract cannot drift silently again.
+- [x] Preserve job Excel labels and ordering from the sample workbook, especially `Dept.`, `HC Requested`, `Hiring manager`, `HRBP`, and `Recruiter`.
+- [x] Keep `parseJobSheetController` preferring `IDL tracking` and keep job import reading HRBP/department relationships in workbook order.
+- [x] Confirm whether `createJobApi` is still used anywhere. Current page code uses `createJobExtendedApi` for new jobs.
+- [x] If `createJobApi` is dead, remove it or make it match `backend/controller/job/createJobController.ts` exactly without changing the Excel import/export contract.
+- [x] If `createJobApi` must stay and callers need partner/HRBP fields, align the backend route or route callers through `createJobExtendedApi` without changing workbook-order behavior.
+- [x] For `updateJobApi`, align unsupported `partners` and `partners_name` handling with the backend route or explicitly keep update paths away from those fields; do not change batch import ordering.
+- [x] Keep `partners` and `partners_name` in `createJobExtendedApi` and `batchImportJobsApi` because those controllers accept them.
+- [x] Clarify in code/tests that job HRBP/partner values from Excel are mapped in order to department ownership fields such as `department.user_id` and batch payload `partner_name`.
+- [x] Add/update frontend service tests for job create/update payload field filtering.
+- [x] Add/update backend controller tests around `POST /job`, `POST /job/extended`, `PUT /job`, and `POST /job/batch` so the accepted field set and order-based import contract cannot drift silently again.
 
 Verification:
-- [ ] `npm run test:file 'test/controller/job/jobController.test.ts'` from `backend/`
-- [ ] `npm run test:file 'test/services/job/createWithAll.test.ts' 'test/services/job/updateWithAll.test.ts' 'test/services/job/batchImport.test.ts'` from `backend/`
-- [ ] `npx vitest run src/services/__tests__` from `frontend/`
-- [ ] `npm run check` from `backend/`
-- [ ] `npm run build` from `frontend/`
+- [x] `npm run test:file 'test/controller/job/jobController.test.ts'` from `backend/` - 9 passing; expected validation-error logs in negative tests.
+- [x] `npm run test:file 'test/services/job/createWithAll.test.ts' 'test/services/job/updateWithAll.test.ts' 'test/services/job/batchImport.test.ts'` from `backend/` - 15 passing; pre-existing `pg` deprecation warning in update path.
+- [x] `npx vitest run src/services/__tests__` from `frontend/` - 5 files passed, 26 tests passed.
+- [x] `npm run check` from `backend/` - passing.
+- [x] `npm run build` from `frontend/` - passing; Vite emitted the existing chunk-size warning.
 
 ## Phase 5 - Frontend Service DTO Tightening
 

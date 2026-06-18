@@ -93,4 +93,45 @@ describe("Job batchImport service", () => {
     );
     expect(jobRes.rows).to.have.lengthOf(1);
   });
+
+  it("should preserve HRBP to department mapping order from batch payload", async () => {
+    const result = await batchImport([
+      {
+        job_code: "JOB-BATCH-ORDER-001",
+        project: "Batch Order Project",
+        partners_name: ["Order HRBP A", "Order HRBP B"],
+        departments_name: [
+          { name: "Order Dept A", candidate_required: 1, partner_name: "Order HRBP A" },
+          { name: "Order Dept B", candidate_required: 2, partner_name: "Order HRBP B" }
+        ],
+      }
+    ], client);
+
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+    expect(result.errors).to.have.lengthOf(0);
+
+    const rows = await client.query(
+      `SELECT d.department_name, u.user_name, jd.candidate_required
+       FROM job j
+       JOIN job_department jd ON jd.job_id = j.job_id
+       JOIN department d ON d.department_id = jd.department_id
+       LEFT JOIN "user" u ON u.user_id = d.user_id
+       WHERE j.job_code = $1
+       ORDER BY d.department_name ASC`,
+      ["JOB-BATCH-ORDER-001"]
+    );
+
+    expect(rows.rows).to.have.lengthOf(2);
+    expect(rows.rows[0]).to.include({
+      department_name: "Order Dept A",
+      user_name: "Order HRBP A",
+      candidate_required: 1,
+    });
+    expect(rows.rows[1]).to.include({
+      department_name: "Order Dept B",
+      user_name: "Order HRBP B",
+      candidate_required: 2,
+    });
+  });
 });
