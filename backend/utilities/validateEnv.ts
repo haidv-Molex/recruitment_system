@@ -26,7 +26,8 @@ const REQUIRED_ENV = [
   "PATH_SAVE_FILE",
   "HOST",
   "CLIENT_URL",
-  "CO_API_KEY",
+  "CVPARSE_API_KEY",
+  "CVPARSE_BASE_URL",
 ];
 
 if (process.env.USE_REDIS === "true") {
