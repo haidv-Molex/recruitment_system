@@ -15,10 +15,10 @@ export async function populateCandidateRelations(candidateRow: any, pool: PoolCl
 
   const queries = [
     platform_id ? pool.query("SELECT platform_id, platform_name, platform_description FROM platform WHERE platform_id = $1", [platform_id]) : Promise.resolve(null),
-    recruiter ? pool.query('SELECT user_id, user_name, user_description, user_role, department_id, create_at, update_at FROM "user" WHERE user_id = $1', [recruiter]) : Promise.resolve(null),
+    recruiter ? pool.query('SELECT user_id, user_name, user_description, user_role, create_at, update_at FROM "user" WHERE user_id = $1', [recruiter]) : Promise.resolve(null),
     job_id ? pool.query("SELECT job_id, job_code, project, note, file_id, create_at, update_at FROM job WHERE job_id = $1", [job_id]) : Promise.resolve(null),
     targeted_company ? pool.query("SELECT company_id, company_name, company_description FROM company WHERE company_id = $1", [targeted_company]) : Promise.resolve(null),
-    reference ? pool.query('SELECT user_id, user_name, user_description, user_role, department_id, create_at, update_at FROM "user" WHERE user_id = $1', [reference]) : Promise.resolve(null),
+    reference ? pool.query('SELECT user_id, user_name, user_description, user_role, create_at, update_at FROM "user" WHERE user_id = $1', [reference]) : Promise.resolve(null),
     file_id ? pool.query("SELECT file_id, file_path FROM file WHERE file_id = $1", [file_id]) : Promise.resolve(null),
     candidate_id ? pool.query("SELECT l.level_id, l.level_code, l.level_name, l.level_description, l.create_at, l.update_at FROM candidate_level cl JOIN level l ON cl.level_id = l.level_id WHERE cl.candidate_id = $1", [candidate_id]) : Promise.resolve(null)
   ];

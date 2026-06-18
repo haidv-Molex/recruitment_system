@@ -53,14 +53,14 @@ describe("hcRequestedByHrbp", () => {
 
     // Seed departments
     const deptA = await client.query(
-      `INSERT INTO department (department_code, department_name) VALUES ($1, $2) RETURNING department_id`,
-      ["DEPT-A", "Department A"]
+      `INSERT INTO department (department_code, department_name, user_id) VALUES ($1, $2, $3) RETURNING department_id`,
+      ["DEPT-A", "Department A", hrbp1Id]
     );
     deptAId = deptA.rows[0].department_id;
 
     const deptB = await client.query(
-      `INSERT INTO department (department_code, department_name) VALUES ($1, $2) RETURNING department_id`,
-      ["DEPT-B", "Department B"]
+      `INSERT INTO department (department_code, department_name, user_id) VALUES ($1, $2, $3) RETURNING department_id`,
+      ["DEPT-B", "Department B", hrbp2Id]
     );
     deptBId = deptB.rows[0].department_id;
 
@@ -68,16 +68,16 @@ describe("hcRequestedByHrbp", () => {
     // Amber has: Job A Dept A (10 HC), Job B Dept A (3 HC) -> Total 13 HC
     // Jim has: Job B Dept B (5 HC) -> Total 5 HC
     await client.query(
-      `INSERT INTO job_department (job_id, department_id, candidate_required, user_id) VALUES ($1, $2, $3, $4)`,
-      [jobAId, deptAId, 10, hrbp1Id]
+      `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
+      [jobAId, deptAId, 10]
     );
     await client.query(
-      `INSERT INTO job_department (job_id, department_id, candidate_required, user_id) VALUES ($1, $2, $3, $4)`,
-      [jobBId, deptAId, 3, hrbp1Id]
+      `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
+      [jobBId, deptAId, 3]
     );
     await client.query(
-      `INSERT INTO job_department (job_id, department_id, candidate_required, user_id) VALUES ($1, $2, $3, $4)`,
-      [jobBId, deptBId, 5, hrbp2Id]
+      `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
+      [jobBId, deptBId, 5]
     );
   });
 
@@ -94,11 +94,11 @@ describe("hcRequestedByHrbp", () => {
 
     expect(amber).to.exist;
     expect(jim).to.exist;
-    expect(amber.value).to.equal(13);
-    expect(jim.value).to.equal(5);
+    expect(amber!.value).to.equal(13);
+    expect(jim!.value).to.equal(5);
 
     // Sorted descending by value
-    expect(result.indexOf(amber)).to.be.lessThan(result.indexOf(jim));
+    expect(result.indexOf(amber!)).to.be.lessThan(result.indexOf(jim!));
   });
 
   it("should filter by job_id", async () => {
@@ -108,7 +108,7 @@ describe("hcRequestedByHrbp", () => {
     const jim = result.find((d: any) => d.label === "HRBP Jim");
 
     expect(amber).to.exist;
-    expect(amber.value).to.equal(10);
+    expect(amber!.value).to.equal(10);
     expect(jim).to.not.exist;
   });
 
@@ -120,7 +120,7 @@ describe("hcRequestedByHrbp", () => {
 
     expect(amber).to.not.exist;
     expect(jim).to.exist;
-    expect(jim.value).to.equal(5);
+    expect(jim!.value).to.equal(5);
   });
 
   it("should filter by date range based on request_date", async () => {
@@ -136,8 +136,8 @@ describe("hcRequestedByHrbp", () => {
     const jim = result.find((d: any) => d.label === "HRBP Jim");
 
     expect(amber).to.exist;
-    expect(amber.value).to.equal(3);
+    expect(amber!.value).to.equal(3);
     expect(jim).to.exist;
-    expect(jim.value).to.equal(5);
+    expect(jim!.value).to.equal(5);
   });
 });

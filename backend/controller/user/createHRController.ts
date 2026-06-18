@@ -28,9 +28,6 @@ const bodySchema = Joi.object({
   }),
   description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả tối đa 255 ký tự"
-  }),
-  departmentId: Joi.number().integer().optional().messages({
-    "number.base": "Mã phòng ban phải là số"
   })
 });
 
@@ -50,8 +47,7 @@ createHRController.post("",
         username: req.body.username,
         account: req.body.account,
         password: req.body.password,
-        description: req.body.description,
-        departmentId: req.body.departmentId
+        description: req.body.description
       }, pool);
     });
 

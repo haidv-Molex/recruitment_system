@@ -22,14 +22,18 @@ async function getAll(
   const search = params.search ? params.search.trim() : "";
 
   let countQuery = `SELECT COUNT(*) AS total FROM department`;
-  let query = `SELECT department_id, department_code, department_name, department_description, create_at, update_at FROM department`;
+  let query = `
+    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.user_id, d.create_at, d.update_at,
+           u.user_name, u.user_description AS u_description, u.user_role, u.create_at AS u_create_at, u.update_at AS u_update_at
+    FROM department d
+    LEFT JOIN "user" u ON d.user_id = u.user_id
+  `;
   const values: any[] = [];
   let index = 1;
 
   if (search) {
-    const filter = ` WHERE department_name ILIKE $${index} OR department_code ILIKE $${index}`;
-    countQuery += filter;
-    query += filter;
+    countQuery += ` WHERE department_name ILIKE $${index} OR department_code ILIKE $${index}`;
+    query += ` WHERE d.department_name ILIKE $${index} OR d.department_code ILIKE $${index}`;
     values.push(`%${search}%`);
     index++;
   }
@@ -39,7 +43,7 @@ async function getAll(
   const total = parseInt(countResult.rows[0].total, 10);
 
   // Append order
-  query += ` ORDER BY department_id DESC`;
+  query += ` ORDER BY d.department_id DESC`;
 
   // Append pagination if not unlimited
   if (!unlimited) {
@@ -55,7 +59,15 @@ async function getAll(
     department_name: row.department_name,
     department_description: row.department_description,
     create_at: row.create_at,
-    update_at: row.update_at
+    update_at: row.update_at,
+    user: row.user_id ? {
+      user_id: row.user_id,
+      user_name: row.user_name,
+      user_description: row.u_description,
+      user_role: row.user_role,
+      create_at: row.u_create_at,
+      update_at: row.u_update_at
+    } : null
   })) satisfies departmentModel[];
 
   return {

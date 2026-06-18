@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
 import { searchDepartmentsApi, createDepartmentApi, deleteDepartmentApi, updateDepartmentApi } from '@/services/departmentApi';
+import { fetchUsersApi } from '@/services/userApi';
 import MasterDataForm from '@/components/ui/MasterDataForm';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/ui/Pagination';
@@ -17,6 +18,10 @@ export const DepartmentPage = () => {
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // HRBP selection state
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,6 +57,14 @@ export const DepartmentPage = () => {
     loadDepartments(1, pageSize, searchQuery);
   }, []);
 
+  useEffect(() => {
+    if (showForm) {
+      fetchUsersApi({ limit: 1000 })
+        .then((res) => setUsers(res.data || []))
+        .catch((err) => console.error(err));
+    }
+  }, [showForm]);
+
   const handlePageChange = (page: number) => {
     loadDepartments(page, pageSize, searchQuery);
   };
@@ -63,12 +76,14 @@ export const DepartmentPage = () => {
 
   const openCreateForm = () => {
     setEditingDept(null);
+    setSelectedUserId(null);
     setFormError('');
     setShowForm(true);
   };
 
   const openEditForm = (dept: any) => {
     setEditingDept(dept);
+    setSelectedUserId(dept.user?.user_id || null);
     setFormError('');
     setShowForm(true);
   };
@@ -99,7 +114,8 @@ export const DepartmentPage = () => {
           editingDept.department_id,
           data.code.trim(),
           data.name.trim(),
-          data.description.trim()
+          data.description.trim(),
+          selectedUserId
         );
         toast.success('Department updated successfully.');
         closeForm();
@@ -112,7 +128,8 @@ export const DepartmentPage = () => {
         await createDepartmentApi(
           data.code.trim(),
           data.name.trim(),
-          data.description.trim()
+          data.description.trim(),
+          selectedUserId
         );
         toast.success('Department created successfully.');
         closeForm();
@@ -173,13 +190,28 @@ export const DepartmentPage = () => {
       {
         key: 'department_name',
         label: 'Department Name',
-        width: 250,
+        width: 200,
         disableFilter: true,
+      },
+      {
+        key: 'hrbp',
+        label: 'HRBP',
+        width: 180,
+        disableFilter: true,
+        render: (_: any, val: any) => (
+          val ? (
+            <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">
+              {val}
+            </span>
+          ) : (
+            <span className="text-slate-400 font-normal italic">Unassigned</span>
+          )
+        ),
       },
       {
         key: 'department_description',
         label: 'Description',
-        width: 450,
+        width: 320,
         disableFilter: true,
         render: (_: any, val: any) => val || '—',
       },
@@ -218,6 +250,8 @@ export const DepartmentPage = () => {
       department_code: d.department_code,
       department_name: d.department_name,
       department_description: d.department_description,
+      user_id: d.user?.user_id || null,
+      hrbp: d.user ? d.user.user_name : null,
     }));
   }, [departments]);
 
@@ -277,7 +311,26 @@ export const DepartmentPage = () => {
             }
             isLoading={saving}
             error={formError}
-          />
+          >
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                HRBP (Manager)
+              </label>
+              <select
+                value={selectedUserId || ''}
+                onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
+                disabled={saving}
+                className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-50 disabled:text-slate-400 transition-colors"
+              >
+                <option value="">Select HRBP...</option>
+                {users.map((u) => (
+                  <option key={u.user_id} value={u.user_id}>
+                    {u.user_name} ({u.user_role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </MasterDataForm>
         </Modal>
       )}
     </div>

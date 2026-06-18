@@ -28,7 +28,7 @@ describe("getStatuses", () => {
 
     const defaults = [
       'CV Fail', 'CV Sent', 'Hold', 'Interview', 'Interview Fail',
-      'No-show', 'Offer', 'Offer Accepted', 'Offer Rejected',
+      'No-show', 'Offered', 'Offer Accepted', 'Offer Rejected',
       'Onboarded', 'Searching', 'Withdraw',
     ];
     for (const status of defaults) {

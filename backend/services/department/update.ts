@@ -6,6 +6,7 @@ type UpdateDepartmentData = {
   department_code?: string;
   department_name?: string;
   department_description?: string | null;
+  user_id?: number | null;
 };
 
 async function update(
@@ -37,6 +38,10 @@ async function update(
     fields.push(`department_description = $${index++}`);
     values.push(data.department_description);
   }
+  if (data.user_id !== undefined) {
+    fields.push(`user_id = $${index++}`);
+    values.push(data.user_id);
+  }
 
   if (fields.length === 0) {
     throw new AppError("Không có dữ liệu thay đổi", 400);
@@ -44,10 +49,16 @@ async function update(
 
   values.push(id);
   const query = `
-    UPDATE department
-    SET ${fields.join(", ")}, update_at = CURRENT_TIMESTAMP
-    WHERE department_id = $${index}
-    RETURNING department_id, department_code, department_name, department_description, create_at, update_at
+    WITH updated AS (
+      UPDATE department
+      SET ${fields.join(", ")}, update_at = CURRENT_TIMESTAMP
+      WHERE department_id = $${index}
+      RETURNING department_id, department_code, department_name, department_description, user_id, create_at, update_at
+    )
+    SELECT u.department_id, u.department_code, u.department_name, u.department_description, u.user_id, u.create_at, u.update_at,
+           usr.user_name, usr.user_description AS u_description, usr.user_role, usr.create_at AS u_create_at, usr.update_at AS u_update_at
+    FROM updated u
+    LEFT JOIN "user" usr ON u.user_id = usr.user_id
   `;
   const result = await pool.query(query, values);
 
@@ -55,13 +66,23 @@ async function update(
     throw new AppError("Lỗi khi cập nhật phòng ban", 500);
   }
 
+  const row = result.rows[0];
+
   return {
-    department_id: result.rows[0].department_id,
-    department_code: result.rows[0].department_code,
-    department_name: result.rows[0].department_name,
-    department_description: result.rows[0].department_description,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
+    department_id: row.department_id,
+    department_code: row.department_code,
+    department_name: row.department_name,
+    department_description: row.department_description,
+    create_at: row.create_at,
+    update_at: row.update_at,
+    user: row.user_id ? {
+      user_id: row.user_id,
+      user_name: row.user_name,
+      user_description: row.u_description,
+      user_role: row.user_role,
+      create_at: row.u_create_at,
+      update_at: row.u_update_at
+    } : null
   } satisfies departmentModel;
 }
 

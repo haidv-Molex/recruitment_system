@@ -7,7 +7,6 @@ export async function createHRApi(body: {
   account: string;
   password?: string;
   description?: string;
-  departmentId?: number;
 }): Promise<userOutputModel> {
   const response = await axiosInstance.post('/user/hr', body);
   return response.data.data!;
@@ -52,7 +51,6 @@ export async function getUserApi(id: number): Promise<userOutputModel> {
 export async function createUserApi(body: {
   username: string;
   description?: string;
-  departmentId?: number;
 }): Promise<userOutputModel> {
   const response = await axiosInstance.post('/user', body);
   return response.data.data!;
@@ -63,7 +61,6 @@ export async function updateUserApi(
   body: {
     username?: string;
     description?: string;
-    departmentId?: number;
   }
 ): Promise<userOutputModel> {
   const response = await axiosInstance.put('/user', body, { params: { id } });

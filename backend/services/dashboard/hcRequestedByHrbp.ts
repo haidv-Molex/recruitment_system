@@ -52,7 +52,8 @@ async function hcRequestedByHrbp(
       u.user_name AS label,
       COALESCE(SUM(jd.candidate_required), 0)::int AS value
     FROM "user" u
-    INNER JOIN job_department jd ON jd.user_id = u.user_id
+    INNER JOIN department d ON d.user_id = u.user_id
+    INNER JOIN job_department jd ON jd.department_id = d.department_id
     INNER JOIN job j ON j.job_id = jd.job_id
     ${whereClause}
     GROUP BY u.user_id, u.user_name

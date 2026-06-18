@@ -2,16 +2,17 @@ import { PoolClient } from "pg";
 
 export async function populateJobRelations(jobId: number, pool: PoolClient) {
   const partnersQuery = `
-    SELECT DISTINCT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at, u.department_id
+    SELECT DISTINCT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at
     FROM job_department jd
-    JOIN "user" u ON jd.user_id = u.user_id
+    JOIN department d ON jd.department_id = d.department_id
+    JOIN "user" u ON d.user_id = u.user_id
     WHERE jd.job_id = $1
   `;
   const departmentsQuery = `
-    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, jd.candidate_required, jd.user_id, u.user_name
+    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, jd.candidate_required, d.user_id, u.user_name
     FROM job_department jd
     JOIN department d ON jd.department_id = d.department_id
-    LEFT JOIN "user" u ON jd.user_id = u.user_id
+    LEFT JOIN "user" u ON d.user_id = u.user_id
     WHERE jd.job_id = $1
   `;
   const segmentsQuery = `
@@ -33,7 +34,7 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     WHERE jt.job_id = $1
   `;
   const managersQuery = `
-    SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at, u.department_id
+    SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at
     FROM hiring_manager hm
     JOIN "user" u ON hm.user_id = u.user_id
     WHERE hm.job_id = $1

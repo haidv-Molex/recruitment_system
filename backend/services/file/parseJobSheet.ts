@@ -37,11 +37,8 @@ function resolveRelationWithPlaceholder<T>(
 export default async function parseJobSheet(rows: any[], pool: PoolClient): Promise<any[]> {
   // Query all users
   const usersQuery = `
-    SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at,
-           d.department_id, d.department_code, d.department_name, d.department_description,
-           d.create_at AS d_create_at, d.update_at AS d_update_at
+    SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at
     FROM "user" u
-    LEFT JOIN department d ON u.department_id = d.department_id
   `;
   // Query all departments
   const departmentsQuery = `
@@ -82,15 +79,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
         user_description: row.user_description,
         user_role: row.user_role,
         create_at: row.create_at,
-        update_at: row.update_at,
-        department: row.department_id != null ? {
-          department_id: row.department_id,
-          department_code: row.department_code,
-          department_name: row.department_name,
-          department_description: row.department_description,
-          create_at: row.d_create_at,
-          update_at: row.d_update_at
-        } : null
+        update_at: row.update_at
       } satisfies userOutputModel);
     }
   }
@@ -141,7 +130,18 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
 
     const note = row["Note"] !== undefined && row["Note"] !== null ? String(row["Note"]).trim() : null;
 
-    // Resolve relation objects by name
+    const partners = resolveRelationWithPlaceholder(row["HRBP"], userMap, (name) => ({
+      user_id: null,
+      user_name: name,
+      user_description: null,
+      user_role: null,
+      create_at: null,
+      update_at: null
+    } as any));
+
+    const partnerName = row["HRBP"] ? String(row["HRBP"]).trim() : null;
+    const partnerUser = partners[0];
+
     const resolvedDepts = resolveRelationWithPlaceholder(row["Dept."], deptMap, (name) => ({
       department_id: null,
       department_code: null,
@@ -158,7 +158,9 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
 
     const departments = resolvedDepts.map((d, index) => ({
       ...d,
-      candidate_required: baseRequired + (index < remainderRequired ? 1 : 0)
+      candidate_required: baseRequired + (index < remainderRequired ? 1 : 0),
+      user_id: partnerUser?.user_id || null,
+      partner_name: partnerUser?.user_id ? null : (partnerName || null)
     }));
 
     const segments = resolveRelationWithPlaceholder(row["Project Segment"], segmentMap, (name) => ({
@@ -203,18 +205,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       user_description: null,
       user_role: null,
       create_at: null,
-      update_at: null,
-      department: null
-    } as any));
-
-    const partners = resolveRelationWithPlaceholder(row["HRBP"], userMap, (name) => ({
-      user_id: null,
-      user_name: name,
-      user_description: null,
-      user_role: null,
-      create_at: null,
-      update_at: null,
-      department: null
+      update_at: null
     } as any));
 
     let request_date: Date | null = null;

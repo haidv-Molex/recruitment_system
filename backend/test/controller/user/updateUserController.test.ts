@@ -91,7 +91,6 @@ describe("updateUserController API", () => {
       user_id: 99,
       user_name: "New Name",
       user_description: "New Desc",
-      department_id: 10,
       user_role: "user"
     };
 
@@ -109,8 +108,7 @@ describe("updateUserController API", () => {
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         username: "New Name",
-        description: "New Desc",
-        departmentId: 10
+        description: "New Desc"
       })
       .expectStatus(200)
       .expectJson({
@@ -123,8 +121,7 @@ describe("updateUserController API", () => {
     expectLocal(updateProfileStub.firstCall.args[0]).to.equal(99);
     expectLocal(updateProfileStub.firstCall.args[1]).to.deep.equal({
       username: "New Name",
-      description: "New Desc",
-      departmentId: 10
+      description: "New Desc"
     });
   });
 
@@ -211,7 +208,6 @@ describe("updateUserController API", () => {
       user_id: 99,
       user_name: "New HR Name",
       user_description: "New HR Desc",
-      department_id: 10,
       user_role: "hr"
     };
 
@@ -227,8 +223,7 @@ describe("updateUserController API", () => {
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         username: "New HR Name",
-        description: "New HR Desc",
-        departmentId: 10
+        description: "New HR Desc"
       })
       .expectStatus(200)
       .expectJson({
@@ -260,7 +255,7 @@ describe("updateUserController API", () => {
       .expectJsonLike({
         result: false,
         message: "Dữ liệu không hợp lệ",
-        details: ["Phải cung cấp ít nhất tên người dùng, mô tả hoặc mã phòng ban để cập nhật"]
+        details: ["Phải cung cấp ít nhất tên người dùng hoặc mô tả để cập nhật"]
       });
 
     expectLocal(updateProfileStub.called).to.be.false;

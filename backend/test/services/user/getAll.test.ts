@@ -43,11 +43,8 @@ describe("getAll (User)", () => {
     expect(user).to.have.property("user_name");
     expect(user).to.have.property("user_description");
     expect(user).to.have.property("user_role");
-    expect(user).to.have.property("department"); // full department object or null
     expect(user).to.have.property("create_at");
     expect(user).to.have.property("update_at");
-    // department_id must NOT be directly present
-    expect(user).to.not.have.property("department_id");
     // Sensitive fields must NOT be present
     expect(user).to.not.have.property("user_account");
     expect(user).to.not.have.property("user_password");

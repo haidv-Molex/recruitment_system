@@ -7,9 +7,11 @@ async function getById(
   pool: PoolClient
 ): Promise<departmentModel> {
   const query = `
-    SELECT department_id, department_code, department_name, department_description, create_at, update_at
-    FROM department
-    WHERE department_id = $1
+    SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.user_id, d.create_at, d.update_at,
+           u.user_name, u.user_description AS u_description, u.user_role, u.create_at AS u_create_at, u.update_at AS u_update_at
+    FROM department d
+    LEFT JOIN "user" u ON d.user_id = u.user_id
+    WHERE d.department_id = $1
   `;
   const result = await pool.query(query, [id]);
 
@@ -17,13 +19,23 @@ async function getById(
     throw new AppError("Không tìm thấy phòng ban", 404);
   }
 
+  const row = result.rows[0];
+
   return {
-    department_id: result.rows[0].department_id,
-    department_code: result.rows[0].department_code,
-    department_name: result.rows[0].department_name,
-    department_description: result.rows[0].department_description,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
+    department_id: row.department_id,
+    department_code: row.department_code,
+    department_name: row.department_name,
+    department_description: row.department_description,
+    create_at: row.create_at,
+    update_at: row.update_at,
+    user: row.user_id ? {
+      user_id: row.user_id,
+      user_name: row.user_name,
+      user_description: row.u_description,
+      user_role: row.user_role,
+      create_at: row.u_create_at,
+      update_at: row.u_update_at
+    } : null
   } satisfies departmentModel;
 }
 

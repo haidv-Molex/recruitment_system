@@ -2,11 +2,12 @@ import axiosInstance from '@/config/axiosInstance';
 import type { departmentModel } from '@/types/departmentModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
-export async function createDepartmentApi(code: string, name: string, description: string): Promise<departmentModel> {
+export async function createDepartmentApi(code: string, name: string, description: string, userId?: number | null): Promise<departmentModel> {
   const response = await axiosInstance.post('/department', {
     department_code: code,
     department_name: name,
     department_description: description,
+    user_id: userId,
   });
   return response.data.data!;
 }
@@ -41,7 +42,8 @@ export async function updateDepartmentApi(
   id: number,
   code: string,
   name: string,
-  description: string
+  description: string,
+  userId?: number | null
 ): Promise<departmentModel> {
   const response = await axiosInstance.put(
     '/department',
@@ -49,6 +51,7 @@ export async function updateDepartmentApi(
       department_code: code,
       department_name: name,
       department_description: description,
+      user_id: userId,
     },
     { params: { id } }
   );

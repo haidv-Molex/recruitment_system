@@ -209,21 +209,6 @@ export const AdminPage = () => {
           </span>
         ),
       },
-      {
-        key: 'department',
-        label: 'Department',
-        width: 150,
-        disableFilter: true,
-        render: (_row: any, val: any) => {
-          if (!val) return <span className="text-slate-400">—</span>;
-          const label = val.department_code || val.department_name || '—';
-          return (
-            <span className="font-mono text-xs font-bold uppercase tracking-wide text-indigo-700">
-              {label}
-            </span>
-          );
-        },
-      },
     ],
     [currentUser, roles]
   );
@@ -259,7 +244,6 @@ export const AdminPage = () => {
       user_name: u.user_name,
       user_description: u.user_description,
       user_role: u.user_role,
-      department: u.department,
     }));
   }, [users]);
 

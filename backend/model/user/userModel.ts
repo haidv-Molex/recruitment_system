@@ -1,5 +1,3 @@
-import type { departmentModel } from "@model/department/departmentModel";
-
 export type userModel = {
   user_id: number;
   user_name: string;
@@ -9,9 +7,7 @@ export type userModel = {
   user_role: 'admin' | 'hr' | 'user' | 'banned' | string | null;
   create_at: Date;
   update_at: Date;
-  department_id: number | null;
 }
 
-export type userOutputModel = Omit<userModel, 'user_password' | 'user_account' | 'department_id'> & {
-  department: departmentModel | null;
-};
+export type userOutputModel = Omit<userModel, 'user_password' | 'user_account'>;
+

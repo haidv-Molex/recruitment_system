@@ -27,9 +27,10 @@ const bodySchema = Joi.object({
   }),
   department_description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả phòng ban tối đa 255 ký tự"
-  })
-}).or("department_code", "department_name", "department_description").messages({
-  "object.missing": "Phải cung cấp ít nhất mã phòng ban, tên hoặc mô tả để cập nhật"
+  }),
+  user_id: Joi.number().integer().optional().allow(null)
+}).or("department_code", "department_name", "department_description", "user_id").messages({
+  "object.missing": "Phải cung cấp ít nhất mã phòng ban, tên, mô tả hoặc người quản lý để cập nhật"
 });
 
 updateDepartmentController.put("",

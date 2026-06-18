@@ -20,7 +20,8 @@ const bodySchema = Joi.object({
   }),
   department_description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả phòng ban tối đa 255 ký tự"
-  })
+  }),
+  user_id: Joi.number().integer().optional().allow(null)
 });
 
 createDepartmentController.post("",
@@ -31,7 +32,8 @@ createDepartmentController.post("",
       return await Department.create({
         department_code: req.body.department_code,
         department_name: req.body.department_name,
-        department_description: req.body.department_description
+        department_description: req.body.department_description,
+        user_id: req.body.user_id
       }, pool);
     });
 

@@ -87,7 +87,6 @@ describe("createUserController API", () => {
       user_id: 5,
       user_name: "Created User Name",
       user_description: "New User Description",
-      department_id: 12,
       user_role: "user"
     };
     createStub.resolves(mockCreatedUser);
@@ -99,8 +98,7 @@ describe("createUserController API", () => {
       .withHeaders("Authorization", `Bearer ${token}`)
       .withJson({
         username: "Created User Name",
-        description: "New User Description",
-        departmentId: 12
+        description: "New User Description"
       })
       .expectStatus(201)
       .expectJson({
@@ -112,8 +110,7 @@ describe("createUserController API", () => {
     expectLocal(createStub.calledOnce).to.be.true;
     expectLocal(createStub.firstCall.args[0]).to.deep.equal({
       username: "Created User Name",
-      description: "New User Description",
-      departmentId: 12
+      description: "New User Description"
     });
   });
 

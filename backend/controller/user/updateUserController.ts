@@ -27,14 +27,9 @@ const bodySchema = Joi.object({
   }),
   description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả tối đa 255 ký tự"
-  }),
-  departmentId: Joi.number().integer().positive().optional().messages({
-    "number.base": "Mã phòng ban phải là số",
-    "number.integer": "Mã phòng ban phải là số nguyên",
-    "number.positive": "Mã phòng ban phải là số dương"
   })
-}).or("username", "description", "departmentId").messages({
-  "object.missing": "Phải cung cấp ít nhất tên người dùng, mô tả hoặc mã phòng ban để cập nhật"
+}).or("username", "description").messages({
+  "object.missing": "Phải cung cấp ít nhất tên người dùng hoặc mô tả để cập nhật"
 });
 
 updateUserController.put("",
@@ -44,7 +39,7 @@ updateUserController.put("",
   async (req, res) => {
     const requestor = req.user as userOutputModel;
     const targetUserId = parseInt(req.query.id as string, 10);
-    const { username, description, departmentId } = req.body;
+    const { username, description } = req.body;
 
     const updatedUser = await withTransaction(async (pool) => {
       // 1. Tìm thông tin user cần cập nhật và kiểm tra role
@@ -55,7 +50,7 @@ updateUserController.put("",
       }
 
       // 2. Tiến hành cập nhật
-      return await User.updateProfile(targetUserId, { username, description, departmentId }, pool);
+      return await User.updateProfile(targetUserId, { username, description }, pool);
     });
 
     res.status(200).json({

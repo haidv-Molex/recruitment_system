@@ -73,6 +73,7 @@ async function createWithAll(
     const user = await User.create({ username: name }, pool);
     newPartnerIds.push(user.user_id);
   }
+  const allPartnerUserIds = [...partners, ...newPartnerIds];
 
   // 2. Tạo user mới cho managers_name và lấy user_id
   const newManagerIds: number[] = [];
@@ -83,36 +84,55 @@ async function createWithAll(
 
   // 3. Tạo department mới cho departments_name (code = name.toUpperCase())
   const resolvedDepartments = [];
+  let partnerIdx = 0;
+
   for (const dept of departments) {
     let uId = dept.user_id;
     if (dept.partner_name) {
       const user = await User.create({ username: dept.partner_name }, pool);
       uId = user.user_id;
     }
+
+    if (!uId && allPartnerUserIds.length > 0) {
+      uId = allPartnerUserIds[partnerIdx % allPartnerUserIds.length];
+      partnerIdx++;
+    }
+
+    // Cập nhật user_id cho department
+    if (uId) {
+      await pool.query(
+        `UPDATE department SET user_id = $1 WHERE department_id = $2`,
+        [uId, dept.department_id]
+      );
+    }
     resolvedDepartments.push({
       department_id: dept.department_id,
       candidate_required: dept.candidate_required,
-      user_id: uId,
     });
   }
 
-  const newDepartments: { department_id: number; candidate_required: number; user_id?: number | null }[] = [];
+  const newDepartments: { department_id: number; candidate_required: number }[] = [];
   for (const item of departments_name) {
-    const dept = await Department.create({
-      department_code: item.name.toUpperCase(),
-      department_name: item.name,
-    }, pool);
-
     let resolvedUserId = item.user_id;
     if (item.partner_name) {
       const user = await User.create({ username: item.partner_name }, pool);
       resolvedUserId = user.user_id;
     }
 
+    if (!resolvedUserId && allPartnerUserIds.length > 0) {
+      resolvedUserId = allPartnerUserIds[partnerIdx % allPartnerUserIds.length];
+      partnerIdx++;
+    }
+
+    const dept = await Department.create({
+      department_code: item.name.toUpperCase(),
+      department_name: item.name,
+      user_id: resolvedUserId,
+    }, pool);
+
     newDepartments.push({
       department_id: dept.department_id,
       candidate_required: item.candidate_required,
-      user_id: resolvedUserId,
     });
   }
 

@@ -43,7 +43,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
       p.platform_name,
       u.user_name  AS recruiter_name,
       ref.user_name AS reference_name,
-      ref_dept.department_name AS reference_department,
+      ref_dept.department_names AS reference_department,
       (c.targeted_company IS NOT NULL) AS targeted_company_is_set,
       comp.company_name AS targeted_company_name,
       cl_level.level_name AS candidate_level_name
@@ -52,7 +52,11 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     LEFT JOIN platform p ON c.platform_id = p.platform_id
     LEFT JOIN "user" u ON c.recruiter = u.user_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id
-    LEFT JOIN department ref_dept ON ref.department_id = ref_dept.department_id
+    LEFT JOIN (
+      SELECT user_id, STRING_AGG(department_name, ', ') AS department_names
+      FROM department
+      GROUP BY user_id
+    ) ref_dept ON ref.user_id = ref_dept.user_id
     LEFT JOIN company comp ON c.targeted_company = comp.company_id
     LEFT JOIN (
       SELECT cl.candidate_id, STRING_AGG(l.level_name, ', ') AS level_name

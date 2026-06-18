@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
+import type { userOutputModel } from "@model/user/userModel";
 import FileService from "@services/file/_File";
 import fs from "fs";
 import path from "path";
@@ -73,64 +74,56 @@ async function create(
     const jobId = jobRow.job_id;
 
     // 3. Insert and fetch linking records
-    // departments -> job_department (job_id, department_id, candidate_required, user_id)
+    // departments -> job_department (job_id, department_id, candidate_required)
     const departmentsList = [];
     for (let i = 0; i < departments.length; i++) {
       const dept = departments[i];
       const departmentId = dept.department_id;
       const candidateRequired = dept.candidate_required;
-      let userId = dept.user_id;
-
-      // Map top-level partners to departments if not explicitly set
-      if (userId === undefined || userId === null) {
-        if (partners.length > 0) {
-          if (partners.length === 1) {
-            userId = partners[0];
-          } else {
-            userId = partners[i] !== undefined ? partners[i] : null;
-          }
-        } else {
-          userId = null;
-        }
-      }
 
       const depCheck = await pool.query(
-        `SELECT department_id, department_code, department_name, department_description, create_at, update_at 
-         FROM department WHERE department_id = $1`, [departmentId]
+        `SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, d.user_id,
+                u.user_name, u.user_description AS u_description, u.user_role, u.create_at AS u_create_at, u.update_at AS u_update_at
+         FROM department d
+         LEFT JOIN "user" u ON d.user_id = u.user_id
+         WHERE d.department_id = $1`, [departmentId]
       );
       if (depCheck.rows.length === 0) {
         throw new AppError(`Phòng ban (department_id = ${departmentId}) không tồn tại`, 400);
       }
 
-      let userCheckRow = null;
-      if (userId) {
-        const userCheck = await pool.query(
-          `SELECT user_id, user_name, user_description, user_role, create_at, update_at, department_id 
-           FROM "user" WHERE user_id = $1`, [userId]
-        );
-        if (userCheck.rows.length === 0) {
-          throw new AppError(`Đối tác (user_id = ${userId}) không tồn tại`, 400);
-        }
-        userCheckRow = userCheck.rows[0];
-      }
+      const depRow = depCheck.rows[0];
+      const userCheckRow = depRow.user_id ? {
+        user_id: depRow.user_id,
+        user_name: depRow.user_name,
+        user_description: depRow.u_description,
+        user_role: depRow.user_role,
+        create_at: depRow.u_create_at,
+        update_at: depRow.u_update_at
+      } : null;
 
       const deptData = { 
-        ...depCheck.rows[0], 
+        department_id: depRow.department_id,
+        department_code: depRow.department_code,
+        department_name: depRow.department_name,
+        department_description: depRow.department_description,
+        create_at: depRow.create_at,
+        update_at: depRow.update_at,
         candidate_required: candidateRequired,
-        user_id: userId,
+        user_id: depRow.user_id,
         user: userCheckRow
       };
       departmentsList.push(deptData);
 
       await pool.query(
-        `INSERT INTO job_department (job_id, department_id, candidate_required, user_id) VALUES ($1, $2, $3, $4)`,
-        [jobId, departmentId, candidateRequired, userId]
+        `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
+        [jobId, departmentId, candidateRequired]
       );
     }
 
     const partnersList = Array.from(new Map(
-      departmentsList.map(d => d.user).filter(Boolean).map(u => [u.user_id, u])
-    ).values());
+      departmentsList.map(d => d.user).filter(Boolean).map(u => [u!.user_id, u])
+    ).values()) as userOutputModel[];
 
     // segments -> job_segment (job_id, segment_id)
     const segmentsList = [];
@@ -187,7 +180,7 @@ async function create(
     const managersList = [];
     for (const userId of managers) {
       const userCheck = await pool.query(
-        `SELECT user_id, user_name, user_description, user_role, create_at, update_at, department_id 
+        `SELECT user_id, user_name, user_description, user_role, create_at, update_at 
          FROM "user" WHERE user_id = $1`, [userId]
       );
       if (userCheck.rows.length === 0) {
