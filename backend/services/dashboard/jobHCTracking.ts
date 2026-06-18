@@ -1,5 +1,6 @@
 import { PoolClient } from "pg";
 import type { JobHCTracking } from "@type/chart.d";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 type Props = {
   department_id?: number;
@@ -25,14 +26,13 @@ async function jobHCTracking(
   const { department_id } = props;
   const conditions: string[] = [];
   const params: any[] = [];
-  let paramIndex = 1;
 
   if (department_id !== undefined) {
-    conditions.push(`jd.department_id = $${paramIndex++}`);
     params.push(department_id);
+    conditions.push(`jd.department_id = $${params.length}`);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT

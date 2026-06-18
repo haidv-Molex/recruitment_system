@@ -1,5 +1,6 @@
 import { PoolClient } from "pg";
 import type { ChartDataPoint } from "@type/chart.d";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 export interface RecruitmentFunnelParams {
   site_ids?: number[];
@@ -53,7 +54,7 @@ async function recruitmentFunnel(
     )`);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT

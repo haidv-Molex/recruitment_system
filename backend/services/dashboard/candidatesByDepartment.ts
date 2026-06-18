@@ -1,5 +1,7 @@
 import { PoolClient } from "pg";
 import type { ChartDataPoint } from "@type/chart.d";
+import buildWhereClause from "@utilities/query/buildWhereClause";
+import mapChartRows from "@utilities/query/mapChartRows";
 
 export interface CandidatesByDepartmentParams {
   status?: string | string[];
@@ -46,7 +48,7 @@ async function candidatesByDepartment(
     conditions.push(`jd.department_id = ANY($${sqlParams.length})`);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT
@@ -63,10 +65,7 @@ async function candidatesByDepartment(
 
   const result = await pool.query(query, sqlParams);
 
-  return result.rows.map((row) => ({
-    label: row.label || "N/A",
-    value: row.value,
-  }));
+  return mapChartRows(result.rows, { defaultLabel: "N/A" });
 }
 
 export default candidatesByDepartment;

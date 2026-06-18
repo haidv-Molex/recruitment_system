@@ -1,5 +1,7 @@
 import { PoolClient } from "pg";
 import type { ChartDateRange, ChartDataPoint } from "@type/chart.d";
+import buildDateRangeConditions from "@utilities/query/buildDateRangeConditions";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 type Props = ChartDateRange & {
   status: string;
@@ -17,37 +19,26 @@ async function hcByStatusAndExpectedOnboardMonth(
   props: Props,
   pool: PoolClient
 ): Promise<ChartDataPoint[]> {
-  const hasDateFilter = props.from !== undefined && props.to !== undefined;
+  const conditions = [
+    "status = $1",
+    "job_id IS NOT NULL",
+    "expected_onboard_date IS NOT NULL"
+  ];
+  const params: any[] = [props.status];
+  buildDateRangeConditions(props, "expected_onboard_date", conditions, params);
+  const whereClause = buildWhereClause(conditions);
 
-  const query = hasDateFilter
-    ? `
-        SELECT
-          EXTRACT(YEAR FROM expected_onboard_date)::int AS year,
-          EXTRACT(MONTH FROM expected_onboard_date)::int AS month,
-          COUNT(*)::int AS value
-        FROM candidate
-        WHERE status = $1
-          AND job_id IS NOT NULL
-          AND expected_onboard_date IS NOT NULL
-          AND expected_onboard_date >= $2
-          AND expected_onboard_date <= $3
-        GROUP BY EXTRACT(YEAR FROM expected_onboard_date), EXTRACT(MONTH FROM expected_onboard_date)
-        ORDER BY year ASC, month ASC
-      `
-    : `
-        SELECT
-          EXTRACT(YEAR FROM expected_onboard_date)::int AS year,
-          EXTRACT(MONTH FROM expected_onboard_date)::int AS month,
-          COUNT(*)::int AS value
-        FROM candidate
-        WHERE status = $1
-          AND job_id IS NOT NULL
-          AND expected_onboard_date IS NOT NULL
-        GROUP BY EXTRACT(YEAR FROM expected_onboard_date), EXTRACT(MONTH FROM expected_onboard_date)
-        ORDER BY year ASC, month ASC
-      `;
+  const query = `
+    SELECT
+      EXTRACT(YEAR FROM expected_onboard_date)::int AS year,
+      EXTRACT(MONTH FROM expected_onboard_date)::int AS month,
+      COUNT(*)::int AS value
+    FROM candidate
+    ${whereClause}
+    GROUP BY EXTRACT(YEAR FROM expected_onboard_date), EXTRACT(MONTH FROM expected_onboard_date)
+    ORDER BY year ASC, month ASC
+  `;
 
-  const params = hasDateFilter ? [props.status, props.from, props.to] : [props.status];
   const result = await pool.query(query, params);
 
   // Determine the start and end year/month

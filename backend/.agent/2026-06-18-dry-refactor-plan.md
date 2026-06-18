@@ -13,6 +13,7 @@ The refactor must preserve existing API response shapes, route behavior, databas
 - Created: 2026-06-18
 - Phase 0 baseline completed successfully on 2026-06-18.
 - Phase 1 revised on 2026-06-18 after user feedback: use Facade class calls such as `User.findById(...)` and `Department.getById(...)`, not direct function imports or SQL fragment/mapper helpers.
+- Phase 2 revised on 2026-06-18 after user feedback: extracted query helpers under `utilities/query`, refactored dashboard services, refactored `getAll` services so they query ids and call domain Facade methods such as `Site.getById(...)`, `Candidate.getById(...)`, and `Job.getById(...)`, and kept Facade classes in the concise static-assignment style.
 - Existing documentation changes: `.agent/guide.md` now contains DRY rules; `.github/instructions/agent-workflow.instructions.md` now requires future plans to be stored in `.agent/`.
 
 ## Scope
@@ -116,6 +117,8 @@ Known affected files:
 - `services/segment/getAll.ts`
 - `services/site/getAll.ts`
 - `services/user/getAll.ts`
+- `services/candidate/getAll.ts`
+- `services/job/getAll.ts`
 - `services/dashboard/hcRequestedByDepartment.ts`
 - `services/dashboard/hcRequestedByMonth.ts`
 - `services/dashboard/hcByRecruiter.ts`
@@ -127,18 +130,27 @@ Known affected files:
 - `services/dashboard/jobHCTracking.ts`
 
 Plan:
-- [ ] Create `utilities/query/buildWhereClause.ts` for joining conditions safely.
-- [ ] Create `utilities/query/buildDateRangeConditions.ts` for date range filters with parameter indexing handled by params length.
-- [ ] Create `utilities/query/buildPagination.ts` for default page/limit/offset/unlimited handling.
-- [ ] Create `utilities/query/mapChartRows.ts` for `ChartDataPoint[]` mapping.
-- [ ] Refactor dashboard services first because dashboard tests already exist.
-- [ ] Refactor CRUD `getAll` services after dashboard helpers are stable.
+- [x] Create `utilities/query/buildWhereClause.ts` for joining conditions safely.
+- [x] Create `utilities/query/buildDateRangeConditions.ts` for date range filters with parameter indexing handled by params length.
+- [x] Create `utilities/query/buildPagination.ts` for default page/limit/offset/unlimited handling.
+- [x] Create `utilities/query/mapChartRows.ts` for `ChartDataPoint[]` mapping.
+- [x] Refactor dashboard services first because dashboard tests already exist.
+- [x] Refactor CRUD `getAll` services after dashboard helpers are stable.
+- [x] Keep CRUD/Candidate/Job/User Facade classes concise with normal imports and static assignments; avoid `typeof import(...)` and dynamic `await import(...)` facades.
+- [x] Refactor `company`, `level`, `platform`, `segment`, `site`, `department`, `candidate`, and `job` `getAll` services to query ids first, then call their domain Facade `getById` methods for result objects.
 
 Verification:
-- [ ] Add tests for new query utilities under `test/utilities/query/`.
-- [ ] `npm run test:file 'test/services/dashboard/*.test.ts'`
-- [ ] Run or add CRUD getAll tests where available.
-- [ ] `npm run check`
+- [x] Add tests for new query utilities under `test/utilities/query/` - `npm run test:file 'test/utilities/query/*.test.ts'` passed, 15 passing.
+- [x] `npm run test:file 'test/services/dashboard/*.test.ts'` - 43 passing.
+- [x] Added service tests for `company`, `level`, `platform`, `segment`, `site`, `department`, and `job` `getAll`; extended candidate `getAll` pagination coverage.
+- [x] `npm run test:file 'test/services/company/getAll.test.ts' 'test/services/level/getAll.test.ts' 'test/services/platform/getAll.test.ts' 'test/services/segment/getAll.test.ts' 'test/services/site/getAll.test.ts' 'test/services/department/getAll.test.ts' 'test/services/user/getAll.test.ts'` - 26 passing; pre-existing `pg` deprecation warning in user getAll path.
+- [x] `npm run test:file 'test/services/candidate/getAll.test.ts' 'test/services/job/getAll.test.ts'` - 7 passing; pre-existing `pg` deprecation warning in candidate getAll path.
+- [x] `npm run test:file 'test/controller/company/companyController.test.ts' 'test/controller/level/levelController.test.ts' 'test/controller/platform/platformController.test.ts' 'test/controller/segment/segmentController.test.ts' 'test/controller/site/siteController.test.ts' 'test/controller/department/departmentController.test.ts'` - 36 passing.
+- [x] `npm run test:file 'test/controller/candidate/candidateController.test.ts' 'test/controller/job/jobController.test.ts'` - 14 passing; expected validation-error logs in negative controller tests.
+- [x] `grep` check for old pagination/WHERE ternary patterns in `services/**` - no matches.
+- [x] `grep` check for `getAll` result construction through domain Facade `getById` - confirmed `Company.getById`, `Level.getById`, `Platform.getById`, `Segment.getById`, `Site.getById`, `Department.getById`, `Candidate.getById`, and `Job.getById` in their `getAll` services.
+- [x] `grep` check for `typeof import(...)` and dynamic `await import(...)` in Facade files - no matches after reverting Facades to concise static assignments.
+- [x] `npm run check` - passing.
 
 ## Phase 3 - Entity Resolution And Lookup Maps
 

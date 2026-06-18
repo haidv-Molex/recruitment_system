@@ -1,5 +1,8 @@
 import { PoolClient } from "pg";
 import type { ChartDateRange, ChartDataPoint } from "@type/chart.d";
+import buildDateRangeConditions from "@utilities/query/buildDateRangeConditions";
+import buildWhereClause from "@utilities/query/buildWhereClause";
+import mapChartRows from "@utilities/query/mapChartRows";
 
 type Props = ChartDateRange & {
   job_id?: number;
@@ -23,29 +26,20 @@ async function hcRequestedByHiringManager(
   const { job_id, department_id, from, to } = props;
   const conditions: string[] = [];
   const params: any[] = [];
-  let paramIndex = 1;
 
   if (job_id !== undefined) {
-    conditions.push(`jd.job_id = $${paramIndex++}`);
     params.push(job_id);
+    conditions.push(`jd.job_id = $${params.length}`);
   }
 
   if (department_id !== undefined) {
-    conditions.push(`jd.department_id = $${paramIndex++}`);
     params.push(department_id);
+    conditions.push(`jd.department_id = $${params.length}`);
   }
 
-  if (from !== undefined) {
-    conditions.push(`j.request_date >= $${paramIndex++}`);
-    params.push(from);
-  }
+  buildDateRangeConditions({ from, to }, "j.request_date", conditions, params);
 
-  if (to !== undefined) {
-    conditions.push(`j.request_date <= $${paramIndex++}`);
-    params.push(to);
-  }
-
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT
@@ -62,10 +56,7 @@ async function hcRequestedByHiringManager(
 
   const result = await pool.query(query, params);
 
-  return result.rows.map((row) => ({
-    label: row.label as string,
-    value: row.value as number,
-  }));
+  return mapChartRows(result.rows);
 }
 
 export default hcRequestedByHiringManager;

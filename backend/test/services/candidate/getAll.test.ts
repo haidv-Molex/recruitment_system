@@ -165,4 +165,18 @@ describe("Candidate getAll service", () => {
     const searchSalaryPrecise = await getAll({ search: "1500 USD", search_at: ["expected_salary"] }, client);
     expect(searchSalaryPrecise.items.map(item => item.candidate_name)).to.include("CandidateZ1");
   });
+
+  it("should paginate matching candidates", async () => {
+    for (let i = 1; i <= 3; i++) {
+      await client.query(
+        `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2)`,
+        [`CandidateGetAll_Page_${i}`, "Searching"]
+      );
+    }
+
+    const result = await getAll({ page: 1, limit: 2, search: "CandidateGetAll_Page_" }, client);
+
+    expect(result.total).to.equal(3);
+    expect(result.items).to.have.lengthOf(2);
+  });
 });

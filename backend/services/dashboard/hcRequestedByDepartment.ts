@@ -1,5 +1,8 @@
 import { PoolClient } from "pg";
 import type { ChartDateRange, ChartDataPoint } from "@type/chart.d";
+import buildDateRangeConditions from "@utilities/query/buildDateRangeConditions";
+import buildWhereClause from "@utilities/query/buildWhereClause";
+import mapChartRows from "@utilities/query/mapChartRows";
 
 /**
  * HC Requested by Department
@@ -19,20 +22,14 @@ async function hcRequestedByDepartment(
   const conditions: string[] = [];
   const params: any[] = [];
 
-  if (range.from !== undefined) {
-    params.push(range.from);
-    conditions.push(`j.request_date >= $${params.length}`);
-  }
-  if (range.to !== undefined) {
-    params.push(range.to);
-    conditions.push(`j.request_date <= $${params.length}`);
-  }
+  buildDateRangeConditions(range, "j.request_date", conditions, params);
+
   if (range.job_id !== undefined) {
     params.push(range.job_id);
     conditions.push(`j.job_id = $${params.length}`);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT
@@ -48,10 +45,7 @@ async function hcRequestedByDepartment(
 
   const result = await pool.query(query, params);
 
-  return result.rows.map((row) => ({
-    label: row.label as string,
-    value: row.value as number,
-  }));
+  return mapChartRows(result.rows);
 }
 
 export default hcRequestedByDepartment;

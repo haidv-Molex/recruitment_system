@@ -1,5 +1,7 @@
 import { PoolClient } from "pg";
-import { populateCandidateList } from "./populate";
+import Candidate from "@services/candidate/_Candidate";
+import buildPagination from "@utilities/query/buildPagination";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 export interface GetAllCandidatesOptions {
   page?: number;
@@ -35,13 +37,10 @@ export async function getAll(
   options: GetAllCandidatesOptions,
   pool: PoolClient
 ) {
-  const page = options.page || 1;
-  const limit = options.limit || 10;
-  const offset = (page - 1) * limit;
+  const { limit, offset } = buildPagination({ page: options.page, limit: options.limit });
 
   const conditions: string[] = [];
   const values: any[] = [];
-  let placeholderIndex = 1;
 
   if (options.search) {
     const columnMap: Record<string, string> = {
@@ -67,25 +66,23 @@ export async function getAll(
       : defaultSearchColumns;
 
     if (searchColumns.length > 0) {
-      const orConditions = searchColumns.map(col => `${col} ILIKE $${placeholderIndex}`).join(" OR ");
-      conditions.push(`(${orConditions})`);
       values.push(`%${options.search}%`);
-      placeholderIndex++;
+      const placeholder = `$${values.length}`;
+      const orConditions = searchColumns.map(col => `${col} ILIKE ${placeholder}`).join(" OR ");
+      conditions.push(`(${orConditions})`);
     }
   }
 
   if (options.status) {
-    conditions.push(`c.status = $${placeholderIndex}`);
     values.push(options.status);
-    placeholderIndex++;
+    conditions.push(`c.status = $${values.length}`);
   }
 
   // Handle specific advanced filters
   const addFilterCondition = (field: string, val: string | undefined) => {
     if (val && val.trim()) {
-      conditions.push(`${field} ILIKE $${placeholderIndex}`);
       values.push(`%${val.trim()}%`);
-      placeholderIndex++;
+      conditions.push(`${field} ILIKE $${values.length}`);
     }
   };
 
@@ -104,17 +101,14 @@ export async function getAll(
 
   const addDateCondition = (field: string, fromVal: Date | undefined, toVal: Date | undefined) => {
     if (fromVal && toVal) {
-      conditions.push(`${field} >= $${placeholderIndex} AND ${field} <= $${placeholderIndex + 1}`);
       values.push(fromVal, toVal);
-      placeholderIndex += 2;
+      conditions.push(`${field} >= $${values.length - 1} AND ${field} <= $${values.length}`);
     } else if (fromVal) {
-      conditions.push(`${field} = $${placeholderIndex}`);
       values.push(fromVal);
-      placeholderIndex++;
+      conditions.push(`${field} = $${values.length}`);
     } else if (toVal) {
-      conditions.push(`${field} = $${placeholderIndex}`);
       values.push(toVal);
-      placeholderIndex++;
+      conditions.push(`${field} = $${values.length}`);
     }
   };
 
@@ -123,7 +117,7 @@ export async function getAll(
   addDateCondition("c.expected_onboard_date", options.expected_onboard_date_from, options.expected_onboard_date_to);
   addDateCondition("c.feedback_date", options.feedback_date_from, options.feedback_date_to);
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const fromClause = `
     FROM candidate c
@@ -145,16 +139,18 @@ export async function getAll(
 
   // Get items
   const selectQuery = `
-    SELECT c.* 
+    SELECT DISTINCT c.candidate_id
     ${fromClause}
     ${whereClause}
     ORDER BY c.candidate_id DESC
-    LIMIT $${placeholderIndex} OFFSET $${placeholderIndex + 1}
   `;
   const selectValues = [...values, limit, offset];
-  const itemsResult = await pool.query(selectQuery, selectValues);
+  const paginatedSelectQuery = `${selectQuery} LIMIT $${selectValues.length - 1} OFFSET $${selectValues.length}`;
+  const itemsResult = await pool.query(paginatedSelectQuery, selectValues);
 
-  const populatedItems = await populateCandidateList(itemsResult.rows, pool);
+  const populatedItems = await Promise.all(
+    itemsResult.rows.map((row) => Candidate.getById(row.candidate_id, pool))
+  );
 
   return {
     items: populatedItems,
