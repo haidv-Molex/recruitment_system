@@ -5,34 +5,18 @@ import type { segmentModel } from "@model/segment/segmentModel";
 import type { siteModel } from "@model/site/siteModel";
 import type { levelModel } from "@model/level/levelModel";
 import User from "@services/user/_User";
+import buildEntityMap from "@utilities/entity/buildEntityMap";
+import { resolveEntities } from "@utilities/entity/resolveEntity";
 
-function resolveRelationWithPlaceholder<T>(
-  val: any,
-  map: Map<string, T>,
-  createPlaceholder: (name: string) => T
-): T[] {
-  if (val === null || val === undefined) return [];
-  const strVal = String(val).trim();
-  if (!strVal) return [];
-
-  // Try matching the whole string first
-  const fullMatch = map.get(strVal.toLowerCase());
-  if (fullMatch) {
-    return [fullMatch];
-  }
-
-  // If no full match, try splitting by comma, semicolon, or newline
-  const parts = strVal.split(/[,;\n\r]/).map(v => v.trim()).filter(v => v.length > 0);
-  const resolved: T[] = [];
-  for (const part of parts) {
-    const matched = map.get(part.toLowerCase());
-    if (matched) {
-      resolved.push(matched);
-    } else {
-      resolved.push(createPlaceholder(part));
-    }
-  }
-  return resolved;
+function createUserPlaceholder(name: string): userOutputModel {
+  return {
+    user_id: null,
+    user_name: name,
+    user_description: null,
+    user_role: null,
+    create_at: null,
+    update_at: null
+  } as any;
 }
 
 export default async function parseJobSheet(rows: any[], pool: PoolClient): Promise<any[]> {
@@ -65,42 +49,11 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     pool.query(levelsQuery)
   ]);
 
-  // Build maps using lowercase trimmed names
-  const userMap = new Map<string, userOutputModel>();
-  for (const user of usersResult.items) {
-    const key = user.user_name ? user.user_name.trim().toLowerCase() : "";
-    if (key && !userMap.has(key)) {
-      userMap.set(key, user);
-    }
-  }
-
-  const deptMap = new Map<string, departmentModel>();
-  for (const row of deptsRes.rows) {
-    if (row.department_name) {
-      deptMap.set(row.department_name.trim().toLowerCase(), row);
-    }
-  }
-
-  const segmentMap = new Map<string, segmentModel>();
-  for (const row of segmentsRes.rows) {
-    if (row.segment_name) {
-      segmentMap.set(row.segment_name.trim().toLowerCase(), row);
-    }
-  }
-
-  const siteMap = new Map<string, siteModel>();
-  for (const row of sitesRes.rows) {
-    if (row.site_name) {
-      siteMap.set(row.site_name.trim().toLowerCase(), row);
-    }
-  }
-
-  const levelMap = new Map<string, levelModel>();
-  for (const row of levelsRes.rows) {
-    if (row.level_name) {
-      levelMap.set(row.level_name.trim().toLowerCase(), row);
-    }
-  }
+  const userMap = buildEntityMap<userOutputModel>(usersResult.items, (user) => user.user_name);
+  const deptMap = buildEntityMap<departmentModel>(deptsRes.rows, (row) => row.department_name, { duplicateStrategy: "last" });
+  const segmentMap = buildEntityMap<segmentModel>(segmentsRes.rows, (row) => row.segment_name, { duplicateStrategy: "last" });
+  const siteMap = buildEntityMap<siteModel>(sitesRes.rows, (row) => row.site_name, { duplicateStrategy: "last" });
+  const levelMap = buildEntityMap<levelModel>(levelsRes.rows, (row) => row.level_name, { duplicateStrategy: "last" });
 
   const formattedJobs: any[] = [];
 
@@ -120,19 +73,12 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
 
     const note = row["Note"] !== undefined && row["Note"] !== null ? String(row["Note"]).trim() : null;
 
-    const partners = resolveRelationWithPlaceholder(row["HRBP"], userMap, (name) => ({
-      user_id: null,
-      user_name: name,
-      user_description: null,
-      user_role: null,
-      create_at: null,
-      update_at: null
-    } as any));
+    const partners = resolveEntities(row["HRBP"], userMap, createUserPlaceholder);
 
     const partnerName = row["HRBP"] ? String(row["HRBP"]).trim() : null;
     const partnerUser = partners[0];
 
-    const resolvedDepts = resolveRelationWithPlaceholder(row["Dept."], deptMap, (name) => ({
+    const resolvedDepts = resolveEntities(row["Dept."], deptMap, (name) => ({
       department_id: null,
       department_code: null,
       department_name: name,
@@ -156,7 +102,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       };
     });
 
-    const segments = resolveRelationWithPlaceholder(row["Project Segment"], segmentMap, (name) => ({
+    const segments = resolveEntities(row["Project Segment"], segmentMap, (name) => ({
       segment_id: null,
       segment_code: null,
       segment_name: name,
@@ -165,7 +111,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       update_at: null
     } as any));
 
-    const sites = resolveRelationWithPlaceholder(row["Sites"], siteMap, (name) => ({
+    const sites = resolveEntities(row["Sites"], siteMap, (name) => ({
       site_id: null,
       site_code: null,
       site_name: name,
@@ -174,7 +120,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       update_at: null
     } as any));
 
-    const titles = resolveRelationWithPlaceholder(row["Job title"], levelMap, (name) => ({
+    const titles = resolveEntities(row["Job title"], levelMap, (name) => ({
       level_id: null,
       level_code: null,
       level_name: name,
@@ -183,7 +129,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       update_at: null
     } as any));
 
-    const employee_levels = resolveRelationWithPlaceholder(row["EE Level"], levelMap, (name) => ({
+    const employee_levels = resolveEntities(row["EE Level"], levelMap, (name) => ({
       level_id: null,
       level_code: null,
       level_name: name,
@@ -192,14 +138,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       update_at: null
     } as any));
 
-    const managers = resolveRelationWithPlaceholder(row["Hiring manager"], userMap, (name) => ({
-      user_id: null,
-      user_name: name,
-      user_description: null,
-      user_role: null,
-      create_at: null,
-      update_at: null
-    } as any));
+    const managers = resolveEntities(row["Hiring manager"], userMap, createUserPlaceholder);
 
     let request_date: Date | null = null;
     if (row["MyHR request date"]) {

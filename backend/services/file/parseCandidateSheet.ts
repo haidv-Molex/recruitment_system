@@ -1,24 +1,20 @@
 import { PoolClient } from "pg";
 import type { userOutputModel } from "@model/user/userModel";
 import User from "@services/user/_User";
+import buildEntityMap from "@utilities/entity/buildEntityMap";
+import { resolveEntity } from "@utilities/entity/resolveEntity";
 
 // ─── Helper: resolve a text value against a Map, returning a placeholder if not found ───
 
-function resolveUserByName(
-  val: any,
-  userMap: Map<string, userOutputModel>
-): userOutputModel | null {
-  if (val === null || val === undefined) return null;
-  const key = String(val).trim().toLowerCase();
-  if (!key) return null;
-  return userMap.get(key) ?? ({
+function createUserPlaceholder(name: string): userOutputModel {
+  return {
     user_id: null,
-    user_name: String(val).trim(),
+    user_name: name,
     user_description: null,
     user_role: null,
     create_at: null,
     update_at: null
-  } as any);
+  } as any;
 }
 
 // ─── Parsed output shape ───────────────────────────────────────────────────
@@ -70,13 +66,7 @@ export default async function parseCandidateSheet(
   // Load all public users through the user service so parser code does not duplicate user SQL/mapping.
   const usersResult = await User.getAll({ unlimited: true }, pool);
 
-  const userMap = new Map<string, userOutputModel>();
-  for (const user of usersResult.items) {
-    const key = user.user_name ? user.user_name.trim().toLowerCase() : "";
-    if (key && !userMap.has(key)) {
-      userMap.set(key, user);
-    }
-  }
+  const userMap = buildEntityMap<userOutputModel>(usersResult.items, (user) => user.user_name);
 
   const result: ParsedCandidateRow[] = [];
 
@@ -181,8 +171,8 @@ export default async function parseCandidateSheet(
       : null;
 
     // Resolve user relations
-    const recruiter = resolveUserByName(row["Recruiter"], userMap);
-    const hiring_manager = resolveUserByName(row["Hiring manager"], userMap);
+    const recruiter = resolveEntity(row["Recruiter"], userMap, createUserPlaceholder);
+    const hiring_manager = resolveEntity(row["Hiring manager"], userMap, createUserPlaceholder);
 
     result.push({
       candidate_name,

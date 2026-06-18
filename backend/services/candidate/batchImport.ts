@@ -5,6 +5,8 @@ import Company from "@services/company/_Company";
 import Level from "@services/level/_Level";
 import Job from "@services/job/_Job";
 import { create } from "@services/candidate/create";
+import normalizeLookupKey from "@utilities/entity/normalizeLookupKey";
+import resolveAndCreateEntities from "@utilities/entity/resolveAndCreateEntities";
 
 export type CandidateImportItem = {
   candidate_name: string;
@@ -65,78 +67,35 @@ export async function batchImport(
     });
   }
 
-  // Helper function to resolve case-insensitive duplicates and create them
-  const resolveAndCreateEntities = async (
-    namesSet: Set<string>,
-    tableName: string,
-    idCol: string,
-    nameCol: string,
-    createFn: (name: string) => Promise<number>
-  ): Promise<Map<string, number>> => {
-    const nameMap = new Map<string, number>();
-    if (namesSet.size === 0) return nameMap;
-
-    const lowerToOriginal = new Map<string, string>();
-    for (const name of namesSet) {
-      const lower = name.toLowerCase();
-      if (!lowerToOriginal.has(lower)) {
-        lowerToOriginal.set(lower, name);
-      }
-    }
-
-    const uniqueLowerNames = Array.from(lowerToOriginal.keys());
-
-    // Find existing entities in database (case-insensitive)
-    const query = `
-      SELECT ${idCol} AS id, ${nameCol} AS name, LOWER(${nameCol}) AS lower_name
-      FROM "${tableName}"
-      WHERE LOWER(${nameCol}) = ANY($1)
-    `;
-    const res = await pool.query(query, [uniqueLowerNames]);
-
-    for (const row of res.rows) {
-      nameMap.set(row.lower_name, Number(row.id));
-    }
-
-    // Create missing entities
-    for (const lowerName of uniqueLowerNames) {
-      if (!nameMap.has(lowerName)) {
-        const originalName = lowerToOriginal.get(lowerName)!;
-        const newId = await createFn(originalName);
-        nameMap.set(lowerName, newId);
-      }
-    }
-
-    return nameMap;
-  };
-
   // Resolve recruiters (User table)
-  const recruiterMap = await resolveAndCreateEntities(
-    recruiterNames,
-    "user",
-    "user_id",
-    "user_name",
-    async (name) => {
+  const recruiterMap = await resolveAndCreateEntities({
+    names: recruiterNames,
+    tableName: "user",
+    idColumn: "user_id",
+    nameColumn: "user_name",
+    pool,
+    create: async (name) => {
       const u = await User.create({ username: name }, pool);
       return u.user_id;
     }
-  );
+  });
 
   // Resolve references (User table)
-  const referenceMap = await resolveAndCreateEntities(
-    referenceNames,
-    "user",
-    "user_id",
-    "user_name",
-    async (name) => {
-      const lower = name.toLowerCase();
+  const referenceMap = await resolveAndCreateEntities({
+    names: referenceNames,
+    tableName: "user",
+    idColumn: "user_id",
+    nameColumn: "user_name",
+    pool,
+    create: async (name) => {
+      const lower = normalizeLookupKey(name);
       if (recruiterMap.has(lower)) {
         return recruiterMap.get(lower)!;
       }
       const u = await User.create({ username: name }, pool);
       return u.user_id;
     }
-  );
+  });
 
   // Sync back new references to recruiterMap and vice-versa
   for (const [k, v] of referenceMap.entries()) {
@@ -147,45 +106,48 @@ export async function batchImport(
   }
 
   // Resolve platforms
-  const platformMap = await resolveAndCreateEntities(
-    platformNames,
-    "platform",
-    "platform_id",
-    "platform_name",
-    async (name) => {
+  const platformMap = await resolveAndCreateEntities({
+    names: platformNames,
+    tableName: "platform",
+    idColumn: "platform_id",
+    nameColumn: "platform_name",
+    pool,
+    create: async (name) => {
       const p = await Platform.create({ platform_name: name }, pool);
       return p.platform_id;
     }
-  );
+  });
 
   // Resolve targeted companies
-  const companyMap = await resolveAndCreateEntities(
-    targetedCompanyNames,
-    "company",
-    "company_id",
-    "company_name",
-    async (name) => {
+  const companyMap = await resolveAndCreateEntities({
+    names: targetedCompanyNames,
+    tableName: "company",
+    idColumn: "company_id",
+    nameColumn: "company_name",
+    pool,
+    create: async (name) => {
       const comp = await Company.create({ company_name: name }, pool);
       return comp.company_id;
     }
-  );
+  });
 
   // Resolve levels
-  const levelMap = await resolveAndCreateEntities(
-    levelNames,
-    "level",
-    "level_id",
-    "level_name",
-    async (name) => {
+  const levelMap = await resolveAndCreateEntities({
+    names: levelNames,
+    tableName: "level",
+    idColumn: "level_id",
+    nameColumn: "level_name",
+    pool,
+    create: async (name) => {
       const l = await Level.create({ level_name: name }, pool);
       return l.level_id;
     }
-  );
+  });
 
   // Resolve Job Codes to Job IDs (auto-create if missing)
   const jobMap = new Map<string, number>();
   if (jobCodes.size > 0) {
-    const uniqueJobCodes = Array.from(jobCodes).map((jc) => jc.toLowerCase());
+    const uniqueJobCodes = Array.from(jobCodes).map((jc) => normalizeLookupKey(jc)).filter(Boolean);
     const jobRes = await pool.query(
       `SELECT job_id, LOWER(job_code) AS lower_code FROM job WHERE LOWER(job_code) = ANY($1)`,
       [uniqueJobCodes]
@@ -196,9 +158,9 @@ export async function batchImport(
 
     // Auto-create missing jobs
     for (const jc of jobCodes) {
-      const lower = jc.trim().toLowerCase();
+      const lower = normalizeLookupKey(jc);
       if (!jobMap.has(lower)) {
-        const matchingCand = candidates.find(c => c.job_code?.trim().toLowerCase() === lower);
+        const matchingCand = candidates.find(c => normalizeLookupKey(c.job_code) === lower);
         const projectVal = matchingCand?.project?.trim() || jc.trim();
 
         const newJob = await Job.create({
@@ -220,17 +182,17 @@ export async function batchImport(
 
       let resolvedJobId = c.job_id ?? null;
       if (!resolvedJobId && c.job_code?.trim()) {
-        resolvedJobId = jobMap.get(c.job_code.trim().toLowerCase()) ?? null;
+        resolvedJobId = jobMap.get(normalizeLookupKey(c.job_code)) ?? null;
       }
 
-      const resolvedRecruiterId = c.recruiter || (c.recruiter_name?.trim() ? recruiterMap.get(c.recruiter_name.trim().toLowerCase()) : null) || null;
-      const resolvedReferenceId = c.reference || (c.reference_name?.trim() ? referenceMap.get(c.reference_name.trim().toLowerCase()) : null) || null;
-      const resolvedPlatformId = c.platform_id || (c.platform_name?.trim() ? platformMap.get(c.platform_name.trim().toLowerCase()) : null) || null;
-      const resolvedCompanyId = c.targeted_company || (c.targeted_company_name?.trim() ? companyMap.get(c.targeted_company_name.trim().toLowerCase()) : null) || null;
+      const resolvedRecruiterId = c.recruiter || (c.recruiter_name?.trim() ? recruiterMap.get(normalizeLookupKey(c.recruiter_name)) : null) || null;
+      const resolvedReferenceId = c.reference || (c.reference_name?.trim() ? referenceMap.get(normalizeLookupKey(c.reference_name)) : null) || null;
+      const resolvedPlatformId = c.platform_id || (c.platform_name?.trim() ? platformMap.get(normalizeLookupKey(c.platform_name)) : null) || null;
+      const resolvedCompanyId = c.targeted_company || (c.targeted_company_name?.trim() ? companyMap.get(normalizeLookupKey(c.targeted_company_name)) : null) || null;
 
       const mergedLevels = [
         ...(c.candidate_levels || []),
-        ...(c.candidate_levels_name || []).map((n) => levelMap.get(n.trim().toLowerCase())).filter(Boolean) as number[],
+        ...(c.candidate_levels_name || []).map((n) => levelMap.get(normalizeLookupKey(n))).filter(Boolean) as number[],
       ];
 
       await create(

@@ -14,6 +14,7 @@ The refactor must preserve existing API response shapes, route behavior, databas
 - Phase 0 baseline completed successfully on 2026-06-18.
 - Phase 1 revised on 2026-06-18 after user feedback: use Facade class calls such as `User.findById(...)` and `Department.getById(...)`, not direct function imports or SQL fragment/mapper helpers.
 - Phase 2 revised on 2026-06-18 after user feedback: extracted query helpers under `utilities/query`, refactored dashboard services, refactored `getAll` services so they query ids and call domain Facade methods such as `Site.getById(...)`, `Candidate.getById(...)`, and `Job.getById(...)`, and kept Facade classes in the concise static-assignment style.
+- Phase 3 completed on 2026-06-18: extracted entity lookup/resolution helpers under `utilities/entity`, refactored candidate/job batch import, and refactored file parsers to share lookup-map and placeholder resolution logic.
 - Existing documentation changes: `.agent/guide.md` now contains DRY rules; `.github/instructions/agent-workflow.instructions.md` now requires future plans to be stored in `.agent/`.
 
 ## Scope
@@ -165,23 +166,23 @@ Known affected files:
 - `services/file/parseJobSheet.ts`
 
 Plan:
-- [ ] Create `utilities/entity/normalizeLookupKey.ts`.
-- [ ] Create `utilities/entity/buildEntityMap.ts`.
-- [ ] Create `utilities/entity/resolveEntity.ts` for lookup with optional placeholder creation.
-- [ ] Create `utilities/entity/resolveAndCreateEntities.ts` for batch import use.
-- [ ] Refactor candidate and job batch import to use the shared resolver.
-- [ ] Refactor file parsers to use shared entity map and relation resolution helpers.
+- [x] Create `utilities/entity/normalizeLookupKey.ts`.
+- [x] Create `utilities/entity/buildEntityMap.ts`.
+- [x] Create `utilities/entity/resolveEntity.ts` for lookup with optional placeholder creation.
+- [x] Create `utilities/entity/resolveAndCreateEntities.ts` for batch import use.
+- [x] Refactor candidate and job batch import to use the shared resolver.
+- [x] Refactor file parsers to use shared entity map and relation resolution helpers.
 
 Safety notes:
 - Keep table and column names as code-owned config, not user-controlled input.
 - Preserve current case-insensitive behavior and original casing when creating missing entities.
 
 Verification:
-- [ ] Add tests for `utilities/entity/*`.
-- [ ] `npm run test:file 'test/services/candidate/batchImport.test.ts'`
-- [ ] Run job batch/createWithAll tests where present.
-- [ ] `npm run test:file 'test/services/file/parseCandidateSheet.test.ts'`
-- [ ] `npm run test:file 'test/services/file/parseJobSheet.test.ts'`
+- [x] Add tests for `utilities/entity/*` - `npm run test:file 'test/utilities/entity/*.test.ts'` covered normalize, build map, resolve single/multiple entities, and DB-backed resolve/create behavior.
+- [x] Add `test/services/job/batchImport.test.ts` because Phase 3 modified `services/job/batchImport.ts`.
+- [x] `npm run test:file 'test/utilities/entity/*.test.ts' 'test/services/candidate/batchImport.test.ts' 'test/services/job/batchImport.test.ts' 'test/services/file/parseCandidateSheet.test.ts' 'test/services/file/parseJobSheet.test.ts' 'test/services/job/createWithAll.test.ts' 'test/services/job/updateWithAll.test.ts'` - 41 passing; pre-existing `pg` deprecation warning in candidate batch import path.
+- [x] `npm run check` - passing.
+- [x] `grep` check for local `resolveAndCreateEntities`, manual entity maps, local `resolveRelationWithPlaceholder`, and repeated `trim().toLowerCase()` in Phase 3 target files - target files clean. Remaining match is `services/candidate/createWithAll.ts`, which is outside the current Phase 3 affected-file list.
 
 ## Phase 4 - File Parser Field Helpers
 
