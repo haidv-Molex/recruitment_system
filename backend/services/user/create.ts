@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { userOutputModel } from "@model/user/userModel";
+import User from "@services/user/_User";
 
 /**
  * Tạo tài khoản người dùng cơ bản (máy tạo).
@@ -16,7 +17,7 @@ async function create(
   const query = `
     INSERT INTO "user" (user_name, user_description, user_role)
     VALUES ($1, $2, 'user')
-    RETURNING user_id, user_name, user_description, user_role, create_at, update_at
+    RETURNING user_id
   `;
   const result = await pool.query(query, [username, description]);
 
@@ -24,15 +25,7 @@ async function create(
     throw new AppError("Lỗi khi tạo người dùng mới", 500);
   }
 
-  const row = result.rows[0];
-  return {
-    user_id: row.user_id,
-    user_name: row.user_name,
-    user_description: row.user_description,
-    user_role: row.user_role,
-    create_at: row.create_at,
-    update_at: row.update_at
-  } satisfies userOutputModel;
+  return await User.findById(result.rows[0].user_id, pool);
 }
 
 export default create;

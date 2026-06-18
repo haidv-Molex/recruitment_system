@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { departmentModel } from "@model/department/departmentModel";
+import User from "@services/user/_User";
 
 type UpdateDepartmentData = {
   department_code?: string;
@@ -49,16 +50,10 @@ async function update(
 
   values.push(id);
   const query = `
-    WITH updated AS (
-      UPDATE department
-      SET ${fields.join(", ")}, update_at = CURRENT_TIMESTAMP
-      WHERE department_id = $${index}
-      RETURNING department_id, department_code, department_name, department_description, user_id, create_at, update_at
-    )
-    SELECT u.department_id, u.department_code, u.department_name, u.department_description, u.user_id, u.create_at, u.update_at,
-           usr.user_name, usr.user_description AS u_description, usr.user_role, usr.create_at AS u_create_at, usr.update_at AS u_update_at
-    FROM updated u
-    LEFT JOIN "user" usr ON u.user_id = usr.user_id
+    UPDATE department
+    SET ${fields.join(", ")}, update_at = CURRENT_TIMESTAMP
+    WHERE department_id = $${index}
+    RETURNING *
   `;
   const result = await pool.query(query, values);
 
@@ -67,6 +62,7 @@ async function update(
   }
 
   const row = result.rows[0];
+  const user = row.user_id ? await User.findById(row.user_id, pool) : null;
 
   return {
     department_id: row.department_id,
@@ -75,14 +71,7 @@ async function update(
     department_description: row.department_description,
     create_at: row.create_at,
     update_at: row.update_at,
-    user: row.user_id ? {
-      user_id: row.user_id,
-      user_name: row.user_name,
-      user_description: row.u_description,
-      user_role: row.user_role,
-      create_at: row.u_create_at,
-      update_at: row.u_update_at
-    } : null
+    user
   } satisfies departmentModel;
 }
 

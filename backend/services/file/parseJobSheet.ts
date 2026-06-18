@@ -4,6 +4,7 @@ import type { departmentModel } from "@model/department/departmentModel";
 import type { segmentModel } from "@model/segment/segmentModel";
 import type { siteModel } from "@model/site/siteModel";
 import type { levelModel } from "@model/level/levelModel";
+import User from "@services/user/_User";
 
 function resolveRelationWithPlaceholder<T>(
   val: any,
@@ -35,11 +36,6 @@ function resolveRelationWithPlaceholder<T>(
 }
 
 export default async function parseJobSheet(rows: any[], pool: PoolClient): Promise<any[]> {
-  // Query all users
-  const usersQuery = `
-    SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at
-    FROM "user" u
-  `;
   // Query all departments
   const departmentsQuery = `
     SELECT department_id, department_code, department_name, department_description, create_at, update_at
@@ -61,8 +57,8 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     FROM level
   `;
 
-  const [usersRes, deptsRes, segmentsRes, sitesRes, levelsRes] = await Promise.all([
-    pool.query(usersQuery),
+  const [usersResult, deptsRes, segmentsRes, sitesRes, levelsRes] = await Promise.all([
+    User.getAll({ unlimited: true }, pool),
     pool.query(departmentsQuery),
     pool.query(segmentsQuery),
     pool.query(sitesQuery),
@@ -71,16 +67,10 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
 
   // Build maps using lowercase trimmed names
   const userMap = new Map<string, userOutputModel>();
-  for (const row of usersRes.rows) {
-    if (row.user_name) {
-      userMap.set(row.user_name.trim().toLowerCase(), {
-        user_id: row.user_id,
-        user_name: row.user_name,
-        user_description: row.user_description,
-        user_role: row.user_role,
-        create_at: row.create_at,
-        update_at: row.update_at
-      } satisfies userOutputModel);
+  for (const user of usersResult.items) {
+    const key = user.user_name ? user.user_name.trim().toLowerCase() : "";
+    if (key && !userMap.has(key)) {
+      userMap.set(key, user);
     }
   }
 

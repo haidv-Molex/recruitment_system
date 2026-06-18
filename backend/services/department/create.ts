@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { departmentModel } from "@model/department/departmentModel";
+import User from "@services/user/_User";
 
 type CreateDepartmentData = {
   department_code: string;
@@ -16,15 +17,9 @@ async function create(
   const { department_code, department_name, department_description = null, user_id = null } = data;
 
   const query = `
-    WITH inserted AS (
-      INSERT INTO department (department_code, department_name, department_description, user_id)
-      VALUES ($1, $2, $3, $4)
-      RETURNING department_id, department_code, department_name, department_description, user_id, create_at, update_at
-    )
-    SELECT i.department_id, i.department_code, i.department_name, i.department_description, i.user_id, i.create_at, i.update_at,
-           u.user_name, u.user_description AS u_description, u.user_role, u.create_at AS u_create_at, u.update_at AS u_update_at
-    FROM inserted i
-    LEFT JOIN "user" u ON i.user_id = u.user_id
+    INSERT INTO department (department_code, department_name, department_description, user_id)
+    VALUES ($1, $2, $3, $4)
+    RETURNING *
   `;
   const result = await pool.query(query, [department_code, department_name, department_description, user_id]);
 
@@ -33,6 +28,7 @@ async function create(
   }
 
   const row = result.rows[0];
+  const user = row.user_id ? await User.findById(row.user_id, pool) : null;
 
   return {
     department_id: row.department_id,
@@ -41,14 +37,7 @@ async function create(
     department_description: row.department_description,
     create_at: row.create_at,
     update_at: row.update_at,
-    user: row.user_id ? {
-      user_id: row.user_id,
-      user_name: row.user_name,
-      user_description: row.u_description,
-      user_role: row.user_role,
-      create_at: row.u_create_at,
-      update_at: row.u_update_at
-    } : null
+    user
   } satisfies departmentModel;
 }
 

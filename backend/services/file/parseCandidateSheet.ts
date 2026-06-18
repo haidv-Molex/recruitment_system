@@ -1,5 +1,6 @@
 import { PoolClient } from "pg";
 import type { userOutputModel } from "@model/user/userModel";
+import User from "@services/user/_User";
 
 // ─── Helper: resolve a text value against a Map, returning a placeholder if not found ───
 
@@ -66,23 +67,14 @@ export default async function parseCandidateSheet(
   rows: any[],
   pool: PoolClient
 ): Promise<ParsedCandidateRow[]> {
-  // Load all users so we can resolve recruiter / hiring_manager by name
-  const usersRes = await pool.query(
-    `SELECT u.user_id, u.user_name, u.user_description, u.user_role, u.create_at, u.update_at
-     FROM "user" u`
-  );
+  // Load all public users through the user service so parser code does not duplicate user SQL/mapping.
+  const usersResult = await User.getAll({ unlimited: true }, pool);
 
   const userMap = new Map<string, userOutputModel>();
-  for (const row of usersRes.rows) {
-    if (row.user_name) {
-      userMap.set(row.user_name.trim().toLowerCase(), {
-        user_id: row.user_id,
-        user_name: row.user_name,
-        user_description: row.user_description,
-        user_role: row.user_role,
-        create_at: row.create_at,
-        update_at: row.update_at
-      } satisfies userOutputModel);
+  for (const user of usersResult.items) {
+    const key = user.user_name ? user.user_name.trim().toLowerCase() : "";
+    if (key && !userMap.has(key)) {
+      userMap.set(key, user);
     }
   }
 

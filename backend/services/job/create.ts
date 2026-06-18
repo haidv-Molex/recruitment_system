@@ -3,6 +3,11 @@ import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
 import type { userOutputModel } from "@model/user/userModel";
 import FileService from "@services/file/_File";
+import Department from "@services/department/_Department";
+import Level from "@services/level/_Level";
+import Segment from "@services/segment/_Segment";
+import Site from "@services/site/_Site";
+import User from "@services/user/_User";
 import fs from "fs";
 import path from "path";
 
@@ -79,38 +84,17 @@ async function create(
       const departmentId = dept.department_id;
       const candidateRequired = dept.candidate_required;
 
-      const depCheck = await pool.query(
-        `SELECT d.department_id, d.department_code, d.department_name, d.department_description, d.create_at, d.update_at, d.user_id,
-                u.user_name, u.user_description AS u_description, u.user_role, u.create_at AS u_create_at, u.update_at AS u_update_at
-         FROM department d
-         LEFT JOIN "user" u ON d.user_id = u.user_id
-         WHERE d.department_id = $1`, [departmentId]
-      );
-      if (depCheck.rows.length === 0) {
+      let departmentData;
+      try {
+        departmentData = await Department.getById(departmentId, pool);
+      } catch (error) {
         throw new AppError(`Phòng ban (department_id = ${departmentId}) không tồn tại`, 400);
       }
 
-      const depRow = depCheck.rows[0];
-      const userCheckRow = depRow.user_id ? {
-        user_id: depRow.user_id,
-        user_name: depRow.user_name,
-        user_description: depRow.u_description,
-        user_role: depRow.user_role,
-        create_at: depRow.u_create_at,
-        update_at: depRow.u_update_at
-      } : null;
-
-      const deptData = { 
-        department_id: depRow.department_id,
-        department_code: depRow.department_code,
-        department_name: depRow.department_name,
-        department_description: depRow.department_description,
-        create_at: depRow.create_at,
-        update_at: depRow.update_at,
+      departmentsList.push({
+        ...departmentData,
         candidate_required: candidateRequired,
-        user: userCheckRow
-      };
-      departmentsList.push(deptData);
+      });
 
       await pool.query(
         `INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, $3)`,
@@ -125,14 +109,11 @@ async function create(
     // segments -> job_segment (job_id, segment_id)
     const segmentsList = [];
     for (const segmentId of segments) {
-      const segCheck = await pool.query(
-        `SELECT segment_id, segment_code, segment_name, segment_description, create_at, update_at 
-         FROM segment WHERE segment_id = $1`, [segmentId]
-      );
-      if (segCheck.rows.length === 0) {
+      try {
+        segmentsList.push(await Segment.getById(segmentId, pool));
+      } catch (error) {
         throw new AppError(`Phân khúc (segment_id = ${segmentId}) không tồn tại`, 400);
       }
-      segmentsList.push(segCheck.rows[0]);
       await pool.query(
         `INSERT INTO job_segment (job_id, segment_id) VALUES ($1, $2)`,
         [jobId, segmentId]
@@ -142,14 +123,11 @@ async function create(
     // sites -> job_site (job_id, site_id)
     const sitesList = [];
     for (const siteId of sites) {
-      const siteCheck = await pool.query(
-        `SELECT site_id, site_code, site_name, site_description, create_at, update_at 
-         FROM site WHERE site_id = $1`, [siteId]
-      );
-      if (siteCheck.rows.length === 0) {
+      try {
+        sitesList.push(await Site.getById(siteId, pool));
+      } catch (error) {
         throw new AppError(`Địa điểm (site_id = ${siteId}) không tồn tại`, 400);
       }
-      sitesList.push(siteCheck.rows[0]);
       await pool.query(
         `INSERT INTO job_site (job_id, site_id) VALUES ($1, $2)`,
         [jobId, siteId]
@@ -159,14 +137,11 @@ async function create(
     // titles -> job_title (job_id, level_id)
     const titlesList = [];
     for (const levelId of titles) {
-      const lvlCheck = await pool.query(
-        `SELECT level_id, level_code, level_name, level_description, create_at, update_at 
-         FROM level WHERE level_id = $1`, [levelId]
-      );
-      if (lvlCheck.rows.length === 0) {
+      try {
+        titlesList.push(await Level.getById(levelId, pool));
+      } catch (error) {
         throw new AppError(`Chức danh (level_id = ${levelId}) không tồn tại`, 400);
       }
-      titlesList.push(lvlCheck.rows[0]);
       await pool.query(
         `INSERT INTO job_title (job_id, level_id) VALUES ($1, $2)`,
         [jobId, levelId]
@@ -176,14 +151,11 @@ async function create(
     // managers -> hiring_manager (job_id, user_id)
     const managersList = [];
     for (const userId of managers) {
-      const userCheck = await pool.query(
-        `SELECT user_id, user_name, user_description, user_role, create_at, update_at 
-         FROM "user" WHERE user_id = $1`, [userId]
-      );
-      if (userCheck.rows.length === 0) {
+      try {
+        managersList.push(await User.findById(userId, pool));
+      } catch (error) {
         throw new AppError(`Quản lý tuyển dụng (user_id = ${userId}) không tồn tại`, 400);
       }
-      managersList.push(userCheck.rows[0]);
       await pool.query(
         `INSERT INTO hiring_manager (job_id, user_id) VALUES ($1, $2)`,
         [jobId, userId]
@@ -193,14 +165,11 @@ async function create(
     // employee_levels -> employee_level (job_id, level_id)
     const employeeLevelsList = [];
     for (const levelId of employee_levels) {
-      const lvlCheck = await pool.query(
-        `SELECT level_id, level_code, level_name, level_description, create_at, update_at 
-         FROM level WHERE level_id = $1`, [levelId]
-      );
-      if (lvlCheck.rows.length === 0) {
+      try {
+        employeeLevelsList.push(await Level.getById(levelId, pool));
+      } catch (error) {
         throw new AppError(`Cấp bậc nhân viên (level_id = ${levelId}) không tồn tại`, 400);
       }
-      employeeLevelsList.push(lvlCheck.rows[0]);
       await pool.query(
         `INSERT INTO employee_level (job_id, level_id) VALUES ($1, $2)`,
         [jobId, levelId]

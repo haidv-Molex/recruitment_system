@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import type { userOutputModel } from "@model/user/userModel";
 import type { PaginationQueryMetadata } from "@type/pagination";
+import User from "@services/user/_User";
 
 type GetAllUsersParams = PaginationQueryMetadata & {
   search?: string;
@@ -26,8 +27,7 @@ async function getAll(
   let countQuery = `SELECT COUNT(*) AS total FROM "user"`;
   let query = `
     SELECT
-      u.user_id, u.user_name, u.user_description, u.user_role,
-      u.create_at, u.update_at
+      u.user_id
     FROM "user" u
   `;
   const values: any[] = [];
@@ -70,14 +70,9 @@ async function getAll(
 
   const result = await pool.query(query, values);
 
-  const items = result.rows.map((row) => ({
-    user_id: row.user_id,
-    user_name: row.user_name,
-    user_description: row.user_description,
-    user_role: row.user_role,
-    create_at: row.create_at,
-    update_at: row.update_at
-  })) satisfies userOutputModel[];
+  const items = await Promise.all(
+    result.rows.map((row) => User.findById(row.user_id, pool))
+  ) satisfies userOutputModel[];
 
   return {
     items,

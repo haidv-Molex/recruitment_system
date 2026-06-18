@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { userOutputModel } from "@model/user/userModel";
+import User from "@services/user/_User";
 
 /**
  * Cập nhật thông tin cá nhân của người dùng (tên và mô tả).
@@ -33,7 +34,7 @@ async function updateProfile(
     UPDATE "user"
     SET ${fields.join(", ")}
     WHERE user_id = $${index}
-    RETURNING user_id, user_name, user_description, user_role, create_at, update_at
+    RETURNING user_id
   `;
 
   const result = await pool.query(query, values);
@@ -42,15 +43,7 @@ async function updateProfile(
     throw new AppError("Không tìm thấy người dùng", 404);
   }
 
-  const row = result.rows[0];
-  return {
-    user_id: row.user_id,
-    user_name: row.user_name,
-    user_description: row.user_description,
-    user_role: row.user_role,
-    create_at: row.create_at,
-    update_at: row.update_at
-  } satisfies userOutputModel;
+  return await User.findById(result.rows[0].user_id, pool);
 }
 
 export default updateProfile;
