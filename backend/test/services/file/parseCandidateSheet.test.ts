@@ -2,6 +2,35 @@ import { PoolClient } from "pg";
 import { pool } from "@middlewares/database";
 import parseCandidateSheet from "@services/file/parseCandidateSheet";
 
+const SAMPLE_DATABASE_HEADERS = [
+  "Input date (dd/mm/yyyy)",
+  "Department",
+  "Name",
+  "Email",
+  "Phone number",
+  "Recruiter",
+  "Job code",
+  "Job title",
+  "EE Level",
+  "Project",
+  "Hiring manager",
+  "DL/IDL",
+  "Status",
+  "Onboarding Date (DD/MM/YYYY)",
+  "Offer Sent date\n(DD/MM/YYYY)",
+  "Source",
+  "Mã nhân viên",
+  "Người giới thiệu",
+  "Bộ phận",
+  "Note",
+  "Current salary \n(Gross M VND)",
+  "Expected salary\n(Gross M VND)",
+  "Candidate result feedback date",
+  "Headhunt Agency",
+  "Targeted company",
+  "Targeted company name",
+];
+
 describe("parseCandidateSheet service", () => {
   let client: PoolClient;
   let expect: any;
@@ -112,6 +141,51 @@ describe("parseCandidateSheet service", () => {
     expect(c.hiring_manager).to.not.be.null;
     expect(c.hiring_manager!.user_id).to.equal(seededManagerId);
     expect(c.hiring_manager!.user_name).to.equal("Nguyễn Lê Hoàng");
+  });
+
+  it("should preserve sample Database sheet fields including Source and EE Level", async () => {
+    const rawRow = Object.fromEntries(SAMPLE_DATABASE_HEADERS.map((header) => [header, null]));
+    rawRow["Name"] = "Sample Contract Candidate";
+    rawRow["Email"] = "sample.contract@example.com";
+    rawRow["Phone number"] = "0903442885";
+    rawRow["Recruiter"] = "Annie";
+    rawRow["Job code"] = "J001";
+    rawRow["Job title"] = "Engineer, Production";
+    rawRow["EE Level"] = "Engineer";
+    rawRow["Project"] = "DSS Talent Connector";
+    rawRow["Hiring manager"] = "Nguyễn Lê Hoàng";
+    rawRow["DL/IDL"] = "MXV";
+    rawRow["Status"] = "CV Sent";
+    rawRow["Source"] = "Vietnamworks Job Post";
+
+    const result = await parseCandidateSheet([rawRow], client);
+
+    expect(result).to.be.an("array").with.lengthOf(1);
+    expect(result[0].candidate_name).to.equal("Sample Contract Candidate");
+    expect(result[0].candidate_email).to.equal("sample.contract@example.com");
+    expect(result[0].source).to.equal("Vietnamworks Job Post");
+    expect(result[0].ee_level).to.equal("Engineer");
+    expect(result[0].job_code).to.equal("J001");
+    expect(result[0].project).to.equal("DSS Talent Connector");
+  });
+
+  it("should allow a blank Email cell and still parse the candidate row", async () => {
+    const rawRow = Object.fromEntries(SAMPLE_DATABASE_HEADERS.map((header) => [header, null]));
+    rawRow["Name"] = "No Email Candidate";
+    rawRow["Email"] = "";
+    rawRow["Recruiter"] = "Annie";
+    rawRow["Hiring manager"] = "Nguyễn Lê Hoàng";
+    rawRow["Status"] = "CV Sent";
+    rawRow["Source"] = "Facebook";
+    rawRow["EE Level"] = "Engineer";
+
+    const result = await parseCandidateSheet([rawRow], client);
+
+    expect(result).to.be.an("array").with.lengthOf(1);
+    expect(result[0].candidate_name).to.equal("No Email Candidate");
+    expect(result[0].candidate_email).to.be.null;
+    expect(result[0].source).to.equal("Facebook");
+    expect(result[0].ee_level).to.equal("Engineer");
   });
 
   // ─── Placeholder stubs for unknown users ───────────────────────────────────
