@@ -1,5 +1,6 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 /**
  * Kiểm tra xem người dùng có phải là Admin hay không dựa trên user_id.
@@ -16,12 +17,9 @@ async function isAdmin(userId: number, pool: PoolClient): Promise<boolean> {
 
   const query = `SELECT user_role FROM "user" WHERE user_id = $1`;
   const result = await pool.query(query, [userId]);
+  const row = assertFirstRow(result.rows, "Không tìm thấy người dùng", 404);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Không tìm thấy người dùng", 404);
-  }
-
-  return result.rows[0].user_role === "admin";
+  return row.user_role === "admin";
 }
 
 export default isAdmin;

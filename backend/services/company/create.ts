@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { companyModel } from "@model/company/companyModel";
+import Company from "@services/company/_Company";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 type CreateCompanyData = {
   company_name: string;
@@ -16,19 +17,12 @@ async function create(
   const query = `
     INSERT INTO company (company_name, company_description)
     VALUES ($1, $2)
-    RETURNING company_id, company_name, company_description
+    RETURNING company_id
   `;
   const result = await pool.query(query, [company_name, company_description]);
+  const row = assertFirstRow(result.rows, "Lỗi khi tạo công ty mới", 500);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Lỗi khi tạo công ty mới", 500);
-  }
-
-  return {
-    company_id: result.rows[0].company_id,
-    company_name: result.rows[0].company_name,
-    company_description: result.rows[0].company_description
-  } satisfies companyModel;
+  return await Company.getById(row.company_id, pool);
 }
 
 export default create;

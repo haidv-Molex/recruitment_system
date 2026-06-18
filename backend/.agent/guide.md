@@ -258,7 +258,7 @@ Trong controller và service khác, hãy luôn gọi service thông qua Facade c
 
 **Quy tắc import service bắt buộc:**
 - Khi một file cần dùng logic của domain khác, import Facade class của domain đó, ví dụ `import User from "@services/user/_User"`, rồi gọi `User.findById(...)`.
-- Khi một service trong cùng domain cần dùng service khác của chính domain đó, vẫn ưu tiên gọi qua Facade class để callsite có ngữ cảnh domain, ví dụ `User.findById(...)` trong `services/user/getAll.ts`.
+- Khi một service trong cùng domain cần dùng service khác của chính domain đó, vẫn ưu tiên gọi qua Facade class nếu không tạo vòng import runtime. Nếu Facade dùng import tĩnh và việc import ngược `_ClassName.ts` gây circular dependency, được phép import trực tiếp service cùng domain đó như ngoại lệ kỹ thuật có chủ đích.
 - Không import trực tiếp service function như `import findById from "@services/user/findById"` trong code nghiệp vụ, ngoại trừ bên trong file Facade class hoặc trường hợp kỹ thuật bắt buộc đã được ghi rõ trong plan.
 - Giữ Facade class gọn nhẹ bằng import tĩnh và static assignment (`static getById = getById`). Không dùng `typeof import(...)` hoặc dynamic `await import(...)` trong Facade chỉ để né vòng import; nếu vòng import thực sự xảy ra, tách helper hoặc điều chỉnh cấu trúc ownership cho rõ ràng.
 

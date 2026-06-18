@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { userOutputModel } from "@model/user/userModel";
-import User from "@services/user/_User";
+import findById from "@services/user/findById";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 /**
  * Tạo tài khoản người dùng cơ bản (máy tạo).
@@ -20,12 +20,9 @@ async function create(
     RETURNING user_id
   `;
   const result = await pool.query(query, [username, description]);
+  const row = assertFirstRow(result.rows, "Lỗi khi tạo người dùng mới", 500);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Lỗi khi tạo người dùng mới", 500);
-  }
-
-  return await User.findById(result.rows[0].user_id, pool);
+  return await findById(row.user_id, pool);
 }
 
 export default create;

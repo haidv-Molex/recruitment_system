@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
 import type { userOutputModel } from "@model/user/userModel";
 import type { PaginationQueryMetadata } from "@type/pagination";
-import User from "@services/user/_User";
+import findById from "@services/user/findById";
 import buildPagination from "@utilities/query/buildPagination";
 import buildWhereClause from "@utilities/query/buildWhereClause";
 
@@ -62,7 +62,7 @@ async function getAll(
   const result = await pool.query(query, values);
 
   const items = await Promise.all(
-    result.rows.map((row) => User.findById(row.user_id, pool))
+    result.rows.map((row) => findById(row.user_id, pool))
   ) satisfies userOutputModel[];
 
   return {

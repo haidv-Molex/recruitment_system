@@ -1,6 +1,6 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { userModel } from "@model/user/userModel";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 /**
  * Tìm kiếm người dùng bằng account.
@@ -12,12 +12,7 @@ async function findByAccount(account: string, pool: PoolClient): Promise<userMod
     WHERE user_account = $1
   `;
   const result = await pool.query(query, [account]);
-
-  if (result.rows.length === 0) {
-    throw new AppError("Tài khoản hoặc mật khẩu không chính xác", 401);
-  }
-
-  const row = result.rows[0];
+  const row = assertFirstRow(result.rows, "Tài khoản hoặc mật khẩu không chính xác", 401);
   return {
     user_id: row.user_id,
     user_name: row.user_name,

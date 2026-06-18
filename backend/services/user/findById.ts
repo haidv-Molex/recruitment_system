@@ -1,6 +1,6 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { userOutputModel } from "@model/user/userModel";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 /**
  * Tìm kiếm người dùng bằng user_id.
@@ -14,12 +14,7 @@ async function findById(userId: number, pool: PoolClient): Promise<userOutputMod
     WHERE u.user_id = $1
   `;
   const result = await pool.query(query, [userId]);
-
-  if (result.rows.length === 0) {
-    throw new AppError("Không tìm thấy người dùng", 404);
-  }
-
-  const row = result.rows[0];
+  const row = assertFirstRow(result.rows, "Không tìm thấy người dùng", 404);
   return {
     user_id: row.user_id,
     user_name: row.user_name,

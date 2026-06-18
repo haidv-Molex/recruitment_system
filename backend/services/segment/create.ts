@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { segmentModel } from "@model/segment/segmentModel";
+import Segment from "@services/segment/_Segment";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 type CreateSegmentData = {
   segment_code?: string | null;
@@ -17,22 +18,12 @@ async function create(
   const query = `
     INSERT INTO segment (segment_code, segment_name, segment_description)
     VALUES ($1, $2, $3)
-    RETURNING segment_id, segment_code, segment_name, segment_description, create_at, update_at
+    RETURNING segment_id
   `;
   const result = await pool.query(query, [segment_code, segment_name, segment_description]);
+  const row = assertFirstRow(result.rows, "Lỗi khi tạo phân khúc mới", 500);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Lỗi khi tạo phân khúc mới", 500);
-  }
-
-  return {
-    segment_id: result.rows[0].segment_id,
-    segment_code: result.rows[0].segment_code,
-    segment_name: result.rows[0].segment_name,
-    segment_description: result.rows[0].segment_description,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
-  } satisfies segmentModel;
+  return await Segment.getById(row.segment_id, pool);
 }
 
 export default create;

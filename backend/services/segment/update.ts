@@ -1,6 +1,9 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { segmentModel } from "@model/segment/segmentModel";
+import Segment from "@services/segment/_Segment";
+import assertFirstRow from "@utilities/db/assertFirstRow";
+import buildUpdateSet from "@utilities/db/buildUpdateSet";
 
 type UpdateSegmentData = {
   segment_code?: string | null;
@@ -15,52 +18,30 @@ async function update(
 ): Promise<segmentModel> {
   const checkQuery = `SELECT segment_id FROM segment WHERE segment_id = $1`;
   const checkResult = await pool.query(checkQuery, [id]);
-  if (checkResult.rows.length === 0) {
-    throw new AppError("Không tìm thấy phân khúc để cập nhật", 404);
-  }
+  assertFirstRow(checkResult.rows, "Không tìm thấy phân khúc để cập nhật", 404);
 
-  const fields: string[] = [];
-  const values: any[] = [];
-  let index = 1;
+  const updateSet = buildUpdateSet([
+    { column: "segment_code", value: data.segment_code },
+    { column: "segment_name", value: data.segment_name },
+    { column: "segment_description", value: data.segment_description }
+  ]);
 
-  if (data.segment_code !== undefined) {
-    fields.push(`segment_code = $${index++}`);
-    values.push(data.segment_code);
-  }
-  if (data.segment_name !== undefined) {
-    fields.push(`segment_name = $${index++}`);
-    values.push(data.segment_name);
-  }
-  if (data.segment_description !== undefined) {
-    fields.push(`segment_description = $${index++}`);
-    values.push(data.segment_description);
-  }
-
-  if (fields.length === 0) {
+  if (updateSet.setClauses.length === 0) {
     throw new AppError("Không có dữ liệu thay đổi", 400);
   }
 
+  const values = updateSet.values;
   values.push(id);
   const query = `
     UPDATE segment
-    SET ${fields.join(", ")}, update_at = CURRENT_TIMESTAMP
-    WHERE segment_id = $${index}
-    RETURNING segment_id, segment_code, segment_name, segment_description, create_at, update_at
+    SET ${updateSet.setClauses.join(", ")}, update_at = CURRENT_TIMESTAMP
+    WHERE segment_id = $${updateSet.nextIndex}
+    RETURNING segment_id
   `;
   const result = await pool.query(query, values);
+  const row = assertFirstRow(result.rows, "Lỗi khi cập nhật phân khúc", 500);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Lỗi khi cập nhật phân khúc", 500);
-  }
-
-  return {
-    segment_id: result.rows[0].segment_id,
-    segment_code: result.rows[0].segment_code,
-    segment_name: result.rows[0].segment_name,
-    segment_description: result.rows[0].segment_description,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
-  } satisfies segmentModel;
+  return await Segment.getById(row.segment_id, pool);
 }
 
 export default update;

@@ -17,6 +17,7 @@ The refactor must preserve existing API response shapes, route behavior, databas
 - Phase 3 completed on 2026-06-18: extracted entity lookup/resolution helpers under `utilities/entity`, refactored candidate/job batch import, and refactored file parsers to share lookup-map and placeholder resolution logic.
 - Phase 4 completed on 2026-06-18: extracted file row string/date helpers under `utilities/file` and refactored parser services to use them.
 - Phase 5 completed on 2026-06-18: extracted small DB linking helpers under `utilities/db` and refactored candidate/job link insert/replace flows while keeping entity validation in domain Facade services.
+- Phase 6 completed on 2026-06-18: extracted small CRUD DB helpers under `utilities/db`, refactored basic CRUD create/update/delete/getById flows, and preserved concise static Facade classes with direct same-domain imports only where needed to avoid circular runtime imports.
 - Existing documentation changes: `.agent/guide.md` now contains DRY rules; `.github/instructions/agent-workflow.instructions.md` now requires future plans to be stored in `.agent/`.
 
 ## Scope
@@ -90,7 +91,7 @@ Known affected files:
 
 Plan:
 - [x] Remove the `userPublicMapper` direction from source changes.
-- [x] Update `services/user/_User.ts` to lazy-load methods so services inside `services/user/` can safely call `User.findById(...)` without circular import issues.
+- [x] Keep `services/user/_User.ts` as a concise static Facade. Same-domain user services use direct same-domain imports where importing `_User.ts` would create a circular runtime dependency.
 - [x] Refactor `services/user/getAll.ts`, `services/user/create.ts`, `services/user/createHR.ts`, and `services/user/updateProfile.ts` to call `User.findById(...)` instead of importing `findById` directly.
 - [x] Refactor department services to fetch department rows first, then call `User.findById(...)` for optional `user_id`.
 - [x] Refactor candidate/file parser code to call `User.findById(...)` or `User.getAll(...)` instead of duplicating public user SQL/mapping.
@@ -255,14 +256,17 @@ Known affected domains:
 - `user`
 
 Plan:
-- [ ] Add missing service tests before broad CRUD refactor.
-- [ ] Extract tiny helpers first: `assertRowFound`, `buildUpdateSet`, `deleteByIds`.
-- [ ] Avoid large generic factories until tests prove the local variations are understood.
-- [ ] Refactor one domain at a time and run its mirrored tests immediately.
+- [x] Add missing service tests before broad CRUD refactor. Existing controller/service coverage was used for CRUD behavior, and new utility tests were added for extracted DB helpers.
+- [x] Extract tiny helpers first: `assertRowFound`, `buildUpdateSet`, `deleteByIds`. Implemented as `assertFirstRow`, `buildUpdateSet`, and `deleteByIds`.
+- [x] Avoid large generic factories until tests prove the local variations are understood.
+- [x] Refactor one domain at a time and run its mirrored tests immediately.
 
 Verification:
-- [ ] Domain-specific service tests for each touched source file.
-- [ ] `npm run check`
+- [x] Added utility tests for `assertFirstRow`, `buildUpdateSet`, `deleteByIds`, and shared `quoteIdentifier` under `test/utilities/db/`.
+- [x] `npm run test:file 'test/utilities/db/*.test.ts'` - 14 passing.
+- [x] `npm run test:file 'test/controller/company/companyController.test.ts' 'test/controller/level/levelController.test.ts' 'test/controller/platform/platformController.test.ts' 'test/controller/segment/segmentController.test.ts' 'test/controller/site/siteController.test.ts' 'test/controller/department/departmentController.test.ts' 'test/controller/user/createUserController.test.ts' 'test/controller/user/createHRController.test.ts' 'test/controller/user/updateUserController.test.ts' 'test/controller/user/deleteUserController.test.ts' 'test/controller/user/getUserController.test.ts' 'test/services/user/comparePassword.test.ts' 'test/services/user/createHR.test.ts' 'test/services/user/isAdmin.test.ts' 'test/services/user/updateProfile.test.ts'` - 90 passing; expected validation-error logs in negative controller tests.
+- [x] `grep` check for old dynamic update arrays, delete-by-ids boilerplate, and repeated row-not-found checks in Phase 6 CRUD/user target services - no matches.
+- [x] `npm run check` - passing.
 
 ## Final Verification
 

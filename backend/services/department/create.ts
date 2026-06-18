@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { departmentModel } from "@model/department/departmentModel";
-import User from "@services/user/_User";
+import Department from "@services/department/_Department";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 type CreateDepartmentData = {
   department_code: string;
@@ -19,26 +19,12 @@ async function create(
   const query = `
     INSERT INTO department (department_code, department_name, department_description, user_id)
     VALUES ($1, $2, $3, $4)
-    RETURNING *
+    RETURNING department_id
   `;
   const result = await pool.query(query, [department_code, department_name, department_description, user_id]);
+  const row = assertFirstRow(result.rows, "Lỗi khi tạo phòng ban mới", 500);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Lỗi khi tạo phòng ban mới", 500);
-  }
-
-  const row = result.rows[0];
-  const user = row.user_id ? await User.findById(row.user_id, pool) : null;
-
-  return {
-    department_id: row.department_id,
-    department_code: row.department_code,
-    department_name: row.department_name,
-    department_description: row.department_description,
-    create_at: row.create_at,
-    update_at: row.update_at,
-    user
-  } satisfies departmentModel;
+  return await Department.getById(row.department_id, pool);
 }
 
 export default create;

@@ -1,15 +1,8 @@
 import { PoolClient } from "pg";
+import quoteIdentifier from "@utilities/db/quoteIdentifier";
 
 export type LinkValue = string | number | boolean | Date | null;
 export type LinkRow = Record<string, LinkValue>;
-
-function quoteIdentifier(identifier: string): string {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
-    throw new Error(`Invalid SQL identifier: ${identifier}`);
-  }
-
-  return `"${identifier}"`;
-}
 
 export async function insertLinkRows(
   pool: PoolClient,

@@ -1,6 +1,9 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { platformModel } from "@model/platform/platformModel";
+import Platform from "@services/platform/_Platform";
+import assertFirstRow from "@utilities/db/assertFirstRow";
+import buildUpdateSet from "@utilities/db/buildUpdateSet";
 
 type UpdatePlatformData = {
   platform_name?: string;
@@ -14,45 +17,28 @@ async function update(
 ): Promise<platformModel> {
   const checkQuery = `SELECT platform_id FROM platform WHERE platform_id = $1`;
   const checkResult = await pool.query(checkQuery, [id]);
-  if (checkResult.rows.length === 0) {
-    throw new AppError("Không tìm thấy nền tảng để cập nhật", 404);
-  }
+  assertFirstRow(checkResult.rows, "Không tìm thấy nền tảng để cập nhật", 404);
 
-  const fields: string[] = [];
-  const values: any[] = [];
-  let index = 1;
+  const { setClauses, values, nextIndex } = buildUpdateSet([
+    { column: "platform_name", value: data.platform_name },
+    { column: "platform_description", value: data.platform_description }
+  ]);
 
-  if (data.platform_name !== undefined) {
-    fields.push(`platform_name = $${index++}`);
-    values.push(data.platform_name);
-  }
-  if (data.platform_description !== undefined) {
-    fields.push(`platform_description = $${index++}`);
-    values.push(data.platform_description);
-  }
-
-  if (fields.length === 0) {
+  if (setClauses.length === 0) {
     throw new AppError("Không có dữ liệu thay đổi", 400);
   }
 
   values.push(id);
   const query = `
     UPDATE platform
-    SET ${fields.join(", ")}
-    WHERE platform_id = $${index}
-    RETURNING platform_id, platform_name, platform_description
+    SET ${setClauses.join(", ")}
+    WHERE platform_id = $${nextIndex}
+    RETURNING platform_id
   `;
   const result = await pool.query(query, values);
+  const row = assertFirstRow(result.rows, "Lỗi khi cập nhật nền tảng", 500);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Lỗi khi cập nhật nền tảng", 500);
-  }
-
-  return {
-    platform_id: result.rows[0].platform_id,
-    platform_name: result.rows[0].platform_name,
-    platform_description: result.rows[0].platform_description
-  } satisfies platformModel;
+  return await Platform.getById(row.platform_id, pool);
 }
 
 export default update;
