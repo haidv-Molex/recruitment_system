@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
+import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
 import { populateCandidateRelations } from "./populate";
 import { insertLinkRows } from "@utilities/db/linking";
 
@@ -43,6 +44,15 @@ export async function create(
   }
 
   try {
+    const candidateDetail = await CandidateDetailService.create({
+      offer_date: data.offer_date ?? null,
+      onboard_date: data.onboard_date ?? null,
+      expected_onboard_date: data.expected_onboard_date ?? null,
+      feedback_date: data.feedback_date ?? null,
+      current_salary: data.current_salary ?? null,
+      expected_salary: data.expected_salary ?? null
+    }, pool);
+
     const query = `
       INSERT INTO candidate (
         candidate_code,
@@ -50,21 +60,16 @@ export async function create(
         candidate_email,
         candidate_phone,
         agency,
-        offer_date,
-        onboard_date,
-        expected_onboard_date,
-        feedback_date,
-        current_salary,
-        expected_salary,
         status,
         note,
+        candidate_detail_id,
         platform_id,
         job_id,
         targeted_company,
         reference,
         file_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -74,14 +79,9 @@ export async function create(
       data.candidate_email || null,
       data.candidate_phone || null,
       data.agency || null,
-      data.offer_date || null,
-      data.onboard_date || null,
-      data.expected_onboard_date || null,
-      data.feedback_date || null,
-      data.current_salary || null,
-      data.expected_salary || null,
       data.status,
       data.note || null,
+      candidateDetail.candidate_detail_id,
       data.platform_id || null,
       data.job_id || null,
       data.targeted_company || null,

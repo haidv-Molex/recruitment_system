@@ -298,20 +298,41 @@ Phase 1 result on 2026-06-19:
 
 Tasks:
 
-- [ ] Update candidate create/update services so flat payload writes fields according to current schema ownership.
-- [ ] Do not add schema columns to `candidate_detail` during service work.
-- [ ] Drop/ignore `address`, `file_id`, and `targeted_company` in candidate_detail service/controller payload handling; keep `location` as the remaining place field.
-- [ ] Preserve `candidate_level` behavior on `candidate`.
-- [ ] Use `candidate.candidate_detail_id` to read/nest candidate_detail without changing its schema.
+- [x] Update candidate create/update services so flat payload writes fields according to current schema ownership.
+- [x] Do not add schema columns to `candidate_detail` during service work.
+- [x] Drop/ignore `address`, `file_id`, and `targeted_company` in candidate_detail service/controller payload handling; keep `location` as the remaining place field.
+- [x] Preserve `candidate_level` behavior on `candidate`.
+- [x] Use `candidate.candidate_detail_id` to read/nest candidate_detail without changing its schema.
+
+Phase 2 result on 2026-06-19:
+
+- `services/candidate/create.ts` now creates a `candidate_detail` row first for detail-owned date/salary fields, then writes `candidate.candidate_detail_id` into the candidate row.
+- `services/candidate/create.ts` keeps `agency`, `platform_id`, `job_id`, `targeted_company`, `reference`, `file_id`, `status`, `note`, identity fields, and candidate levels on candidate-owned flows.
+- `services/candidate/update.ts` now sends date/salary updates to `CandidateDetailService.update(...)` through `candidate.candidate_detail_id`.
+- `services/candidate/update.ts` creates a candidate_detail row and links it back to candidate if detail-owned fields are updated on a candidate without `candidate_detail_id`.
+- `createWithAll` and `batchImport` continue to call `create(...)`, so their date/salary payloads use the new split logic indirectly.
+- `npm run check` passed.
+- `npm run run-init-db` was not run.
 
 ## Phase 3 - Candidate Search And Response
 
 Tasks:
 
-- [ ] Update candidate populate/search according to current schema ownership.
-- [ ] Detail nesting/search should use `candidate.candidate_detail_id -> candidate_detail.candidate_detail_id`.
-- [ ] Candidate-owned relation joins stay rooted on `candidate` for `platform_id`, `job_id`, `targeted_company`, `reference`, and `file_id`.
-- [ ] Detail-owned joins/search use only existing `candidate_detail` fields. Do not join/search `targeted_company` or `file_id` through candidate_detail because those columns have been removed.
+- [x] Update candidate populate/search according to current schema ownership.
+- [x] Detail nesting/search should use `candidate.candidate_detail_id -> candidate_detail.candidate_detail_id`.
+- [x] Candidate-owned relation joins stay rooted on `candidate` for `platform_id`, `job_id`, `targeted_company`, `reference`, and `file_id`.
+- [x] Detail-owned joins/search use only existing `candidate_detail` fields. Do not join/search `targeted_company` or `file_id` through candidate_detail because those columns have been removed.
+
+Phase 3 result on 2026-06-19:
+
+- `services/candidate/populate.ts` now nests `candidate_detail` by calling `CandidateDetailService.getById(candidate_detail_id, pool)`.
+- Candidate-owned relations remain at candidate root: `platform`, `job`, `targeted_company`, `reference`, `file`, and `candidate_levels`.
+- `services/candidate/getAll.ts` now joins `candidate_detail cd ON c.candidate_detail_id = cd.candidate_detail_id` for detail-owned date/salary search.
+- Candidate search date range filters now use `cd.offer_date`, `cd.onboard_date`, `cd.expected_onboard_date`, and `cd.feedback_date`.
+- Candidate salary filters/search now use `cd.current_salary::text` and `cd.expected_salary::text`.
+- `controller/candidate/getAllCandidatesController.ts` now accepts salary filters and date fields in `search_at`.
+- `npm run check` passed.
+- `npm run run-init-db` was not run.
 
 ## Phase 4 - Frontend Table/Form
 

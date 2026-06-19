@@ -25,6 +25,8 @@ export interface GetAllCandidatesOptions {
   candidate_phone?: string;
   agency?: string;
   note?: string;
+  current_salary?: string;
+  expected_salary?: string;
   job_code?: string;
   project?: string;
   platform?: string;
@@ -49,8 +51,12 @@ export async function getAll(
       phone: "c.candidate_phone",
       agency: "c.agency",
       note: "c.note",
-      current_salary: "c.current_salary",
-      expected_salary: "c.expected_salary",
+      current_salary: "cd.current_salary::text",
+      expected_salary: "cd.expected_salary::text",
+      offer_date: "cd.offer_date::text",
+      onboard_date: "cd.onboard_date::text",
+      expected_onboard_date: "cd.expected_onboard_date::text",
+      feedback_date: "cd.feedback_date::text",
       job_name: "j.project",
       job_code: "j.job_code",
       platform: "p.platform_name",
@@ -92,6 +98,8 @@ export async function getAll(
   addFilterCondition("c.candidate_phone", options.candidate_phone);
   addFilterCondition("c.agency", options.agency);
   addFilterCondition("c.note", options.note);
+  addFilterCondition("cd.current_salary::text", options.current_salary);
+  addFilterCondition("cd.expected_salary::text", options.expected_salary);
   addFilterCondition("j.job_code", options.job_code);
   addFilterCondition("j.project", options.project);
   if (options.platform && options.platform.trim()) {
@@ -114,15 +122,16 @@ export async function getAll(
     }
   };
 
-  addDateCondition("c.offer_date", options.offer_date_from, options.offer_date_to);
-  addDateCondition("c.onboard_date", options.onboard_date_from, options.onboard_date_to);
-  addDateCondition("c.expected_onboard_date", options.expected_onboard_date_from, options.expected_onboard_date_to);
-  addDateCondition("c.feedback_date", options.feedback_date_from, options.feedback_date_to);
+  addDateCondition("cd.offer_date", options.offer_date_from, options.offer_date_to);
+  addDateCondition("cd.onboard_date", options.onboard_date_from, options.onboard_date_to);
+  addDateCondition("cd.expected_onboard_date", options.expected_onboard_date_from, options.expected_onboard_date_to);
+  addDateCondition("cd.feedback_date", options.feedback_date_from, options.feedback_date_to);
 
   const whereClause = buildWhereClause(conditions);
 
   const fromClause = `
     FROM candidate c
+    LEFT JOIN candidate_detail cd ON c.candidate_detail_id = cd.candidate_detail_id
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id

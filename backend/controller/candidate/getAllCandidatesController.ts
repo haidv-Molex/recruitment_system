@@ -28,11 +28,13 @@ const querySchema = Joi.object({
     Joi.array().items(
       Joi.string().valid(
         "name", "code", "email", "phone", "agency", "note", "current_salary", "expected_salary",
+        "offer_date", "onboard_date", "expected_onboard_date", "feedback_date",
         "job_name", "job_code", "platform", "platform_code", "reference", "company"
       )
     ),
     Joi.string().valid(
       "name", "code", "email", "phone", "agency", "note", "current_salary", "expected_salary",
+      "offer_date", "onboard_date", "expected_onboard_date", "feedback_date",
       "job_name", "job_code", "platform", "platform_code", "reference", "company"
     )
   ).optional().messages({
@@ -54,6 +56,8 @@ const querySchema = Joi.object({
   candidate_phone: Joi.string().optional().allow(""),
   agency: Joi.string().optional().allow(""),
   note: Joi.string().optional().allow(""),
+  current_salary: Joi.string().optional().allow(""),
+  expected_salary: Joi.string().optional().allow(""),
   job_code: Joi.string().optional().allow(""),
   project: Joi.string().optional().allow(""),
   platform: Joi.string().optional().allow(""),
@@ -91,6 +95,8 @@ getAllCandidatesController.get("/",
     const candidate_phone = req.query.candidate_phone as string || "";
     const agency = req.query.agency as string || "";
     const note = req.query.note as string || "";
+    const current_salary = req.query.current_salary as string || "";
+    const expected_salary = req.query.expected_salary as string || "";
     const job_code = req.query.job_code as string || "";
     const project = req.query.project as string || "";
     const platform = req.query.platform as string || "";
@@ -105,7 +111,7 @@ getAllCandidatesController.get("/",
         expected_onboard_date_from, expected_onboard_date_to,
         feedback_date_from, feedback_date_to,
         candidate_code, candidate_name, candidate_email, candidate_phone,
-        agency, note, job_code, project, platform, reference, company
+        agency, note, current_salary, expected_salary, job_code, project, platform, reference, company
       }, pool);
     });
 
