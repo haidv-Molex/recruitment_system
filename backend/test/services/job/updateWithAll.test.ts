@@ -87,4 +87,33 @@ describe("update job service with auto-creation names", () => {
     expect(result.employee_levels).to.be.an("array").with.lengthOf(1);
     expect(result.employee_levels![0]).to.have.property("level_name", "Update Level E1");
   });
+
+  it("should successfully create new notes and update existing notes on update", async () => {
+    const userRes = await client.query("SELECT user_id FROM \"user\" LIMIT 1");
+    const adminId = userRes.rows[0].user_id;
+
+    // Seed existing note
+    const noteRes = await client.query(
+      `INSERT INTO note (user_id, text, job_id) VALUES ($1, $2, $3) RETURNING note_id`,
+      [adminId, "Old job note text", sampleJobId]
+    );
+    const existingNoteId = noteRes.rows[0].note_id;
+
+    const result = await updateJob(
+      sampleJobId,
+      {
+        notes: [
+          { note_id: existingNoteId, text: "Updated job note text" },
+          { note_id: null, text: "New job note text" }
+        ],
+        updater_id: adminId
+      },
+      client
+    );
+
+    expect(result.note).to.be.an("array").with.lengthOf(2);
+    expect(result.note[0].note_id).to.equal(existingNoteId);
+    expect(result.note[0].text).to.equal("Updated job note text");
+    expect(result.note[1].text).to.equal("New job note text");
+  });
 });

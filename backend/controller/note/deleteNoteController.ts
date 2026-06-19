@@ -26,7 +26,7 @@ deleteNoteController.delete("",
     const noteId = parseInt(req.query.id as string, 10);
 
     await withTransaction(async (pool) => {
-      await Note.delete(noteId, requestor.user_id, requestor.user_role || "hr", pool);
+      await Note.delete(noteId, requestor.user_id, pool);
     });
 
     res.status(200).json({

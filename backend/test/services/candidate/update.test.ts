@@ -147,4 +147,34 @@ describe("Candidate update service", () => {
     expect(result).to.not.be.null;
     expect(result.onboard_date).to.be.null;
   });
+
+  it("should successfully create new notes and update existing notes on update", async () => {
+    const userRes = await client.query("SELECT user_id FROM \"user\" LIMIT 1");
+    const adminId = userRes.rows[0].user_id;
+
+    const initialCand = await client.query(
+      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
+      ["Jane Doe", "Applied"]
+    );
+    const candidateId = initialCand.rows[0].candidate_id;
+
+    const noteRes = await client.query(
+      `INSERT INTO note (user_id, text, candidate_id) VALUES ($1, $2, $3) RETURNING note_id`,
+      [adminId, "Old note text", candidateId]
+    );
+    const existingNoteId = noteRes.rows[0].note_id;
+
+    const result = await update(candidateId, {
+      notes: [
+        { note_id: existingNoteId, text: "Updated note text" },
+        { note_id: null, text: "New note text" }
+      ],
+      updater_id: adminId
+    }, client);
+
+    expect(result.note).to.be.an("array").with.lengthOf(2);
+    expect(result.note[0].note_id).to.equal(existingNoteId);
+    expect(result.note[0].text).to.equal("Updated note text");
+    expect(result.note[1].text).to.equal("New note text");
+  });
 });

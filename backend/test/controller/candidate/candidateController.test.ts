@@ -372,7 +372,10 @@ describe("CandidateController API", () => {
         }
       });
 
-    expectLocal(updateStub.calledOnceWith(1, { candidate_name: "John Doe Updated" })).to.be.true;
+    expectLocal(updateStub.calledOnce).to.be.true;
+    expectLocal(updateStub.firstCall.args[0]).to.equal(1);
+    expectLocal(updateStub.firstCall.args[1].candidate_name).to.equal("John Doe Updated");
+    expectLocal(updateStub.firstCall.args[1].updater_id).to.equal(1);
   });
 
   it("PUT /candidate - should return 400 validation error for invalid dates", async () => {

@@ -362,6 +362,7 @@ describe("JobController API", () => {
     expectLocal(updateArgs.job_code).to.equal("JOB001_NEW");
     expectLocal(updateArgs.recruiter_name).to.equal("New Recruiter");
     expectLocal(new Date(updateArgs.request_date).toISOString().slice(0, 10)).to.equal("2026-06-12");
+    expectLocal(updateArgs.updater_id).to.equal(1);
   });
 
   it("PUT /job - should reject unsupported partners_name field", async () => {

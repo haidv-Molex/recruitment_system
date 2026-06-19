@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
+import Note from "@services/note/_Note";
 import { populateCandidateRelations } from "./populate";
 import { replaceLinkRows } from "@utilities/db/linking";
 
@@ -24,6 +25,8 @@ export interface UpdateCandidateInput {
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
   candidate_levels?: number[];
+  notes?: { note_id?: number | null; text: string }[];
+  updater_id?: number | null;
 }
 
 export async function update(
@@ -32,7 +35,7 @@ export async function update(
   pool: PoolClient
 ) {
   // Check if candidate exists
-  const checkCand = await pool.query("SELECT candidate_id FROM candidate WHERE candidate_id = $1", [id]);
+  const checkCand = await pool.query("SELECT candidate_id, job_id FROM candidate WHERE candidate_id = $1", [id]);
   if (checkCand.rows.length === 0) {
     throw new AppError("Không tìm thấy thông tin ứng viên để cập nhật", 404);
   }
@@ -89,6 +92,25 @@ export async function update(
     if (data.targeted_company !== undefined) addParam(data.targeted_company, "targeted_company");
     if (data.reference !== undefined) addParam(data.reference, "reference");
     if (fileId !== undefined) addParam(fileId, "file_id");
+
+    if (data.notes !== undefined && data.updater_id) {
+      for (const item of data.notes) {
+        if (item.note_id === undefined || item.note_id === null) {
+          await Note.create({
+            user_id: data.updater_id,
+            text: item.text,
+            candidate_id: id,
+            job_id: data.job_id !== undefined ? data.job_id : checkCand.rows[0].job_id
+          }, pool);
+        } else {
+          await Note.update({
+            id: item.note_id,
+            text: item.text,
+            userId: data.updater_id
+          }, pool);
+        }
+      }
+    }
 
     if (sets.length === 0) {
       // No updates to candidate columns, just fetch candidate and populate candidate levels

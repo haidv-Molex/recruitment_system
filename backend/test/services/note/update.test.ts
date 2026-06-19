@@ -42,8 +42,7 @@ describe("Note update service", () => {
     const result = await update({
       id: noteId,
       text: "New text",
-      userId: adminId,
-      userRole: "hr"
+      userId: adminId
     }, client);
 
     expect(result.note_id).to.equal(noteId);
@@ -51,7 +50,7 @@ describe("Note update service", () => {
     expect(result.user.user_id).to.equal(adminId);
   });
 
-  it("should successfully update a note if admin but not owner", async () => {
+  it("should throw AppError 403 if user is admin but not owner", async () => {
     const candidateRes = await client.query(
       `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
       ["Test Candidate", "Applied"]
@@ -64,19 +63,20 @@ describe("Note update service", () => {
     );
     const noteId = noteRes.rows[0].note_id;
 
-    const result = await update({
-      id: noteId,
-      text: "Admin updated text",
-      userId: adminId + 1, // different user ID
-      userRole: "admin"
-    }, client);
-
-    expect(result.note_id).to.equal(noteId);
-    expect(result.text).to.equal("Admin updated text");
-    expect(result.user.user_id).to.equal(adminId);
+    try {
+      await update({
+        id: noteId,
+        text: "Admin updated text",
+        userId: adminId + 1 // different user ID
+      }, client);
+      expect.fail("Should have thrown AppError");
+    } catch (err) {
+      expect(err).to.be.instanceOf(AppError);
+      expect((err as AppError).statusCode).to.equal(403);
+    }
   });
 
-  it("should throw AppError 403 if not owner and not admin", async () => {
+  it("should throw AppError 403 if not owner", async () => {
     const candidateRes = await client.query(
       `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
       ["Test Candidate", "Applied"]
@@ -93,8 +93,7 @@ describe("Note update service", () => {
       await update({
         id: noteId,
         text: "New text",
-        userId: adminId + 1, // different user ID
-        userRole: "hr"
+        userId: adminId + 1 // different user ID
       }, client);
       expect.fail("Should have thrown AppError");
     } catch (err) {
@@ -108,8 +107,7 @@ describe("Note update service", () => {
       await update({
         id: 999999,
         text: "New text",
-        userId: adminId,
-        userRole: "hr"
+        userId: adminId
       }, client);
       expect.fail("Should have thrown AppError");
     } catch (err) {

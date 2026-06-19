@@ -2,6 +2,7 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
 import uploadFile from "@services/file/upload";
+import Note from "@services/note/_Note";
 import { populateJobRelations } from "./populate";
 import fs from "fs";
 import path from "path";
@@ -36,6 +37,8 @@ type UpdateJobData = {
   titles_name?: string[];
   managers_name?: string[];
   employee_levels_name?: string[];
+  notes?: { note_id?: number | null; text: string }[];
+  updater_id?: number | null;
 };
 
 async function update(
@@ -302,6 +305,26 @@ async function update(
       await replaceLinkRows(pool, "employee_level", "job_id", id, employeeLevelLinkRows);
     }
 
+    // Process notes list
+    if (data.notes !== undefined && data.updater_id) {
+      for (const item of data.notes) {
+        if (item.note_id === undefined || item.note_id === null) {
+          await Note.create({
+            user_id: data.updater_id,
+            text: item.text,
+            job_id: id,
+            candidate_id: null
+          }, pool);
+        } else {
+          await Note.update({
+            id: item.note_id,
+            text: item.text,
+            userId: data.updater_id
+          }, pool);
+        }
+      }
+    }
+
     // 4. Retrieve complete job output info
     const query = `
       SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id, j.recruiter_id,
@@ -315,12 +338,13 @@ async function update(
     const host = process.env.HOST || "http://localhost:3000";
 
     const relations = await populateJobRelations(row.job_id, pool);
+    const notes = await Note.getAll({ job_id: row.job_id }, pool);
 
     return {
       job_id: row.job_id,
       job_code: row.job_code,
       project: row.project,
-      note: row.note,
+      note: notes,
       request_date: row.request_date,
       create_at: row.create_at,
       update_at: row.update_at,

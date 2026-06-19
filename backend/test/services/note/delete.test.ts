@@ -39,13 +39,13 @@ describe("Note delete service", () => {
     );
     const noteId = noteRes.rows[0].note_id;
 
-    await deleteNote(noteId, adminId, "admin", client);
+    await deleteNote(noteId, adminId, client);
 
     const check = await client.query("SELECT note_id FROM note WHERE note_id = $1", [noteId]);
     expect(check.rows.length).to.equal(0);
   });
 
-  it("should throw AppError 403 if user is not owner and not admin", async () => {
+  it("should throw AppError 403 if user is not owner", async () => {
     const candidateRes = await client.query(
       `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
       ["Test Candidate", "Applied"]
@@ -58,9 +58,9 @@ describe("Note delete service", () => {
     );
     const noteId = noteRes.rows[0].note_id;
 
-    // Try deleting with another user id (e.g. adminId + 1) and role "hr"
+    // Try deleting with another user id (e.g. adminId + 1)
     try {
-      await deleteNote(noteId, adminId + 1, "hr", client);
+      await deleteNote(noteId, adminId + 1, client);
       expect.fail("Should have thrown AppError");
     } catch (err) {
       expect(err).to.be.instanceOf(AppError);
@@ -70,7 +70,7 @@ describe("Note delete service", () => {
 
   it("should throw AppError 404 if deleting non-existent note", async () => {
     try {
-      await deleteNote(999999, adminId, "admin", client);
+      await deleteNote(999999, adminId, client);
       expect.fail("Should have thrown AppError");
     } catch (err) {
       expect(err).to.be.instanceOf(AppError);

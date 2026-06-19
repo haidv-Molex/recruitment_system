@@ -7,14 +7,13 @@ type UpdateNoteData = {
   id: number;
   text: string;
   userId: number;
-  userRole: string;
 };
 
 async function update(
   data: UpdateNoteData,
   pool: PoolClient
 ): Promise<noteOutputModel> {
-  const { id, text, userId, userRole } = data;
+  const { id, text, userId } = data;
 
   const check = await pool.query("SELECT user_id FROM note WHERE note_id = $1", [id]);
   if (check.rows.length === 0) {
@@ -23,7 +22,7 @@ async function update(
 
   const creatorId = check.rows[0].user_id;
 
-  if (userRole !== "admin" && creatorId !== userId) {
+  if (creatorId !== userId) {
     throw new AppError("Bạn không có quyền chỉnh sửa ghi chú của người khác", 403);
   }
 

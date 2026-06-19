@@ -128,7 +128,6 @@ describe("NoteController API", () => {
     expectLocal(deleteStub.calledOnce).to.be.true;
     expectLocal(deleteStub.firstCall.args[0]).to.equal(1);
     expectLocal(deleteStub.firstCall.args[1]).to.equal(1);
-    expectLocal(deleteStub.firstCall.args[2]).to.equal("hr");
   });
 
   it("PUT /note - should update note successfully", async () => {
@@ -153,8 +152,7 @@ describe("NoteController API", () => {
     expectLocal(updateStub.firstCall.args[0]).to.deep.equal({
       id: 1,
       text: "Updated text",
-      userId: 1,
-      userRole: "hr"
+      userId: 1
     });
   });
 });

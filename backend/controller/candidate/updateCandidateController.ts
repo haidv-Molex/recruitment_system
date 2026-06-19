@@ -2,10 +2,11 @@ import express from "express";
 import multer from "multer";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
-import { numberArray } from "@utilities/joiTypes";
+import { numberArray, notesArray } from "@utilities/joiTypes";
 import Candidate from "@services/candidate/_Candidate";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
+import type { userOutputModel } from "@model/user/userModel";
 
 const updateCandidateController = express.Router({ mergeParams: true });
 const upload = multer({
@@ -60,6 +61,7 @@ const updateBodySchema = Joi.object({
     "string.base": "Trạng thái ứng viên phải là chuỗi"
   }),
   note: Joi.string().empty(["", "null"]).allow(null).optional(),
+  notes: notesArray().optional(),
   platform_id: Joi.number().integer().empty(["", "null"]).allow(null).optional().messages({
     "number.base": "Platform ID phải là số nguyên",
     "number.integer": "Platform ID phải là số nguyên"
@@ -85,6 +87,7 @@ updateCandidateController.put("",
   upload.single("file"),
   joiValidate(updateBodySchema, "body"),
   async (req, res) => {
+    const requestor = req.user as userOutputModel;
     const id = parseInt(req.query.id as string, 10);
     const body = req.body || {};
 
@@ -109,6 +112,8 @@ updateCandidateController.put("",
     if (hasProp(body, "targeted_company")) updateData.targeted_company = body.targeted_company;
     if (hasProp(body, "reference")) updateData.reference = body.reference;
     if (hasProp(body, "candidate_levels")) updateData.candidate_levels = body.candidate_levels;
+    if (hasProp(body, "notes")) updateData.notes = body.notes;
+    updateData.updater_id = requestor.user_id;
 
     if (req.file) {
       updateData.file = {

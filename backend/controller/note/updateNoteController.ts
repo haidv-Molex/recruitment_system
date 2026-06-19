@@ -37,8 +37,7 @@ updateNoteController.put("",
       return await Note.update({
         id: noteId,
         text,
-        userId: requestor.user_id,
-        userRole: requestor.user_role || "hr"
+        userId: requestor.user_id
       }, pool);
     });
 

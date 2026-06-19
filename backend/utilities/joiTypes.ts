@@ -148,3 +148,36 @@ export const departmentNameArray = () =>
     }
     return helpers.error("any.invalid");
   });
+
+/**
+ * Custom Joi type: parse array of { note_id: number | null, text: string }
+ */
+export const notesArray = () =>
+  Joi.custom((value, helpers) => {
+    if (value === undefined || value === null || value === "") return [];
+    
+    let parsed: any = value;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed === "") return [];
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch (_) {
+        return helpers.error("any.invalid");
+      }
+    }
+    
+    if (Array.isArray(parsed)) {
+      for (const item of parsed) {
+        if (!item || typeof item !== "object") return helpers.error("any.invalid");
+        if (item.note_id !== undefined && item.note_id !== null) {
+          if (!Number.isInteger(item.note_id) || item.note_id <= 0) return helpers.error("any.invalid");
+        }
+        if (typeof item.text !== "string" || item.text.trim() === "") return helpers.error("any.invalid");
+        item.text = item.text.trim();
+      }
+      return parsed;
+    }
+    return helpers.error("any.invalid");
+  });
+

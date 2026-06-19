@@ -4,7 +4,6 @@ import { AppError } from "@middlewares/AppError";
 async function deleteNote(
   id: number,
   userId: number,
-  userRole: string,
   pool: PoolClient
 ): Promise<void> {
   const check = await pool.query("SELECT user_id FROM note WHERE note_id = $1", [id]);
@@ -14,7 +13,7 @@ async function deleteNote(
 
   const creatorId = check.rows[0].user_id;
 
-  if (userRole !== "admin" && creatorId !== userId) {
+  if (creatorId !== userId) {
     throw new AppError("Bạn không có quyền xóa ghi chú của người khác", 403);
   }
 

@@ -22,10 +22,11 @@ import express from "express";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
 import multer from "multer";
-import { numberArray, stringArray, departmentArray, departmentNameArray } from "@utilities/joiTypes";
+import { numberArray, stringArray, departmentArray, departmentNameArray, notesArray } from "@utilities/joiTypes";
 import Job from "@services/job/_Job";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
+import type { userOutputModel } from "@model/user/userModel";
 
 const updateJobController = express.Router({ mergeParams: true });
 const upload = multer({
@@ -83,6 +84,7 @@ const bodySchema = Joi.object({
   titles_name: stringArray().optional(),
   managers_name: stringArray().optional(),
   employee_levels_name: stringArray().optional(),
+  notes: notesArray().optional(),
 });
 
 updateJobController.put(
@@ -92,6 +94,7 @@ updateJobController.put(
   upload.single("file"),
   joiValidate(bodySchema, "body"),
   async (req, res) => {
+    const requestor = req.user as userOutputModel;
     const id = Number(req.query.id);
     const body = req.body;
 
@@ -116,12 +119,15 @@ updateJobController.put(
       "titles_name",
       "managers_name",
       "employee_levels_name",
+      "notes",
     ];
     for (const key of keys) {
       if (Object.prototype.hasOwnProperty.call(body, key)) {
         updateData[key] = body[key];
       }
     }
+
+    updateData.updater_id = requestor.user_id;
 
     if (req.file) {
       updateData.file = {
