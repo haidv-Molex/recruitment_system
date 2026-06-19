@@ -58,6 +58,7 @@ export default function Layout({ children }: LayoutProps) {
   const mainTabs = [
     { path: '/', label: 'Dashboard', icon: LayoutGrid },
     { path: '/job-tracking', label: 'Job Tracking', icon: Table2 },
+    { path: '/open-position-requests', label: 'Open Requests', icon: FolderOpen },
     { path: '/candidates', label: 'Candidate Database', icon: Database },
     { path: '/email', label: 'Email', icon: Mail },
   ];
@@ -71,7 +72,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/levels', label: 'Levels', icon: Award },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path || (path !== '/' && location.pathname.startsWith(`${path}/`));
 
   return (
     <div className="h-screen w-screen flex bg-slate-50 overflow-hidden font-sans">

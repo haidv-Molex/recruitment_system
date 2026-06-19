@@ -15,6 +15,7 @@ import { LevelPage } from '@/pages/LevelPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { EmailPage } from '@/pages/EmailPage';
+import { OpenPositionRequestsPage } from '@/pages/OpenPositionRequestsPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { mockCandidates, mockJobs } from '@/services/mockData';
 import { HeaderProvider } from '@/contexts/HeaderContext';
@@ -29,7 +30,7 @@ function App() {
     <ConfirmProvider>
       <AuthProvider>
         <HeaderProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
 
@@ -50,6 +51,8 @@ function App() {
                       <Route path="/sites" element={<SitePage />} />
                       <Route path="/levels" element={<LevelPage />} />
                       <Route path="/email" element={<EmailPage />} />
+                      <Route path="/open-position-requests" element={<OpenPositionRequestsPage />} />
+                      <Route path="/open-position-requests/:id" element={<OpenPositionRequestsPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
 
                       {/* Admin route: requires admin role to access */}

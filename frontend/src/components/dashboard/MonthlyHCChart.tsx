@@ -19,7 +19,7 @@ export default function MonthlyHCChart({ data }: MonthlyHCChartProps) {
   return (
     <DashboardCard title="HC Requested By Expected Onboard Month">
       <div className="flex-1 p-3 min-h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
           <BarChart data={data} margin={{ top: 12, right: 8, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis

@@ -96,7 +96,7 @@ export default function StatusLineChart({
 
       {/* Chart */}
       <div className="flex-1 px-3 pb-3 pt-2 min-h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
           <LineChart data={mergedData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
             <XAxis
