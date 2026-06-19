@@ -1,5 +1,5 @@
 import { PoolClient } from "pg";
-import type { accessModel } from "@model/access/accessModel";
+import type { accessOutputModel } from "@model/access/accessModel";
 import type { PaginationQueryMetadata } from "@type/pagination";
 import buildPagination from "@utilities/query/buildPagination";
 import buildWhereClause from "@utilities/query/buildWhereClause";
@@ -12,7 +12,7 @@ type GetAllAccessParams = PaginationQueryMetadata & {
 };
 
 type GetAllAccessResult = {
-  items: accessModel[];
+  items: accessOutputModel[];
   total: number;
 };
 
@@ -61,7 +61,7 @@ async function getAll(
 
   const items = await Promise.all(
     result.rows.map((row) => findById(row.access_id, pool))
-  ) satisfies accessModel[];
+  ) satisfies accessOutputModel[];
 
   return {
     items,

@@ -38,8 +38,9 @@ describe("findById (Access)", () => {
     const access = await create({ user_id: hrId, job_id: jobId }, client);
     const result = await findById(access.access_id, client);
     expect(result.access_id).to.equal(access.access_id);
-    expect(result.user_id).to.equal(hrId);
-    expect(result.job_id).to.equal(jobId);
+    expect(result.user.user_id).to.equal(hrId);
+    expect(result.job).to.not.be.null;
+    expect(result.job!.job_id).to.equal(jobId);
   });
 
   it("should throw AppError 404 when access_id is not found", async () => {

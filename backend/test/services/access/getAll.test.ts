@@ -61,17 +61,18 @@ describe("getAll (Access)", () => {
     // Get filtered by user_id
     const filteredUser = await getAll({ page: 1, limit: 10, user_id: hrId1 }, client);
     expect(filteredUser.total).to.equal(2);
-    expect(filteredUser.items.every(x => x.user_id === hrId1)).to.be.true;
+    expect(filteredUser.items.every(x => x.user.user_id === hrId1)).to.be.true;
 
     // Get filtered by job_id
     const filteredJob = await getAll({ page: 1, limit: 10, job_id: jobId1 }, client);
     expect(filteredJob.total).to.equal(2);
-    expect(filteredJob.items.every(x => x.job_id === jobId1)).to.be.true;
+    expect(filteredJob.items.every(x => x.job && x.job.job_id === jobId1)).to.be.true;
 
     // Get filtered by user_id and job_id
     const filteredBoth = await getAll({ page: 1, limit: 10, user_id: hrId2, job_id: jobId1 }, client);
     expect(filteredBoth.total).to.equal(1);
-    expect(filteredBoth.items[0].user_id).to.equal(hrId2);
-    expect(filteredBoth.items[0].job_id).to.equal(jobId1);
+    expect(filteredBoth.items[0].user.user_id).to.equal(hrId2);
+    expect(filteredBoth.items[0].job).to.not.be.null;
+    expect(filteredBoth.items[0].job!.job_id).to.equal(jobId1);
   });
 });

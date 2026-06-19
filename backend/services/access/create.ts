@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
-import type { accessModel } from "@model/access/accessModel";
+import type { accessOutputModel } from "@model/access/accessModel";
+import findById from "./findById";
 
 type CreateProps = {
   user_id: number;
@@ -8,7 +9,7 @@ type CreateProps = {
   job_id?: number | null;
 };
 
-async function create(props: CreateProps, pool: PoolClient): Promise<accessModel> {
+async function create(props: CreateProps, pool: PoolClient): Promise<accessOutputModel> {
   const { user_id, candidate_id = null, job_id = null } = props;
 
   // 1. Validation: Exactly one target must be provided
@@ -54,7 +55,7 @@ async function create(props: CreateProps, pool: PoolClient): Promise<accessModel
   const query = `
     INSERT INTO access (user_id, candidate_id, job_id)
     VALUES ($1, $2, $3)
-    RETURNING access_id, user_id, candidate_id, job_id, create_at, update_at
+    RETURNING access_id
   `;
   const result = await pool.query(query, [user_id, candidate_id, job_id]);
 
@@ -63,14 +64,7 @@ async function create(props: CreateProps, pool: PoolClient): Promise<accessModel
   }
 
   const row = result.rows[0];
-  return {
-    access_id: row.access_id,
-    user_id: row.user_id,
-    candidate_id: row.candidate_id,
-    job_id: row.job_id,
-    create_at: row.create_at,
-    update_at: row.update_at
-  } satisfies accessModel;
+  return await findById(row.access_id, pool);
 }
 
 export default create;

@@ -52,17 +52,19 @@ describe("create (Access)", () => {
   it("should create access permission for a job successfully", async () => {
     const result = await create({ user_id: hrId1, job_id: jobId }, client);
     expect(result).to.have.property("access_id").that.is.a("number");
-    expect(result.user_id).to.equal(hrId1);
-    expect(result.job_id).to.equal(jobId);
-    expect(result.candidate_id).to.be.null;
+    expect(result.user.user_id).to.equal(hrId1);
+    expect(result.job).to.not.be.null;
+    expect(result.job!.job_id).to.equal(jobId);
+    expect(result.candidate).to.be.null;
   });
 
   it("should create access permission for a candidate successfully", async () => {
     const result = await create({ user_id: hrId1, candidate_id: candidateId }, client);
     expect(result).to.have.property("access_id").that.is.a("number");
-    expect(result.user_id).to.equal(hrId1);
-    expect(result.candidate_id).to.equal(candidateId);
-    expect(result.job_id).to.be.null;
+    expect(result.user.user_id).to.equal(hrId1);
+    expect(result.candidate).to.not.be.null;
+    expect(result.candidate!.candidate_id).to.equal(candidateId);
+    expect(result.job).to.be.null;
   });
 
   it("should throw AppError 400 when both candidate_id and job_id are provided", async () => {
