@@ -32,7 +32,6 @@ export function mapCandidateDetailRow(row: any): CandidateDetail {
     marital_status: row.marital_status,
     nationality: row.nationality,
     location: row.location,
-    address: row.address,
     links: toLinks(row.links),
     skills: toArray<string>(row.skills),
     languages: toArray<string>(row.languages),
@@ -56,8 +55,6 @@ export function mapCandidateDetailRow(row: any): CandidateDetail {
     onboard_date: row.onboard_date,
     feedback_date: row.feedback_date,
     salary_currency: row.salary_currency ?? "VND",
-    file_id: row.file_id,
-    targeted_company: row.targeted_company,
     create_at: row.create_at,
     update_at: row.update_at
   };

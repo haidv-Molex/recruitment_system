@@ -13,7 +13,6 @@ export type CandidateDetailWriteData = {
   marital_status?: CandidateDetail["marital_status"];
   nationality?: string | null;
   location?: string | null;
-  address?: string | null;
   links?: ParsedCVLinks;
   skills?: string[];
   languages?: string[];
@@ -37,8 +36,6 @@ export type CandidateDetailWriteData = {
   onboard_date?: string | Date | null;
   feedback_date?: string | Date | null;
   salary_currency?: string;
-  file_id?: number | null;
-  targeted_company?: number | null;
 };
 
 export const candidateDetailWriteFields = [
@@ -48,7 +45,6 @@ export const candidateDetailWriteFields = [
   "marital_status",
   "nationality",
   "location",
-  "address",
   "links",
   "skills",
   "languages",
@@ -71,9 +67,7 @@ export const candidateDetailWriteFields = [
   "expected_onboard_date",
   "onboard_date",
   "feedback_date",
-  "salary_currency",
-  "file_id",
-  "targeted_company"
+  "salary_currency"
 ] as const;
 
 export type CandidateDetailWriteField = typeof candidateDetailWriteFields[number];

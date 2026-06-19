@@ -13,7 +13,6 @@ export type GetAllCandidateDetailsParams = PaginationQueryMetadata & {
   marital_status?: "single" | "married" | "";
   nationality?: string;
   location?: string;
-  address?: string;
   links?: string;
   skills?: string;
   languages?: string;
@@ -37,7 +36,6 @@ export type GetAllCandidateDetailsParams = PaginationQueryMetadata & {
   onboard_date?: string;
   feedback_date?: string;
   salary_currency?: string;
-  targeted_company?: string;
 };
 
 type GetAllCandidateDetailsResult = {
@@ -51,7 +49,6 @@ async function getAll(
 ): Promise<GetAllCandidateDetailsResult> {
   const { unlimited, limit, offset } = buildPagination(params);
   const search = params.search ? params.search.trim() : "";
-  const targetedCompany = params.targeted_company ? params.targeted_company.trim() : "";
 
   const values: any[] = [];
   const conditions: string[] = [];
@@ -74,7 +71,6 @@ async function getAll(
       "cd.marital_status",
       "cd.nationality",
       "cd.location",
-      "cd.address",
       "cd.links::text",
       "array_to_string(cd.skills, ' ')",
       "array_to_string(cd.languages, ' ')",
@@ -97,9 +93,7 @@ async function getAll(
       "cd.expected_onboard_date::text",
       "cd.onboard_date::text",
       "cd.feedback_date::text",
-      "cd.salary_currency",
-      "comp.company_name",
-      "comp.company_description"
+      "cd.salary_currency"
     ];
 
     conditions.push(`(${searchColumns.map((column) => `${column} ILIKE ${placeholder}`).join(" OR ")})`);
@@ -119,7 +113,6 @@ async function getAll(
   addTextFilter(params.date_of_birth, "cd.date_of_birth::text");
   addTextFilter(params.nationality, "cd.nationality");
   addTextFilter(params.location, "cd.location");
-  addTextFilter(params.address, "cd.address");
   addTextFilter(params.links, "cd.links::text");
   addTextFilter(params.skills, "array_to_string(cd.skills, ' ')");
   addTextFilter(params.languages, "array_to_string(cd.languages, ' ')");
@@ -143,12 +136,10 @@ async function getAll(
   addTextFilter(params.onboard_date, "cd.onboard_date::text");
   addTextFilter(params.feedback_date, "cd.feedback_date::text");
   addTextFilter(params.salary_currency, "cd.salary_currency");
-  addTextFilter(targetedCompany, "comp.company_name");
 
   const whereClause = buildWhereClause(conditions);
   const fromClause = `
     FROM candidate_detail cd
-    LEFT JOIN company comp ON cd.targeted_company = comp.company_id
   `;
   const countQuery = `SELECT COUNT(*) AS total ${fromClause} ${whereClause}`;
   let query = `SELECT cd.candidate_detail_id ${fromClause} ${whereClause}`;

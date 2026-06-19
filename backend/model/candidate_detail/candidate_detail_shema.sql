@@ -8,7 +8,6 @@ CREATE TABLE candidate_detail (
     marital_status             VARCHAR(20) CHECK (marital_status IS NULL OR marital_status IN ('single', 'married')),
     nationality                VARCHAR(100),
     location                   VARCHAR(255),                -- Thành phố / tỉnh
-    address                    TEXT,                        -- Địa chỉ chi tiết
 
     -- ===== Liên kết & kỹ năng =====
     links                      JSONB        NOT NULL DEFAULT '{}'::jsonb,
@@ -47,17 +46,9 @@ CREATE TABLE candidate_detail (
     ----- ===== Thông tin khác =====
     salary_currency           VARCHAR(10)  NOT NULL DEFAULT 'VND',
 
-    -- ===== Foreign Keys =====
-    file_id                    INT,
-    targeted_company           INT,
-
     -- ===== Metadata =====
     create_at                  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_at                  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    -- ===== Foreign Keys =====
-    FOREIGN KEY (file_id) REFERENCES file(file_id) ON DELETE SET NULL,
-    FOREIGN KEY (targeted_company) REFERENCES company(company_id) ON DELETE SET NULL
+    update_at                  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TRIGGER set_updated_at_candidate_detail

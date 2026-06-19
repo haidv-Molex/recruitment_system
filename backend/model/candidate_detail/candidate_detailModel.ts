@@ -15,7 +15,6 @@ export type CandidateDetail = {
   marital_status: 'single' | 'married' | null;
   nationality: string | null;
   location: string | null;
-  address: string | null;
 
   // ===== Liên kết & kỹ năng =====
   links: ParsedCVLinks;
@@ -53,10 +52,6 @@ export type CandidateDetail = {
 
   // ===== Thông tin khác =====
   salary_currency: string;
-
-  // ===== Foreign Keys =====
-  file_id: number | null;
-  targeted_company: number | null;
 
   // ===== Metadata =====
   create_at: Date;

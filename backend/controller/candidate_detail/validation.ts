@@ -68,7 +68,6 @@ function bodyFields(withDefaults: boolean) {
     marital_status: Joi.string().valid("single", "married").empty(emptyNullable).allow(null).optional(),
     nationality: nullableString(100).optional(),
     location: nullableString(255).optional(),
-    address: nullableString().optional(),
     links: linksSchema(withDefaults),
     skills: stringArray(withDefaults),
     languages: stringArray(withDefaults),
@@ -93,9 +92,7 @@ function bodyFields(withDefaults: boolean) {
     feedback_date: nullableDate().optional(),
     salary_currency: withDefaults
       ? Joi.string().max(10).empty(emptyNullable).default("VND")
-      : Joi.string().max(10).empty(emptyNullable).optional(),
-    file_id: Joi.number().integer().empty(emptyNullable).allow(null).optional(),
-    targeted_company: Joi.number().integer().empty(emptyNullable).allow(null).optional()
+      : Joi.string().max(10).empty(emptyNullable).optional()
   };
 }
 
@@ -141,7 +138,6 @@ export const searchQuerySchema = Joi.object({
   marital_status: Joi.string().valid("single", "married", "").optional().allow(""),
   nationality: Joi.string().optional().allow("").max(100),
   location: Joi.string().optional().allow("").max(255),
-  address: Joi.string().optional().allow("").max(255),
   links: Joi.string().optional().allow("").max(255),
   skills: Joi.string().optional().allow("").max(255),
   languages: Joi.string().optional().allow("").max(255),
@@ -164,6 +160,5 @@ export const searchQuerySchema = Joi.object({
   expected_onboard_date: Joi.string().optional().allow("").max(50),
   onboard_date: Joi.string().optional().allow("").max(50),
   feedback_date: Joi.string().optional().allow("").max(50),
-  salary_currency: Joi.string().optional().allow("").max(10),
-  targeted_company: Joi.string().optional().allow("").max(255)
+  salary_currency: Joi.string().optional().allow("").max(10)
 });
