@@ -16,6 +16,7 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import HeaderContext from '@/contexts/HeaderContext';
@@ -172,6 +173,21 @@ export default function Layout({ children }: LayoutProps) {
             >
               <Shield size={18} className={isActive('/admin') ? 'text-white' : 'text-slate-400'} />
               <span>Accounts</span>
+            </Link>
+          )}
+
+          {/* Access Control tab */}
+          {isAdmin && (
+            <Link
+              to="/access-control"
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                isActive('/access-control')
+                  ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-600'
+                  : 'text-slate-650 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <Lock size={18} className={isActive('/access-control') ? 'text-white' : 'text-slate-450'} />
+              <span>Access Control</span>
             </Link>
           )}
         </nav>

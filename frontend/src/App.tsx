@@ -13,6 +13,7 @@ import { SegmentPage } from '@/pages/SegmentPage';
 import { SitePage } from '@/pages/SitePage';
 import { LevelPage } from '@/pages/LevelPage';
 import { AdminPage } from '@/pages/AdminPage';
+import { AccessControlPage } from '@/pages/AccessControl';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { mockCandidates, mockJobs } from '@/services/mockData';
@@ -56,6 +57,16 @@ function App() {
                         element={
                           <ProtectedRoute allowedRoles={['admin', 'hr']}>
                             <AdminPage />
+                          </ProtectedRoute>
+                        }
+                      />
+
+                      {/* Access control: admin only */}
+                      <Route
+                        path="/access-control"
+                        element={
+                          <ProtectedRoute allowedRoles={['admin']}>
+                            <AccessControlPage />
                           </ProtectedRoute>
                         }
                       />
