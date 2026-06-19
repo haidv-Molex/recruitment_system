@@ -4,6 +4,11 @@ import { createDatabaseSheet as createDatabaseSheetUtil } from "@utilities/file/
 import type { CandidateRow, JdLookupRow } from "@utilities/file/createDatabaseSheet";
 import Job from "@services/job/_Job";
 
+const formatNotes = (notes?: { message: string }[]): string | null => {
+  const messages = notes?.map((note) => note.message).filter(Boolean) ?? [];
+  return messages.length > 0 ? messages.join("\n") : null;
+};
+
 async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> {
   // 1. Query all candidates with all required joins
   const candidateRes = await pool.query<{
@@ -36,7 +41,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
       c.candidate_id, c.candidate_name, c.candidate_email, c.candidate_phone,
       c.candidate_code, c.agency, c.offer_date, c.onboard_date,
       c.expected_onboard_date, c.feedback_date, c.current_salary,
-      c.expected_salary, c.status, c.note, c.create_at,
+      c.expected_salary, c.status, candidate_notes.note_messages AS note, c.create_at,
       c.job_id,
       j.job_code,
       p.platform_name,
@@ -63,6 +68,12 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
       JOIN level l ON cl.level_id = l.level_id
       GROUP BY cl.candidate_id
     ) cl_level ON c.candidate_id = cl_level.candidate_id
+    LEFT JOIN (
+      SELECT cn.candidate_id, STRING_AGG(n.message, E'\n' ORDER BY n.create_at DESC, n.note_id DESC) AS note_messages
+      FROM candidate_note cn
+      JOIN note n ON n.note_id = cn.note_id
+      GROUP BY cn.candidate_id
+    ) candidate_notes ON c.candidate_id = candidate_notes.candidate_id
     ORDER BY c.candidate_id ASC
   `);
 

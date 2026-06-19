@@ -1,5 +1,6 @@
 
 import type { levelModel } from "@model/level/levelModel";
+import type { noteOutputModel } from "@model/note/noteModel";
 
 export type HeadhuntAgency =
   | 'AsiaHr'
@@ -38,7 +39,7 @@ export type candidateModel = {
   candidate_phone: string | null;
   agency: HeadhuntAgency | string | null;
   status: candidateStatus | string;
-  note: string | null;
+  notes?: noteOutputModel[];
   create_at: Date;
   update_at: Date;
   candidate_detail_id: number | null;

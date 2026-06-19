@@ -3,6 +3,7 @@ import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
 import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
 import Company from "@services/company/_Company";
+import Note from "@services/note/_Note";
 import { populateCandidateRelations } from "./populate";
 import { insertLinkRows } from "@utilities/db/linking";
 import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
@@ -22,6 +23,7 @@ export interface CreateCandidateInput extends CandidateDetailWriteData {
   agency?: string | null;
   status: string;
   note?: string | null;
+  note_user_id?: number | null;
   platform_id?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
@@ -82,7 +84,6 @@ export async function create(
         candidate_phone,
         agency,
         status,
-        note,
         candidate_detail_id,
         platform_id,
         job_id,
@@ -90,7 +91,7 @@ export async function create(
         reference,
         file_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `;
 
@@ -101,7 +102,6 @@ export async function create(
       data.candidate_phone || null,
       data.agency || null,
       data.status,
-      data.note || null,
       candidateDetail.candidate_detail_id,
       data.platform_id || null,
       data.job_id || null,
@@ -124,6 +124,15 @@ export async function create(
         "candidate_level",
         data.candidate_levels.map((levelId) => ({ candidate_id: candidateId, level_id: levelId }))
       );
+    }
+
+    const noteMessage = typeof data.note === "string" ? data.note.trim() : "";
+    if (noteMessage && data.note_user_id) {
+      await Note.create({
+        user_id: data.note_user_id,
+        message: noteMessage,
+        candidate_id: candidateId
+      }, pool);
     }
 
     return await populateCandidateRelations(candidateRow, pool);

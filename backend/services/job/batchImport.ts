@@ -14,6 +14,7 @@ export type JobImportItem = {
   job_code?: string | null;
   project: string;
   note?: string | null;
+  note_user_id?: number | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;
   partners?: number[];
@@ -244,6 +245,7 @@ async function batchImport(
       const jobData = {
         project: job.project,
         note: job.note || null,
+        note_user_id: job.note_user_id ?? null,
         request_date: job.request_date || null,
         recruiter_id: resolvedRecruiterId,
         file: null,

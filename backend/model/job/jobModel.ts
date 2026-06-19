@@ -3,12 +3,12 @@ import type { departmentModel } from "@model/department/departmentModel";
 import type { segmentModel } from "@model/segment/segmentModel";
 import type { siteModel } from "@model/site/siteModel";
 import type { levelModel } from "@model/level/levelModel";
+import type { noteOutputModel } from "@model/note/noteModel";
 
 export type jobModel = {
   job_id: number;
   job_code: string;
   project: string;
-  note: string | null;
   request_date: Date | null;
   create_at: Date;
   update_at: Date;
@@ -30,4 +30,5 @@ export type jobOutputModel = Omit<jobModel, 'file_id'> & {
   titles?: levelModel[];
   managers?: userOutputModel[];
   employee_levels?: levelModel[];
+  notes?: noteOutputModel[];
 }

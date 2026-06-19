@@ -136,11 +136,17 @@ describe("Job batchImport service", () => {
   });
 
   it("should update an existing job when batch import receives the same job_code", async () => {
+    const noteOwner = await client.query(
+      `INSERT INTO "user" (user_name, user_role) VALUES ($1, $2) RETURNING user_id`,
+      ["Batch Import Note Owner", "hr"]
+    );
+
     const firstImport = await batchImport([
       {
         job_code: "JOB-BATCH-UPSERT-001",
         project: "Original Project",
         note: "old note",
+        note_user_id: noteOwner.rows[0].user_id,
         departments_name: [{ name: "Upsert Dept Old", candidate_required: 1 }],
         segments_name: ["Upsert Segment Old"],
       }
@@ -159,6 +165,7 @@ describe("Job batchImport service", () => {
         job_code: " job-batch-upsert-001 ",
         project: "Updated Project",
         note: "new note",
+        note_user_id: noteOwner.rows[0].user_id,
         departments_name: [{ name: "Upsert Dept New", candidate_required: 4 }],
         segments_name: ["Upsert Segment New"],
       }
@@ -169,7 +176,7 @@ describe("Job batchImport service", () => {
     expect(secondImport.errors).to.have.lengthOf(0);
 
     const jobs = await client.query(
-      `SELECT job_id, job_code, project, note FROM job WHERE LOWER(TRIM(job_code)) = $1`,
+      `SELECT job_id, job_code, project FROM job WHERE LOWER(TRIM(job_code)) = $1`,
       ["job-batch-upsert-001"]
     );
     expect(jobs.rows).to.have.lengthOf(1);
@@ -177,8 +184,17 @@ describe("Job batchImport service", () => {
       job_id: jobId,
       job_code: "job-batch-upsert-001",
       project: "Updated Project",
-      note: "new note",
     });
+
+    const notes = await client.query(
+      `SELECT n.message
+       FROM job_note jn
+       JOIN note n ON n.note_id = jn.note_id
+       WHERE jn.job_id = $1
+       ORDER BY n.note_id ASC`,
+      [jobId]
+    );
+    expect(notes.rows.map((row) => row.message)).to.deep.equal(["old note", "new note"]);
 
     const departments = await client.query(
       `SELECT d.department_name, jd.candidate_required

@@ -104,7 +104,7 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001",
       project: "Project X",
-      note: "Urgent",
+      notes: [],
       request_date: new Date("2026-06-11"),
       create_at: new Date(),
       update_at: new Date(),
@@ -149,6 +149,8 @@ describe("JobController API", () => {
     const args = createStub.firstCall.args[0];
     expectLocal(args.job_code).to.equal("JOB001");
     expectLocal(args.project).to.equal("Project X");
+    expectLocal(args.note).to.equal("Urgent");
+    expectLocal(args.note_user_id).to.equal(1);
     expectLocal(args.request_date.toISOString().slice(0, 10)).to.equal("2026-06-11");
     expectLocal(args.departments).to.deep.equal([{ department_id: 3, candidate_required: 5 }, { department_id: 4, candidate_required: 2 }]);
     expectLocal(args.file).to.not.be.null;
@@ -249,7 +251,7 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001",
       project: "Project X",
-      note: "Urgent",
+      notes: [],
       create_at: new Date(),
       update_at: new Date(),
       file_id: null,
@@ -292,7 +294,7 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001",
       project: "Project X",
-      note: "Urgent",
+      notes: [],
       create_at: new Date(),
       update_at: new Date(),
       file_id: 2,
@@ -329,7 +331,7 @@ describe("JobController API", () => {
       job_id: 1,
       job_code: "JOB001_NEW",
       project: "Project X",
-      note: "Urgent",
+      notes: [],
       request_date: new Date("2026-06-12"),
       create_at: new Date(),
       update_at: new Date(),

@@ -35,6 +35,7 @@ export interface CreateCandidateWithAllInput {
   current_salary?: string | null;
   expected_salary?: string | null;
   note?: string | null;
+  note_user_id?: number | null;
   job_id?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
 
@@ -128,6 +129,7 @@ export async function createWithAll(
     expected_salary: data.expected_salary ?? null,
     status: data.status,
     note: data.note ?? null,
+    note_user_id: data.note_user_id ?? null,
     job_id: jobId,
     file: data.file ?? null,
     platform_id: platformId,

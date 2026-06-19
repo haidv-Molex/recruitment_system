@@ -192,7 +192,7 @@ describe("CandidateController API", () => {
       .expectJson({
         result: false,
         message: "Dữ liệu không hợp lệ",
-        details: ["Trường onboard_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"]
+        details: ["Trường ngày phải đúng định dạng YYYY-MM-DD hoặc ISO"]
       });
   });
 
@@ -233,7 +233,8 @@ describe("CandidateController API", () => {
         }
       });
 
-    expectLocal(getAllStub.calledOnceWith({
+    expectLocal(getAllStub.calledOnce).to.be.true;
+    expectLocal(getAllStub.firstCall.args[0]).to.include({
       page: 1,
       limit: 10,
       search: "John",
@@ -258,7 +259,7 @@ describe("CandidateController API", () => {
       platform: "",
       reference: "",
       company: ""
-    })).to.be.true;
+    });
   });
 
   it("GET /candidate/search - should support search_at filter parameter", async () => {
@@ -285,12 +286,13 @@ describe("CandidateController API", () => {
       .withQueryParams({ page: 1, limit: 10, search: "John", status: "Applied", "search_at[]": ["name", "email"] })
       .expectStatus(200);
 
-    expectLocal(getAllStub.calledOnceWith({
+    expectLocal(getAllStub.calledOnce).to.be.true;
+    const getAllArgs = getAllStub.firstCall.args[0];
+    expectLocal(getAllArgs).to.include({
       page: 1,
       limit: 10,
       search: "John",
       status: "Applied",
-      search_at: ["name", "email"],
       offer_date_from: undefined,
       offer_date_to: undefined,
       onboard_date_from: undefined,
@@ -310,7 +312,8 @@ describe("CandidateController API", () => {
       platform: "",
       reference: "",
       company: ""
-    })).to.be.true;
+    });
+    expectLocal(getAllArgs.search_at).to.deep.equal(["name", "email"]);
   });
 
   it("GET /candidate - should get candidate by id", async () => {
@@ -389,7 +392,7 @@ describe("CandidateController API", () => {
       .expectJson({
         result: false,
         message: "Dữ liệu không hợp lệ",
-        details: ["Trường onboard_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"]
+        details: ["Trường ngày phải đúng định dạng YYYY-MM-DD hoặc ISO"]
       });
   });
 
@@ -465,6 +468,7 @@ describe("CandidateController API", () => {
         candidate_email: "nguyen.van.a@example.com",
         platform_name: "Vietnamworks Job Post",
         candidate_levels_name: ["Engineer"],
+        note_user_id: 1,
       }
     ]);
   });

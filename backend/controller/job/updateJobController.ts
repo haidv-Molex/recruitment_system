@@ -122,6 +122,9 @@ updateJobController.put(
         updateData[key] = body[key];
       }
     }
+    if (Object.prototype.hasOwnProperty.call(body, "note")) {
+      updateData.note_user_id = req.user!.user_id;
+    }
 
     if (req.file) {
       updateData.file = {

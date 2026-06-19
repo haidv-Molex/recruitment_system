@@ -4,6 +4,11 @@ import { createIDLTrackingSheet as createIDLTrackingSheetUtil } from "@utilities
 import type { JdRow, CandidateRowForJd } from "@utilities/file/createIDLTrackingSheet";
 import Job from "@services/job/_Job";
 
+const formatNotes = (notes?: { message: string }[]): string | null => {
+  const messages = notes?.map((note) => note.message).filter(Boolean) ?? [];
+  return messages.length > 0 ? messages.join("\n") : null;
+};
+
 async function createIDLTrackingSheet(pool: PoolClient): Promise<ExcelJS.Workbook> {
   // 1. Fetch all jobs with their populated relations
   const jobsResult = await Job.getAll({ unlimited: true }, pool);
@@ -49,7 +54,7 @@ async function createIDLTrackingSheet(pool: PoolClient): Promise<ExcelJS.Workboo
     hrbp: job.departments?.map((d) => d.user?.user_name || "").filter(Boolean).join(", ") ?? "",
     recruiter: job.recruiter?.user_name ?? "",
     myhr_request_date: (job as any).request_date ?? job.create_at,
-    note: job.note ?? null,
+    note: formatNotes(job.notes),
   }));
 
   // 5. Map candidate DB rows → CandidateRowForJd[]

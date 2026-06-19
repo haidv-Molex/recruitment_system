@@ -91,6 +91,7 @@ createJobWithAllController.post(
           job_code: body.job_code,
           project: body.project,
           note: body.note || null,
+          note_user_id: req.user!.user_id,
           request_date: body.request_date || null,
           recruiter_id: body.recruiter_id,
           file,

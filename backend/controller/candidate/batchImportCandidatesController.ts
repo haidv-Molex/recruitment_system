@@ -61,9 +61,13 @@ batchImportCandidatesController.post(
   joiValidate(bodySchema, "body"),
   async (req, res) => {
     const { candidates } = req.body;
+    const candidatesWithNoteOwner = candidates.map((candidate: any) => ({
+      ...candidate,
+      note_user_id: req.user!.user_id,
+    }));
 
     const result = await withTransaction(async (pool) => {
-      return await Candidate.batchImport(candidates, pool);
+      return await Candidate.batchImport(candidatesWithNoteOwner, pool);
     });
 
     res.status(200).json({

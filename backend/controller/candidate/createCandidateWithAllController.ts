@@ -146,6 +146,7 @@ createCandidateWithAllController.post(
           current_salary: body.current_salary,
           expected_salary: body.expected_salary,
           note: body.note,
+          note_user_id: req.user!.user_id,
           job_id: body.job_id,
           job_code: body.job_code,
           project: body.project,

@@ -3,7 +3,6 @@ CREATE TABLE job (
     job_code VARCHAR(255) NOT NULL,
     CONSTRAINT job_job_code_not_blank CHECK (TRIM(job_code) <> ''),
     project VARCHAR(255) NOT NULL,
-    note TEXT,
     request_date DATE,
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

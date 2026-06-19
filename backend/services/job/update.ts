@@ -10,12 +10,14 @@ import User from "@services/user/_User";
 import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import Level from "@services/level/_Level";
+import Note from "@services/note/_Note";
 import { replaceLinkRows, type LinkRow } from "@utilities/db/linking";
 
 type UpdateJobData = {
   job_code?: string;
   project?: string;
   note?: string | null;
+  note_user_id?: number | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;
   recruiter_name?: string | null;
@@ -80,10 +82,6 @@ async function update(
       fields.push(`project = $${index++}`);
       values.push(data.project);
     }
-    if (data.note !== undefined) {
-      fields.push(`note = $${index++}`);
-      values.push(data.note);
-    }
     if (data.request_date !== undefined) {
       fields.push(`request_date = $${index++}`);
       values.push(data.request_date);
@@ -111,6 +109,15 @@ async function update(
         WHERE job_id = $${index}
       `;
       await pool.query(query, values);
+    }
+
+    const noteMessage = typeof data.note === "string" ? data.note.trim() : "";
+    if (noteMessage && data.note_user_id) {
+      await Note.create({
+        user_id: data.note_user_id,
+        message: noteMessage,
+        job_id: id
+      }, pool);
     }
 
     // 3. Update linking records if provided
@@ -304,7 +311,7 @@ async function update(
 
     // 4. Retrieve complete job output info
     const query = `
-      SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id, j.recruiter_id,
+      SELECT j.job_id, j.job_code, j.project, j.request_date, j.create_at, j.update_at, j.file_id, j.recruiter_id,
              f.file_path
       FROM job j
       LEFT JOIN file f ON j.file_id = f.file_id
@@ -320,7 +327,6 @@ async function update(
       job_id: row.job_id,
       job_code: row.job_code,
       project: row.project,
-      note: row.note,
       request_date: row.request_date,
       create_at: row.create_at,
       update_at: row.update_at,

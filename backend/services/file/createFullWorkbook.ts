@@ -13,6 +13,11 @@ import { getStatuses } from "@services/candidate/getStatuses";
 import { getAgencies } from "@services/candidate/getAgencies";
 import Job from "@services/job/_Job";
 
+const formatNotes = (notes?: { message: string }[]): string | null => {
+    const messages = notes?.map((note) => note.message).filter(Boolean) ?? [];
+    return messages.length > 0 ? messages.join("\n") : null;
+};
+
 
 // ======================== FILL STYLES ========================
 
@@ -244,7 +249,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
       c.candidate_id, c.candidate_name, c.candidate_email, c.candidate_phone,
       c.candidate_code, c.agency, c.offer_date, c.onboard_date,
       c.expected_onboard_date, c.feedback_date, c.current_salary,
-      c.expected_salary, c.status, c.note, c.create_at,
+    c.expected_salary, c.status, candidate_notes.note_messages AS note, c.create_at,
     c.job_id,
       j.job_code,
       p.platform_name,
@@ -271,6 +276,12 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
       JOIN level l ON cl.level_id = l.level_id
       GROUP BY cl.candidate_id
     ) cl_level ON c.candidate_id = cl_level.candidate_id
+        LEFT JOIN (
+            SELECT cn.candidate_id, STRING_AGG(n.message, E'\n' ORDER BY n.create_at DESC, n.note_id DESC) AS note_messages
+            FROM candidate_note cn
+            JOIN note n ON n.note_id = cn.note_id
+            GROUP BY cn.candidate_id
+        ) candidate_notes ON c.candidate_id = candidate_notes.candidate_id
     ORDER BY c.candidate_id ASC
   `);
     const rows = candidateRes.rows;
@@ -327,7 +338,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         hrbp: job.departments?.map((d) => d.user?.user_name || "").filter(Boolean).join(", ") ?? "",
         recruiter: job.recruiter?.user_name ?? "",
         myhr_request_date: (job as any).request_date ?? job.create_at,
-        note: job.note ?? null,
+        note: formatNotes(job.notes),
     }));
 
     const candidatesForJd: CandidateRowForJd[] = rows.map((row) => ({

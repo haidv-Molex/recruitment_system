@@ -93,6 +93,7 @@ describe("Candidate update service", () => {
       expected_salary: "2000 USD",
       status: "OFFERED",
       note: "Strong backend developer",
+      note_user_id: recruiterId,
       platform_id: platformId,
       recruiter: recruiterId,
       job_id: jobId,
@@ -108,6 +109,9 @@ describe("Candidate update service", () => {
     expect(result.candidate_name).to.equal("Jane Doe Updated");
     expect(result.candidate_email).to.equal("jane.updated@example.com");
     expect(result.onboard_date).to.not.be.null;
+    expect(result).to.not.have.property("note");
+    expect(result.notes).to.be.an("array").with.lengthOf(1);
+    expect(result.notes[0].message).to.equal("Strong backend developer");
     expect(result.candidate_levels).to.be.an("array").with.lengthOf(1);
     expect(result.candidate_levels[0].level_id).to.equal(levelId1);
 

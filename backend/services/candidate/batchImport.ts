@@ -28,6 +28,7 @@ export type CandidateImportItem = {
   current_salary?: string | null;
   expected_salary?: string | null;
   note?: string | null;
+  note_user_id?: number | null;
   job_id?: number | null;
   platform_id?: number | null;
   targeted_company?: number | null;
@@ -187,6 +188,7 @@ export async function batchImport(
         expected_salary: c.expected_salary || null,
         status: c.status,
         note: c.note || null,
+        note_user_id: c.note_user_id ?? null,
         job_id: resolvedJobId,
         reference: resolvedReferenceId,
         platform_id: resolvedPlatformId,

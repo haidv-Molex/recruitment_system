@@ -60,13 +60,19 @@ export async function getAll(
   const values: any[] = [];
 
   if (options.search) {
+    const noteSearchExpression = `COALESCE((
+      SELECT STRING_AGG(n.message, ' ')
+      FROM candidate_note cn
+      JOIN note n ON n.note_id = cn.note_id
+      WHERE cn.candidate_id = c.candidate_id
+    ), '')`;
     const columnMap: Record<string, string> = {
       name: "c.candidate_name",
       code: "c.candidate_code",
       email: "c.candidate_email",
       phone: "c.candidate_phone",
       agency: "c.agency",
-      note: "c.note",
+      note: noteSearchExpression,
       summary: "cd.summary",
       nationality: "cd.nationality",
       location: "cd.location",
@@ -124,12 +130,19 @@ export async function getAll(
     }
   };
 
+  const candidateNoteSearchExpression = `COALESCE((
+    SELECT STRING_AGG(n.message, ' ')
+    FROM candidate_note cn
+    JOIN note n ON n.note_id = cn.note_id
+    WHERE cn.candidate_id = c.candidate_id
+  ), '')`;
+
   addFilterCondition("c.candidate_code", options.candidate_code);
   addFilterCondition("c.candidate_name", options.candidate_name);
   addFilterCondition("c.candidate_email", options.candidate_email);
   addFilterCondition("c.candidate_phone", options.candidate_phone);
   addFilterCondition("c.agency", options.agency);
-  addFilterCondition("c.note", options.note);
+  addFilterCondition(candidateNoteSearchExpression, options.note);
   addFilterCondition("cd.summary", options.summary);
   addFilterCondition("cd.nationality", options.nationality);
   addFilterCondition("cd.location", options.location);

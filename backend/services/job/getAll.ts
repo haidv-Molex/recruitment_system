@@ -47,7 +47,7 @@ async function getAll(
     conditions.push(`(
       j.job_code ILIKE ${placeholder}
       OR j.project ILIKE ${placeholder}
-      OR j.note ILIKE ${placeholder}
+      OR EXISTS (SELECT 1 FROM job_note jn JOIN note n ON n.note_id = jn.note_id WHERE jn.job_id = j.job_id AND n.message ILIKE ${placeholder})
       OR CAST(j.request_date AS TEXT) ILIKE ${placeholder}
       OR EXISTS (SELECT 1 FROM job_department jd JOIN department d ON jd.department_id = d.department_id WHERE jd.job_id = j.job_id AND (d.department_code ILIKE ${placeholder} OR d.department_name ILIKE ${placeholder}))
       OR EXISTS (SELECT 1 FROM job_segment js JOIN segment sg ON js.segment_id = sg.segment_id WHERE js.job_id = j.job_id AND (sg.segment_code ILIKE ${placeholder} OR sg.segment_name ILIKE ${placeholder}))
@@ -71,7 +71,7 @@ async function getAll(
   }
   if (params.note) {
     values.push(`%${params.note}%`);
-    conditions.push(`j.note ILIKE $${values.length}`);
+    conditions.push(`EXISTS (SELECT 1 FROM job_note jn JOIN note n ON n.note_id = jn.note_id WHERE jn.job_id = j.job_id AND n.message ILIKE $${values.length})`);
   }
   if (params.request_date_from) {
     values.push(params.request_date_from);

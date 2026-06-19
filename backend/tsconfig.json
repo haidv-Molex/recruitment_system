@@ -34,6 +34,7 @@
   "include": ["src", "src/type", "**/*.ts", "**/*.js", "types/**/*", "ecosystem.config.cjs"],   // Bao gồm cả file .ts và .js
   "exclude": ["node_modules", "dist", "test"],  // Không build lại node_modules
   "ts-node": {
+    "files": true,
     "require": ["tsconfig-paths/register"]
   }
 }

@@ -8,6 +8,7 @@ import Level from "@services/level/_Level";
 import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import User from "@services/user/_User";
+import Note from "@services/note/_Note";
 import { insertLinkRows, type LinkRow } from "@utilities/db/linking";
 import fs from "fs";
 import path from "path";
@@ -16,6 +17,7 @@ type CreateJobData = {
   job_code?: string | null;
   project: string;
   note?: string | null;
+  note_user_id?: number | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;
   file?: {
@@ -38,6 +40,7 @@ async function create(
     job_code,
     project,
     note = null,
+    note_user_id = null,
     request_date = null,
     recruiter_id = null,
     file = null,
@@ -68,11 +71,11 @@ async function create(
 
     // 2. Insert Job record
     const query = `
-      INSERT INTO job (job_code, project, note, file_id, request_date, recruiter_id)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING job_id, job_code, project, note, request_date, create_at, update_at, file_id, recruiter_id
+      INSERT INTO job (job_code, project, file_id, request_date, recruiter_id)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING job_id, job_code, project, request_date, create_at, update_at, file_id, recruiter_id
     `;
-    const result = await pool.query(query, [jobCode, project, note, file_id, request_date, recruiter_id]);
+    const result = await pool.query(query, [jobCode, project, file_id, request_date, recruiter_id]);
 
     if (result.rows.length === 0) {
       throw new AppError("Lỗi khi tạo công việc mới", 500);
@@ -81,6 +84,15 @@ async function create(
     const jobRow = result.rows[0];
     const jobId = jobRow.job_id;
     const recruiter = jobRow.recruiter_id ? await User.findById(jobRow.recruiter_id, pool) : null;
+
+    const noteMessage = typeof note === "string" ? note.trim() : "";
+    if (noteMessage && note_user_id) {
+      await Note.create({
+        user_id: note_user_id,
+        message: noteMessage,
+        job_id: jobId
+      }, pool);
+    }
 
     // 3. Insert and fetch linking records
     // departments -> job_department (job_id, department_id, candidate_required)
@@ -191,7 +203,6 @@ async function create(
       job_id: jobId,
       job_code: jobRow.job_code,
       project: jobRow.project,
-      note: jobRow.note,
       request_date: jobRow.request_date,
       create_at: jobRow.create_at,
       update_at: jobRow.update_at,
@@ -204,7 +215,8 @@ async function create(
       sites: sitesList,
       titles: titlesList,
       managers: managersList,
-      employee_levels: employeeLevelsList
+      employee_levels: employeeLevelsList,
+      notes: await Note.getByJobId(jobId, pool)
     } satisfies jobOutputModel;
 
   } catch (error) {

@@ -53,9 +53,13 @@ batchImportJobsController.post(
   joiValidate(bodySchema, "body"),
   async (req, res) => {
     const { jobs } = req.body;
+    const jobsWithNoteOwner = jobs.map((job: any) => ({
+      ...job,
+      note_user_id: req.user!.user_id,
+    }));
 
     const result = await withTransaction(async (pool) => {
-      return await Job.batchImport(jobs, pool);
+      return await Job.batchImport(jobsWithNoteOwner, pool);
     });
 
     res.status(200).json({

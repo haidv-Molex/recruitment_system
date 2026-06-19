@@ -4,6 +4,7 @@ import Level from "@services/level/_Level";
 import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import User from "@services/user/_User";
+import Note from "@services/note/_Note";
 
 export async function populateJobRelations(jobId: number, pool: PoolClient) {
   const partnersQuery = `
@@ -57,7 +58,8 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     sitesRes,
     titlesRes,
     managersRes,
-    employeeLevelsRes
+    employeeLevelsRes,
+    notes
   ] = await Promise.all([
     pool.query(partnersQuery, [jobId]),
     pool.query(departmentsQuery, [jobId]),
@@ -65,7 +67,8 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     pool.query(sitesQuery, [jobId]),
     pool.query(titlesQuery, [jobId]),
     pool.query(managersQuery, [jobId]),
-    pool.query(employeeLevelsQuery, [jobId])
+    pool.query(employeeLevelsQuery, [jobId]),
+    Note.getByJobId(jobId, pool)
   ]);
 
   const departmentsList = await Promise.all(
@@ -91,6 +94,7 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     sites,
     titles,
     managers,
-    employee_levels: employeeLevels
+    employee_levels: employeeLevels,
+    notes
   };
 }

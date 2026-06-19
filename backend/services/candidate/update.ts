@@ -3,6 +3,7 @@ import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
 import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
 import Company from "@services/company/_Company";
+import Note from "@services/note/_Note";
 import { populateCandidateRelations } from "./populate";
 import { replaceLinkRows } from "@utilities/db/linking";
 import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
@@ -22,6 +23,7 @@ export interface UpdateCandidateInput extends CandidateDetailWriteData {
   agency?: string | null;
   status?: string;
   note?: string | null;
+  note_user_id?: number | null;
   platform_id?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
@@ -98,7 +100,6 @@ export async function update(
     if (data.candidate_phone !== undefined) addParam(data.candidate_phone, "candidate_phone");
     if (data.agency !== undefined) addParam(data.agency, "agency");
     if (data.status !== undefined) addParam(data.status, "status");
-    if (data.note !== undefined) addParam(data.note, "note");
     if (data.platform_id !== undefined) addParam(data.platform_id, "platform_id");
     if (data.job_id !== undefined) addParam(data.job_id, "job_id");
     if ((data.targeted_company === undefined || data.targeted_company === null) && data.targeted_company_name?.trim()) {
@@ -124,6 +125,15 @@ export async function update(
         candidateDetailId = candidateDetail.candidate_detail_id;
         addParam(candidateDetailId, "candidate_detail_id");
       }
+    }
+
+    const noteMessage = typeof data.note === "string" ? data.note.trim() : "";
+    if (noteMessage && data.note_user_id) {
+      await Note.create({
+        user_id: data.note_user_id,
+        message: noteMessage,
+        candidate_id: id
+      }, pool);
     }
 
     if (sets.length === 0) {

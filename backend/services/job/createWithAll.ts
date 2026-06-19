@@ -12,6 +12,7 @@ type CreateJobWithAllData = {
   job_code?: string | null;
   project: string;
   note?: string | null;
+  note_user_id?: number | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;
   file?: {
@@ -52,6 +53,7 @@ async function createWithAll(
     job_code = null,
     project,
     note = null,
+    note_user_id = null,
     recruiter_id = null,
     file = null,
     partners = [],
@@ -191,6 +193,7 @@ async function createWithAll(
       job_code,
       project,
       note,
+      note_user_id,
       file,
       request_date: data.request_date,
       recruiter_id: resolvedRecruiterId,

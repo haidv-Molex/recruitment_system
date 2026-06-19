@@ -8,7 +8,6 @@ CREATE TABLE candidate (
     candidate_phone VARCHAR(50),
     agency VARCHAR(255),
     status VARCHAR(100) NOT NULL,
-    note TEXT,
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     candidate_detail_id INT,

@@ -88,6 +88,7 @@ updateCandidateController.put("",
     if (hasProp(body, "agency")) updateData.agency = body.agency;
     if (hasProp(body, "status")) updateData.status = body.status.trim();
     if (hasProp(body, "note")) updateData.note = body.note;
+    if (hasProp(body, "note")) updateData.note_user_id = req.user!.user_id;
     if (hasProp(body, "platform_id")) updateData.platform_id = body.platform_id;
     if (hasProp(body, "job_id")) updateData.job_id = body.job_id;
     if (hasProp(body, "targeted_company")) updateData.targeted_company = body.targeted_company;
