@@ -12,16 +12,18 @@ const emptyUser = {
 
 export interface UserFormProps {
   user?: any;
+  accountType?: 'user' | 'hr';
   onSubmit: (data: typeof emptyUser) => void;
   onClose: () => void;
   saving: boolean;
 }
 
-export default function UserForm({ user, onSubmit, onClose, saving }: UserFormProps) {
+export default function UserForm({ user, accountType = 'hr', onSubmit, onClose, saving }: UserFormProps) {
   const [formData, setFormData] = useState(emptyUser);
   const [error, setError] = useState('');
 
   const isEditing = !!user;
+  const isCreatingHr = !isEditing && accountType === 'hr';
 
   useEffect(() => {
     if (user) {
@@ -50,7 +52,7 @@ export default function UserForm({ user, onSubmit, onClose, saving }: UserFormPr
       return;
     }
 
-    if (!isEditing) {
+    if (isCreatingHr) {
       if (!formData.account.trim()) {
         setError('Account is required.');
         return;
@@ -79,7 +81,7 @@ export default function UserForm({ user, onSubmit, onClose, saving }: UserFormPr
     <Modal
       isOpen={true}
       onClose={onClose}
-      title={isEditing ? 'Edit Account' : 'Create New HR Account'}
+      title={isEditing ? 'Edit Account' : isCreatingHr ? 'Create New HR Account' : 'Create New User'}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
@@ -92,7 +94,9 @@ export default function UserForm({ user, onSubmit, onClose, saving }: UserFormPr
                 : 'Creating...'
               : isEditing
               ? 'Save Changes'
-              : 'Create Account'}
+              : isCreatingHr
+              ? 'Create HR Account'
+              : 'Create User'}
           </Button>
         </>
       }
@@ -114,7 +118,7 @@ export default function UserForm({ user, onSubmit, onClose, saving }: UserFormPr
           hint="This name will be displayed throughout the system."
         />
 
-        {!isEditing && (
+        {isCreatingHr && (
           <>
             <InputField
               label="Account (Login ID) *"

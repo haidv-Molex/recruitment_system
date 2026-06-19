@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Shield, User } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield, User, Ban } from 'lucide-react';
 import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
-import { fetchUsersApi, createHRApi, deleteUserApi, fetchRolesApi, updateUserApi } from '@/services/userApi';
+import { fetchUsersApi, createHRApi, createUserApi, deleteUserApi, fetchRolesApi, updateUserApi, changeUserRoleApi } from '@/services/userApi';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/ui/Pagination';
 import ExcelTable, { ExcelColumn } from '@/components/ui/ExcelTable';
@@ -41,6 +41,7 @@ export const AdminPage = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [createMode, setCreateMode] = useState<'user' | 'hr'>('user');
   const [saving, setSaving] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -81,8 +82,17 @@ export const AdminPage = () => {
     loadUsers(1, newSize, searchQuery, selectedRole);
   };
 
-  const openCreateForm = () => {
+  const canCreateHr = currentUser?.user_role === 'admin';
+
+  const openCreateUserForm = () => {
     setEditingUser(null);
+    setCreateMode('user');
+    setShowForm(true);
+  };
+
+  const openCreateHrForm = () => {
+    setEditingUser(null);
+    setCreateMode('hr');
     setShowForm(true);
   };
 
@@ -108,13 +118,21 @@ export const AdminPage = () => {
         closeForm();
         loadUsers(currentPage, pageSize, searchQuery, selectedRole);
       } else {
-        await createHRApi({
-          username: formData.username.trim(),
-          account: formData.account.trim(),
-          password: formData.password,
-          description: formData.description || undefined,
-        });
-        toast.success(`Account "${formData.account}" created successfully.`);
+        if (createMode === 'hr') {
+          await createHRApi({
+            username: formData.username.trim(),
+            account: formData.account.trim(),
+            password: formData.password,
+            description: formData.description || undefined,
+          });
+          toast.success(`HR account "${formData.account}" created successfully.`);
+        } else {
+          await createUserApi({
+            username: formData.username.trim(),
+            description: formData.description || undefined,
+          });
+          toast.success(`User "${formData.username.trim()}" created successfully.`);
+        }
         closeForm();
         loadUsers(currentPage, pageSize, searchQuery, selectedRole);
       }
@@ -152,15 +170,43 @@ export const AdminPage = () => {
     }
   };
 
+  const handleToggleHrBan = async (row: any) => {
+    if (row.user_role !== 'hr' && row.user_role !== 'banned') {
+      toast.error('Only HR accounts can be banned or unbanned.');
+      return;
+    }
+
+    const shouldUnban = row.user_role === 'banned';
+    const nextRole = shouldUnban ? 'hr' : 'banned';
+    const actionText = shouldUnban ? 'unban' : 'ban';
+    const isConfirmed = await confirm(`Bạn có chắc chắn muốn ${actionText} HR "${row.user_name}" không?`);
+    if (!isConfirmed) return;
+
+    try {
+      await changeUserRoleApi(row.user_id, nextRole);
+      toast.success(`HR "${row.user_name}" has been ${shouldUnban ? 'unbanned' : 'banned'}.`);
+      loadUsers(currentPage, pageSize, searchQuery, selectedRole);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || `${shouldUnban ? 'Unban' : 'Ban'} HR failed.`);
+    }
+  };
+
   const headerActions = useMemo(() => (
-    <Button onClick={openCreateForm} icon={<Plus size={16} />}>
-      Add Account
-    </Button>
-  ), []);
+    <div className="flex items-center gap-2">
+      <Button onClick={openCreateUserForm} icon={<Plus size={16} />}>
+        Add User
+      </Button>
+      {canCreateHr && (
+        <Button onClick={openCreateHrForm} icon={<Shield size={16} />} variant="secondary">
+          Add HR Account
+        </Button>
+      )}
+    </div>
+  ), [canCreateHr]);
 
   useHeader({
     title: '👤 Account Management',
-    subTitle: 'Manage HR user accounts. Only administrators can access this page.',
+    subTitle: 'Manage user accounts for recruitment operations.',
     actions: headerActions,
   }, [headerActions]);
 
@@ -218,6 +264,14 @@ export const AdminPage = () => {
       label: 'Edit',
       icon: <Edit2 size={14} />,
       onClick: (row: any) => openEditForm(row),
+    },
+    {
+      label: (rows: any[]) => rows[0]?.user_role === 'banned' ? 'Unban HR' : 'Ban HR',
+      icon: (rows: any[]) => rows[0]?.user_role === 'banned'
+        ? <Shield size={14} className="text-blue-500" />
+        : <Ban size={14} className="text-orange-500" />,
+      isVisible: (rows: any[]) => rows.length === 1 && ['hr', 'banned'].includes(rows[0]?.user_role),
+      onClick: (row: any) => handleToggleHrBan(row),
     },
     {
       label: 'Delete',
@@ -285,6 +339,7 @@ export const AdminPage = () => {
       {showForm && (
         <UserForm
           user={editingUser}
+          accountType={createMode}
           onSubmit={handleCreateOrUpdateUser}
           onClose={closeForm}
           saving={saving}

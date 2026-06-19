@@ -50,11 +50,11 @@ function App() {
                       <Route path="/levels" element={<LevelPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
 
-                      {/* Admin route: requires admin role to access */}
+                      {/* Account management: admin and HR can create regular users */}
                       <Route
                         path="/admin"
                         element={
-                          <ProtectedRoute requireAdmin>
+                          <ProtectedRoute allowedRoles={['admin', 'hr']}>
                             <AdminPage />
                           </ProtectedRoute>
                         }
