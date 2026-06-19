@@ -55,6 +55,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
   const [selectedPlatform, setSelectedPlatform] = useState<any | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<any | null>(null);
   const [selectedAgency, setSelectedAgency] = useState<any | null>(null);
+  const [showDetailSection, setShowDetailSection] = useState(false);
 
   const [options, setOptions] = useState({
     jobs: [] as any[],
@@ -67,18 +68,19 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
 
   useEffect(() => {
     if (candidate) {
+      const detail = candidate.candidate_detail || {};
       setFormData({
         candidateCode: candidate.candidate_code || '',
         candidateName: candidate.candidate_name || '',
         candidateEmail: candidate.candidate_email || '',
         candidatePhone: candidate.candidate_phone || '',
         agency: candidate.agency || '',
-        offerDate: candidate.offer_date ? String(candidate.offer_date).slice(0, 10) : '',
-        onboardDate: candidate.onboard_date ? String(candidate.onboard_date).slice(0, 10) : '',
-        expectedOnboardDate: candidate.expected_onboard_date ? String(candidate.expected_onboard_date).slice(0, 10) : '',
-        feedbackDate: candidate.feedback_date ? String(candidate.feedback_date).slice(0, 10) : '',
-        currentSalary: candidate.current_salary || '',
-        expectedSalary: candidate.expected_salary || '',
+        offerDate: detail.offer_date ? String(detail.offer_date).slice(0, 10) : '',
+        onboardDate: detail.onboard_date ? String(detail.onboard_date).slice(0, 10) : '',
+        expectedOnboardDate: detail.expected_onboard_date ? String(detail.expected_onboard_date).slice(0, 10) : '',
+        feedbackDate: detail.feedback_date ? String(detail.feedback_date).slice(0, 10) : '',
+        currentSalary: detail.current_salary || '',
+        expectedSalary: detail.expected_salary || '',
         status: candidate.status || 'CV Sent',
         note: candidate.note || '',
         platformId: candidate.platform?.platform_id || candidate.platform_id || '',
@@ -92,6 +94,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       setSelectedPlatform(candidate.platform || null);
       setSelectedCompany(candidate.targeted_company || null);
       setSelectedAgency(candidate.agency ? { name: candidate.agency } : null);
+      setShowDetailSection(false);
     } else {
       setFormData(emptyCandidate);
       setSelectedJob(null);
@@ -99,6 +102,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       setSelectedPlatform(null);
       setSelectedCompany(null);
       setSelectedAgency(null);
+      setShowDetailSection(false);
     }
   }, [candidate]);
 
@@ -422,79 +426,88 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
           </div>
         </div>
 
-        {/* Section 4: Employment & Salary Details */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment & Salary Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InputField
-              label="Current Salary"
-              name="currentSalary"
-              value={formData.currentSalary}
-              onChange={handleChange}
-              placeholder="e.g. 2200 USD"
-              disabled={saving}
-            />
-            <InputField
-              label="Expected Salary"
-              name="expectedSalary"
-              value={formData.expectedSalary}
-              onChange={handleChange}
-              placeholder="e.g. 2800 USD"
-              disabled={saving}
-            />
-            <SingleSearchSelect
-              label="Targeted Company"
-              placeholder="Search company..."
-              initialItem={selectedCompany}
-              searchApi={(search) => searchCompaniesApi({ search })}
-              displayFn={(c: any) => c.company_name || ''}
-              keyProp="company_id"
-              onChange={(id, item) => {
-                setFormData((prev) => ({ ...prev, targetedCompanyId: id || '' }));
-                setSelectedCompany(item);
-              }}
-              disabled={saving}
-            />
-          </div>
-        </div>
+        {/* Section 4: Candidate Detail / CV Data */}
+        <div className="bg-slate-50/50 rounded-xl border border-slate-100/80 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowDetailSection((prev) => !prev)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-100/60 transition-colors"
+            disabled={saving}
+          >
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Candidate Detail / CV Data</span>
+            <span className="text-xs font-semibold text-emerald-700">{showDetailSection ? 'Hide' : 'Show'}</span>
+          </button>
 
-        {/* Section 5: Recruitment Timeline */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recruitment Timeline</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <InputField
-              label="Offer Date"
-              type="date"
-              name="offerDate"
-              value={formData.offerDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-            <InputField
-              label="Onboard Date"
-              type="date"
-              name="onboardDate"
-              value={formData.onboardDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-            <InputField
-              label="Expected Onboard Date"
-              type="date"
-              name="expectedOnboardDate"
-              value={formData.expectedOnboardDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-            <InputField
-              label="Feedback Date"
-              type="date"
-              name="feedbackDate"
-              value={formData.feedbackDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-          </div>
+          {showDetailSection && (
+            <div className="p-4 border-t border-slate-100 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <InputField
+                  label="Current Salary"
+                  name="currentSalary"
+                  value={formData.currentSalary}
+                  onChange={handleChange}
+                  placeholder="e.g. 2200 USD"
+                  disabled={saving}
+                />
+                <InputField
+                  label="Expected Salary"
+                  name="expectedSalary"
+                  value={formData.expectedSalary}
+                  onChange={handleChange}
+                  placeholder="e.g. 2800 USD"
+                  disabled={saving}
+                />
+                <SingleSearchSelect
+                  label="Targeted Company"
+                  placeholder="Search company..."
+                  initialItem={selectedCompany}
+                  searchApi={(search) => searchCompaniesApi({ search })}
+                  displayFn={(c: any) => c.company_name || ''}
+                  keyProp="company_id"
+                  onChange={(id, item) => {
+                    setFormData((prev) => ({ ...prev, targetedCompanyId: id || '' }));
+                    setSelectedCompany(item);
+                  }}
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <InputField
+                  label="Offer Date"
+                  type="date"
+                  name="offerDate"
+                  value={formData.offerDate}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+                <InputField
+                  label="Onboard Date"
+                  type="date"
+                  name="onboardDate"
+                  value={formData.onboardDate}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+                <InputField
+                  label="Expected Onboard Date"
+                  type="date"
+                  name="expectedOnboardDate"
+                  value={formData.expectedOnboardDate}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+                <InputField
+                  label="Feedback Date"
+                  type="date"
+                  name="feedbackDate"
+                  value={formData.feedbackDate}
+                  onChange={handleChange}
+                  disabled={saving}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Section 6: Attachments & Notes */}

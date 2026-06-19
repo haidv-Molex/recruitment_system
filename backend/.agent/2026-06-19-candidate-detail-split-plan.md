@@ -338,10 +338,21 @@ Phase 3 result on 2026-06-19:
 
 Tasks:
 
-- [ ] CandidateTable shows all candidate data HR needs, including long text columns with hover.
-- [ ] CandidateForm keeps detail/CV/AI fields in collapsible section.
-- [ ] CandidateForm should not include `address`; use `location` only.
-- [ ] Frontend handles nested detail data if backend response provides it.
+- [x] CandidateTable shows all candidate data HR needs, including long text columns with hover.
+- [x] CandidateForm keeps detail/CV/AI fields in collapsible section.
+- [x] CandidateForm should not include `address`; use `location` only.
+- [x] Frontend handles nested detail data if backend response provides it.
+
+Phase 4 result on 2026-06-19:
+
+- `frontend/src/pages/CandidateDatabase.tsx` now maps nested `candidate_detail` fields into table rows for date, salary, summary, location, skills, languages, education, experience, current/expected fields, certifications, and salary currency.
+- Candidate database table now exposes more detail columns and defaults to all columns visible unless the user has saved column visibility preferences.
+- Candidate database table filters now send detail field params to `GET /candidate/search`.
+- `frontend/src/services/candidateApi.ts` now accepts and sends detail search params such as skills, languages, education, current/expected position, salary, and related detail filters.
+- `frontend/src/components/candidate/CandidateForm.tsx` now reads salary/timeline fields from nested `candidate_detail` and places those detail fields in a collapsible `Candidate Detail / CV Data` section.
+- `frontend/src/components/candidate/CandidateTable.tsx` now renders real candidate + nested detail fields instead of old mock-oriented fields.
+- `frontend/src/types/candidateModel.ts` now includes nested `candidate_detail` typing while keeping legacy root detail fields optional during transition.
+- Frontend `npm run build` passed. Vite emitted only the existing large chunk warning.
 
 ## Risks / Notes
 

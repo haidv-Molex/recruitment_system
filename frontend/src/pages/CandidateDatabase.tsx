@@ -29,37 +29,60 @@ import Modal from '@/components/ui/Modal';
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
-const mapCandidateToRow = (c: any) => ({
-  id: c.candidate_id,
-  candidateCode: c.candidate_code || '',
-  inputDate: c.create_at ? String(c.create_at).slice(0, 10) : '',
-  name: c.candidate_name,
-  email: c.candidate_email || '',
-  phone: c.candidate_phone || '',
-  jobCode: c.job?.job_code || '',
-  jobTitle: '',
-  department: '',
-  eeLevel: '',
-  project: c.job?.project || '',
-  hiringManager: '',
-  dlIdl: 'IDL',
-  status: c.status,
-  onboardingDate: c.onboard_date ? String(c.onboard_date).slice(0, 10) : '',
-  offerSentDate: c.offer_date ? String(c.offer_date).slice(0, 10) : '',
-  source: c.platform?.platform_code || c.platform?.platform_name || '',
-  employeeId: '',
-  referrerName: c.reference?.user_name || '',
-  referrerDepartment: '',
-  note: c.note || '',
-  currentSalary: c.current_salary || '',
-  expectedSalary: c.expected_salary || '',
-  candidateResultFeedbackDate: c.feedback_date ? String(c.feedback_date).slice(0, 10) : '',
-  headhuntAgency: c.agency || '',
-  targetedCompany: !!c.targeted_company,
-  targetedCompanyName: c.targeted_company?.company_name || '',
-  file: c.file || null,
-  _apiData: c,
-});
+const joinList = (value: any) => Array.isArray(value) ? value.filter(Boolean).join(', ') : (value || '');
+
+const mapCandidateToRow = (c: any) => {
+  const detail = c.candidate_detail || {};
+
+  return {
+    id: c.candidate_id,
+    candidateCode: c.candidate_code || '',
+    inputDate: c.create_at ? String(c.create_at).slice(0, 10) : '',
+    name: c.candidate_name,
+    email: c.candidate_email || '',
+    phone: c.candidate_phone || '',
+    jobCode: c.job?.job_code || '',
+    jobTitle: '',
+    department: '',
+    eeLevel: joinList(c.candidate_levels?.map((level: any) => level.level_name || level.level_code)),
+    project: c.job?.project || '',
+    hiringManager: '',
+    dlIdl: 'IDL',
+    status: c.status,
+    onboardingDate: detail.onboard_date ? String(detail.onboard_date).slice(0, 10) : '',
+    offerSentDate: detail.offer_date ? String(detail.offer_date).slice(0, 10) : '',
+    expectedOnboardDate: detail.expected_onboard_date ? String(detail.expected_onboard_date).slice(0, 10) : '',
+    source: c.platform?.platform_code || c.platform?.platform_name || '',
+    employeeId: '',
+    referrerName: c.reference?.user_name || '',
+    referrerDepartment: '',
+    note: c.note || '',
+    summary: detail.summary || '',
+    nationality: detail.nationality || '',
+    location: detail.location || '',
+    skills: joinList(detail.skills),
+    languages: joinList(detail.languages),
+    education: detail.education || '',
+    experienceYears: detail.experience_years || '',
+    currentPosition: detail.current_position || '',
+    currentLevel: detail.current_level || '',
+    currentSalary: detail.current_salary || '',
+    lastCompany: detail.last_company || '',
+    workExperience: detail.work_experience || '',
+    certifications: joinList(detail.certifications),
+    expectedPosition: detail.expected_position || '',
+    expectedLevel: detail.expected_level || '',
+    expectedSalary: detail.expected_salary || '',
+    expectedWorkLocation: detail.expected_work_location || '',
+    salaryCurrency: detail.salary_currency || '',
+    candidateResultFeedbackDate: detail.feedback_date ? String(detail.feedback_date).slice(0, 10) : '',
+    headhuntAgency: c.agency || '',
+    targetedCompany: !!c.targeted_company,
+    targetedCompanyName: c.targeted_company?.company_name || '',
+    file: c.file || null,
+    _apiData: c,
+  };
+};
 
 export interface CandidateDatabasePageProps {
   candidates: any[];
@@ -85,22 +108,7 @@ export const CandidateDatabasePage = ({
   const [parsedCVInfo, setParsedCVInfo] = useState<{ data: any; file: File } | null>(null);
 
   const savedColumns = useItem('visibleCandidateColumns');
-  const defaultVisible = savedColumns || [
-    'candidateCode',
-    'file',
-    'inputDate',
-    'name',
-    'email',
-    'phone',
-    'jobCode',
-    'status',
-    'onboardingDate',
-    'offerSentDate',
-    'source',
-    'currentSalary',
-    'expectedSalary',
-    'note',
-  ];
+  const defaultVisible = Array.isArray(savedColumns) ? savedColumns : undefined;
   const handleVisibleColumnsChange = (cols: string[]) => {
     setItem('visibleCandidateColumns', cols);
   };
@@ -166,6 +174,40 @@ export const CandidateDatabasePage = ({
     if (colFilters.targetedCompanyName) params.company = colFilters.targetedCompanyName;
     if (colFilters.referrerName) params.reference = colFilters.referrerName;
     if (colFilters.note) params.note = colFilters.note;
+    if (colFilters.currentSalary) params.currentSalary = colFilters.currentSalary;
+    if (colFilters.expectedSalary) params.expectedSalary = colFilters.expectedSalary;
+    if (colFilters.summary) params.summary = colFilters.summary;
+    if (colFilters.nationality) params.nationality = colFilters.nationality;
+    if (colFilters.location) params.location = colFilters.location;
+    if (colFilters.skills) params.skills = colFilters.skills;
+    if (colFilters.languages) params.languages = colFilters.languages;
+    if (colFilters.education) params.education = colFilters.education;
+    if (colFilters.experienceYears) params.experienceYears = colFilters.experienceYears;
+    if (colFilters.currentPosition) params.currentPosition = colFilters.currentPosition;
+    if (colFilters.currentLevel) params.currentLevel = colFilters.currentLevel;
+    if (colFilters.lastCompany) params.lastCompany = colFilters.lastCompany;
+    if (colFilters.workExperience) params.workExperience = colFilters.workExperience;
+    if (colFilters.certifications) params.certifications = colFilters.certifications;
+    if (colFilters.expectedPosition) params.expectedPosition = colFilters.expectedPosition;
+    if (colFilters.expectedLevel) params.expectedLevel = colFilters.expectedLevel;
+    if (colFilters.expectedWorkLocation) params.expectedWorkLocation = colFilters.expectedWorkLocation;
+    if (colFilters.salaryCurrency) params.salaryCurrency = colFilters.salaryCurrency;
+    if (colFilters.offerSentDate) {
+      params.offerDateFrom = colFilters.offerSentDate;
+      params.offerDateTo = colFilters.offerSentDate;
+    }
+    if (colFilters.onboardingDate) {
+      params.onboardDateFrom = colFilters.onboardingDate;
+      params.onboardDateTo = colFilters.onboardingDate;
+    }
+    if (colFilters.expectedOnboardDate) {
+      params.expectedOnboardDateFrom = colFilters.expectedOnboardDate;
+      params.expectedOnboardDateTo = colFilters.expectedOnboardDate;
+    }
+    if (colFilters.candidateResultFeedbackDate) {
+      params.feedbackDateFrom = colFilters.candidateResultFeedbackDate;
+      params.feedbackDateTo = colFilters.candidateResultFeedbackDate;
+    }
 
     setActiveSearchParams(params);
     loadCandidatesFromApi(1, pageSize, params);
@@ -296,6 +338,12 @@ export const CandidateDatabasePage = ({
         render: (_: any, value: any) => formatDate(value),
       },
       {
+        key: 'expectedOnboardDate',
+        label: 'Expected Onboard Date',
+        width: 170,
+        render: (_: any, value: any) => formatDate(value),
+      },
+      {
         key: 'offerSentDate',
         label: 'Offer Sent Date',
         width: 150,
@@ -304,9 +352,31 @@ export const CandidateDatabasePage = ({
       { key: 'source', label: 'Source', width: 190 },
       { key: 'currentSalary', label: 'Current Salary', width: 150 },
       { key: 'expectedSalary', label: 'Expected Salary', width: 150 },
+      { key: 'salaryCurrency', label: 'Currency', width: 110 },
       { key: 'headhuntAgency', label: 'Agency', width: 170 },
       { key: 'targetedCompanyName', label: 'Targeted Company', width: 180 },
       { key: 'referrerName', label: 'Reference', width: 160 },
+      { key: 'summary', label: 'Summary', width: 260 },
+      { key: 'nationality', label: 'Nationality', width: 140 },
+      { key: 'location', label: 'Location', width: 170 },
+      { key: 'skills', label: 'Skills', width: 260 },
+      { key: 'languages', label: 'Languages', width: 180 },
+      { key: 'education', label: 'Education', width: 260 },
+      { key: 'experienceYears', label: 'Experience Years', width: 150 },
+      { key: 'currentPosition', label: 'Current Position', width: 190 },
+      { key: 'currentLevel', label: 'Current Level', width: 150 },
+      { key: 'lastCompany', label: 'Last Company', width: 190 },
+      { key: 'workExperience', label: 'Work Experience', width: 300 },
+      { key: 'certifications', label: 'Certifications', width: 240 },
+      { key: 'expectedPosition', label: 'Expected Position', width: 190 },
+      { key: 'expectedLevel', label: 'Expected Level', width: 150 },
+      { key: 'expectedWorkLocation', label: 'Expected Work Location', width: 210 },
+      {
+        key: 'candidateResultFeedbackDate',
+        label: 'Feedback Date',
+        width: 150,
+        render: (_: any, value: any) => formatDate(value),
+      },
       {
         key: 'file',
         label: 'CV File',

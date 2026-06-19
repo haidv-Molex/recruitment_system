@@ -57,7 +57,25 @@ export async function searchCandidatesApi({
   candidatePhone = '',
   agency = '',
   note = '',
+  summary = '',
+  nationality = '',
+  location = '',
+  skills = '',
+  languages = '',
+  education = '',
+  experienceYears = '',
+  currentPosition = '',
+  currentLevel = '',
   jobCode = '',
+  currentSalary = '',
+  lastCompany = '',
+  workExperience = '',
+  certifications = '',
+  expectedPosition = '',
+  expectedLevel = '',
+  expectedSalary = '',
+  expectedWorkLocation = '',
+  salaryCurrency = '',
   project = '',
   platform = '',
   reference = '',
@@ -82,6 +100,24 @@ export async function searchCandidatesApi({
   candidatePhone?: string;
   agency?: string;
   note?: string;
+  summary?: string;
+  nationality?: string;
+  location?: string;
+  skills?: string;
+  languages?: string;
+  education?: string;
+  experienceYears?: string;
+  currentPosition?: string;
+  currentLevel?: string;
+  currentSalary?: string;
+  lastCompany?: string;
+  workExperience?: string;
+  certifications?: string;
+  expectedPosition?: string;
+  expectedLevel?: string;
+  expectedSalary?: string;
+  expectedWorkLocation?: string;
+  salaryCurrency?: string;
   jobCode?: string;
   project?: string;
   platform?: string;
@@ -109,6 +145,24 @@ export async function searchCandidatesApi({
   if (candidatePhone) params.candidate_phone = candidatePhone;
   if (agency) params.agency = agency;
   if (note) params.note = note;
+  if (summary) params.summary = summary;
+  if (nationality) params.nationality = nationality;
+  if (location) params.location = location;
+  if (skills) params.skills = skills;
+  if (languages) params.languages = languages;
+  if (education) params.education = education;
+  if (experienceYears) params.experience_years = experienceYears;
+  if (currentPosition) params.current_position = currentPosition;
+  if (currentLevel) params.current_level = currentLevel;
+  if (currentSalary) params.current_salary = currentSalary;
+  if (lastCompany) params.last_company = lastCompany;
+  if (workExperience) params.work_experience = workExperience;
+  if (certifications) params.certifications = certifications;
+  if (expectedPosition) params.expected_position = expectedPosition;
+  if (expectedLevel) params.expected_level = expectedLevel;
+  if (expectedSalary) params.expected_salary = expectedSalary;
+  if (expectedWorkLocation) params.expected_work_location = expectedWorkLocation;
+  if (salaryCurrency) params.salary_currency = salaryCurrency;
   if (jobCode) params.job_code = jobCode;
   if (project) params.project = project;
   if (platform) params.platform = platform;

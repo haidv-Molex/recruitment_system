@@ -25,8 +25,24 @@ export interface GetAllCandidatesOptions {
   candidate_phone?: string;
   agency?: string;
   note?: string;
+  summary?: string;
+  nationality?: string;
+  location?: string;
+  skills?: string;
+  languages?: string;
+  education?: string;
+  experience_years?: string;
+  current_position?: string;
+  current_level?: string;
   current_salary?: string;
+  last_company?: string;
+  work_experience?: string;
+  certifications?: string;
+  expected_position?: string;
+  expected_level?: string;
   expected_salary?: string;
+  expected_work_location?: string;
+  salary_currency?: string;
   job_code?: string;
   project?: string;
   platform?: string;
@@ -51,8 +67,24 @@ export async function getAll(
       phone: "c.candidate_phone",
       agency: "c.agency",
       note: "c.note",
+      summary: "cd.summary",
+      nationality: "cd.nationality",
+      location: "cd.location",
+      skills: "array_to_string(cd.skills, ' ')",
+      languages: "array_to_string(cd.languages, ' ')",
+      education: "cd.education",
+      experience_years: "cd.experience_years",
+      current_position: "cd.current_position",
+      current_level: "cd.current_level",
       current_salary: "cd.current_salary::text",
+      last_company: "cd.last_company",
+      work_experience: "cd.work_experience",
+      certifications: "array_to_string(cd.certifications, ' ')",
+      expected_position: "cd.expected_position",
+      expected_level: "cd.expected_level",
       expected_salary: "cd.expected_salary::text",
+      expected_work_location: "cd.expected_work_location",
+      salary_currency: "cd.salary_currency",
       offer_date: "cd.offer_date::text",
       onboard_date: "cd.onboard_date::text",
       expected_onboard_date: "cd.expected_onboard_date::text",
@@ -98,8 +130,24 @@ export async function getAll(
   addFilterCondition("c.candidate_phone", options.candidate_phone);
   addFilterCondition("c.agency", options.agency);
   addFilterCondition("c.note", options.note);
+  addFilterCondition("cd.summary", options.summary);
+  addFilterCondition("cd.nationality", options.nationality);
+  addFilterCondition("cd.location", options.location);
+  addFilterCondition("array_to_string(cd.skills, ' ')", options.skills);
+  addFilterCondition("array_to_string(cd.languages, ' ')", options.languages);
+  addFilterCondition("cd.education", options.education);
+  addFilterCondition("cd.experience_years", options.experience_years);
+  addFilterCondition("cd.current_position", options.current_position);
+  addFilterCondition("cd.current_level", options.current_level);
   addFilterCondition("cd.current_salary::text", options.current_salary);
+  addFilterCondition("cd.last_company", options.last_company);
+  addFilterCondition("cd.work_experience", options.work_experience);
+  addFilterCondition("array_to_string(cd.certifications, ' ')", options.certifications);
+  addFilterCondition("cd.expected_position", options.expected_position);
+  addFilterCondition("cd.expected_level", options.expected_level);
   addFilterCondition("cd.expected_salary::text", options.expected_salary);
+  addFilterCondition("cd.expected_work_location", options.expected_work_location);
+  addFilterCondition("cd.salary_currency", options.salary_currency);
   addFilterCondition("j.job_code", options.job_code);
   addFilterCondition("j.project", options.project);
   if (options.platform && options.platform.trim()) {
