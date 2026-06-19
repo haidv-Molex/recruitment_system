@@ -48,7 +48,6 @@ export type candidateModel = {
   create_at: Date;
   update_at: Date;
   platform_id: number | null;
-  recruiter: number | null;
   job_id: number | null;
   targeted_company: number | null;
   reference: number | null;

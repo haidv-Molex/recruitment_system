@@ -36,7 +36,6 @@ const mapCandidateToRow = (c: any) => ({
   name: c.candidate_name,
   email: c.candidate_email || '',
   phone: c.candidate_phone || '',
-  recruiter: c.recruiter?.user_name || '',
   jobCode: c.job?.job_code || '',
   jobTitle: '',
   department: '',
@@ -93,7 +92,6 @@ export const CandidateDatabasePage = ({
     'name',
     'email',
     'phone',
-    'recruiter',
     'jobCode',
     'status',
     'onboardingDate',
@@ -161,7 +159,6 @@ export const CandidateDatabasePage = ({
     if (colFilters.name) params.candidateName = colFilters.name;
     if (colFilters.email) params.candidateEmail = colFilters.email;
     if (colFilters.phone) params.candidatePhone = colFilters.phone;
-    if (colFilters.recruiter) params.recruiter = colFilters.recruiter;
     if (colFilters.jobCode) params.jobCode = colFilters.jobCode;
     if (colFilters.project) params.project = colFilters.project;
     if (colFilters.source) params.platform = colFilters.source;
@@ -283,7 +280,6 @@ export const CandidateDatabasePage = ({
       { key: 'name', label: 'Candidate Name', width: 190 },
       { key: 'email', label: 'Email', width: 220 },
       { key: 'phone', label: 'Phone Number', width: 150 },
-      { key: 'recruiter', label: 'Recruiter', width: 150 },
       { key: 'jobCode', label: 'Job Code', width: 130 },
       { key: 'project', label: 'Project', width: 170 },
       {

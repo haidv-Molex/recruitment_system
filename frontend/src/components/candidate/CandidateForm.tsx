@@ -27,7 +27,6 @@ const emptyCandidate = {
   status: 'CV Sent',
   note: '',
   platformId: '',
-  recruiterId: '',
   jobId: '',
   targetedCompanyId: '',
   referenceId: '',
@@ -52,7 +51,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
-  const [selectedRecruiter, setSelectedRecruiter] = useState<any | null>(null);
   const [selectedReference, setSelectedReference] = useState<any | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<any | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<any | null>(null);
@@ -84,14 +82,12 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         status: candidate.status || 'CV Sent',
         note: candidate.note || '',
         platformId: candidate.platform?.platform_id || candidate.platform_id || '',
-        recruiterId: candidate.recruiter?.user_id || candidate.recruiter || '',
         jobId: candidate.job?.job_id || candidate.job_id || '',
         targetedCompanyId: candidate.targeted_company?.company_id || candidate.targeted_company || '',
         referenceId: candidate.reference?.user_id || candidate.reference || '',
         file: null,
       });
       setSelectedJob(candidate.job || null);
-      setSelectedRecruiter(candidate.recruiter || null);
       setSelectedReference(candidate.reference || null);
       setSelectedPlatform(candidate.platform || null);
       setSelectedCompany(candidate.targeted_company || null);
@@ -99,7 +95,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
     } else {
       setFormData(emptyCandidate);
       setSelectedJob(null);
-      setSelectedRecruiter(null);
       setSelectedReference(null);
       setSelectedPlatform(null);
       setSelectedCompany(null);
@@ -119,13 +114,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       }
     }
   }, [formData.jobId, options.jobs, selectedJob]);
-
-  useEffect(() => {
-    if (formData.recruiterId && options.users.length > 0 && !selectedRecruiter) {
-      const found = options.users.find((u) => String(u.user_id) === String(formData.recruiterId));
-      if (found) setSelectedRecruiter(found);
-    }
-  }, [formData.recruiterId, options.users, selectedRecruiter]);
 
   useEffect(() => {
     if (formData.referenceId && options.users.length > 0 && !selectedReference) {
@@ -217,11 +205,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
   const platformOptions = [
     { value: '', label: 'Select Platform' },
     ...options.platforms.map((p) => ({ value: p.platform_id, label: getPlatformLabel(p) })),
-  ];
-
-  const recruiterOptions = [
-    { value: '', label: 'Select Recruiter' },
-    ...options.users.map((u) => ({ value: u.user_id, label: `${u.user_name}` })),
   ];
 
   const companyOptions = [
@@ -389,19 +372,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sourcing & Assignment</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SingleSearchSelect
-              label="Recruiter"
-              placeholder="Search recruiter..."
-              initialItem={selectedRecruiter}
-              searchApi={(search) => fetchUsersApi({ search })}
-              displayFn={(u: any) => `${u.user_name}`}
-              keyProp="user_id"
-              onChange={(id, item) => {
-                setFormData((prev) => ({ ...prev, recruiterId: id || '' }));
-                setSelectedRecruiter(item);
-              }}
-              disabled={saving}
-            />
             <SingleSearchSelect
               label="Reference (Internal User)"
               placeholder="Search reference user..."

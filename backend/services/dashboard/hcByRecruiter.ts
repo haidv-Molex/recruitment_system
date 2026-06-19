@@ -46,7 +46,8 @@ async function hcByRecruiter(
       u.user_name AS label,
       COUNT(c.candidate_id)::int AS value
     FROM "user" u
-    INNER JOIN candidate c ON c.recruiter = u.user_id
+    INNER JOIN job j ON j.recruiter_id = u.user_id
+    INNER JOIN candidate c ON c.job_id = j.job_id
     ${whereClause}
     GROUP BY u.user_id, u.user_name
     ORDER BY value DESC

@@ -17,6 +17,7 @@ type CreateJobData = {
   project: string;
   note?: string | null;
   request_date?: string | Date | null;
+  recruiter_id?: number | null;
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -38,6 +39,7 @@ async function create(
     project,
     note = null,
     request_date = null,
+    recruiter_id = null,
     file = null,
     departments = [],
     segments = [],
@@ -64,11 +66,11 @@ async function create(
 
     // 2. Insert Job record
     const query = `
-      INSERT INTO job (job_code, project, note, file_id, request_date)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING job_id, job_code, project, note, request_date, create_at, update_at, file_id
+      INSERT INTO job (job_code, project, note, file_id, request_date, recruiter_id)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING job_id, job_code, project, note, request_date, create_at, update_at, file_id, recruiter_id
     `;
-    const result = await pool.query(query, [job_code, project, note, file_id, request_date]);
+    const result = await pool.query(query, [job_code, project, note, file_id, request_date, recruiter_id]);
 
     if (result.rows.length === 0) {
       throw new AppError("Lỗi khi tạo công việc mới", 500);
@@ -76,6 +78,7 @@ async function create(
 
     const jobRow = result.rows[0];
     const jobId = jobRow.job_id;
+    const recruiter = jobRow.recruiter_id ? await User.findById(jobRow.recruiter_id, pool) : null;
 
     // 3. Insert and fetch linking records
     // departments -> job_department (job_id, department_id, candidate_required)
@@ -190,7 +193,9 @@ async function create(
       request_date: jobRow.request_date,
       create_at: jobRow.create_at,
       update_at: jobRow.update_at,
+      recruiter_id: jobRow.recruiter_id,
       file: fileInfo,
+      recruiter,
       partners: partnersList,
       departments: departmentsList,
       segments: segmentsList,

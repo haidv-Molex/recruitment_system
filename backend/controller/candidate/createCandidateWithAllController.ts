@@ -4,7 +4,6 @@
  * Content-Type: multipart/form-data
  *
  * Tất cả các trường của POST /candidate, cộng thêm:
- * - recruiter_name        (string, optional): Tên recruiter – user sẽ được tạo mới nếu không truyền recruiter (ID)
  * - reference_name        (string, optional): Tên người giới thiệu – user sẽ được tạo mới nếu không truyền reference (ID)
  * - platform_name         (string, optional): Tên platform – platform sẽ được tạo mới nếu không truyền platform_id
  * - targeted_company_name (string, optional): Tên công ty đích – company sẽ được tạo mới nếu không truyền targeted_company (ID)
@@ -92,10 +91,6 @@ const bodySchema = Joi.object({
   }),
 
   // --- FK bằng ID gốc ---
-  recruiter: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
-    "number.base": "Recruiter ID phải là số nguyên",
-    "number.integer": "Recruiter ID phải là số nguyên",
-  }),
   platform_id: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
     "number.base": "Platform ID phải là số nguyên",
     "number.integer": "Platform ID phải là số nguyên",
@@ -111,9 +106,6 @@ const bodySchema = Joi.object({
   candidate_levels: numberArray().optional(),
 
   // --- FK bằng tên – tự động tạo bản ghi mới ---
-  recruiter_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
-    "string.max": "Tên recruiter không được vượt quá 255 ký tự",
-  }),
   reference_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Tên người giới thiệu không được vượt quá 255 ký tự",
   }),
@@ -160,14 +152,12 @@ createCandidateWithAllController.post(
           file,
 
           // FK bằng ID gốc
-          recruiter: body.recruiter,
           platform_id: body.platform_id,
           targeted_company: body.targeted_company,
           reference: body.reference,
           candidate_levels: body.candidate_levels ?? [],
 
           // FK bằng tên – tự động tạo
-          recruiter_name: body.recruiter_name,
           platform_name: body.platform_name,
           targeted_company_name: body.targeted_company_name,
           reference_name: body.reference_name,

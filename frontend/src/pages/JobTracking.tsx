@@ -36,6 +36,7 @@ const COLUMN_KEY_TO_API: Record<string, string> = {
   projectSegment: 'segment',
   hiringManager: 'manager',
   hrbp: 'partner',
+  recruiter: 'recruiter',
   note: 'note',
 };
 
@@ -53,7 +54,7 @@ const mapApiJobToRow = (j: any) => ({
   hrbp: (j.departments || [])
     .map((d: any) => d.user?.user_name || '—')
     .join(', '),
-  recruiter: '',
+  recruiter: j.recruiter?.user_name || '',
   myhrRequestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
   status: 'Searching',
   offerDate: '',
@@ -65,6 +66,8 @@ const mapApiJobToRow = (j: any) => ({
   employee_levels: j.employee_levels || [],
   partners: j.partners || [],
   managers: j.managers || [],
+  recruiter_id: j.recruiter_id || j.recruiter?.user_id || '',
+  recruiterUser: j.recruiter || null,
   file: j.file || null,
 });
 
@@ -126,6 +129,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       candidate_required: formData.candidateRequired,
       note: formData.note,
       request_date: formData.requestDate,
+      recruiter_id: formData.recruiterId || null,
       file: formData.file,
       // Existing IDs
       departments: (formData.departments || [])
@@ -284,6 +288,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     const jobsPayload = parsedJobs.map((parsedJob) => {
       const partners = splitByIdExists(parsedJob.partners);
       const managers = splitByIdExists(parsedJob.managers);
+      const recruiter = parsedJob.recruiter || null;
       const segments = splitByIdExists(parsedJob.segments);
       const sites = splitByIdExists(parsedJob.sites);
       const titles = splitByIdExists(parsedJob.titles);
@@ -311,6 +316,8 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         project: parsedJob.project,
         note: parsedJob.note || '',
         request_date: parsedJob.requestDate || '',
+        recruiter_id: recruiter?.user_id || null,
+        recruiter_name: recruiter && recruiter.user_id === null ? recruiter.user_name : null,
         partners: partners.ids,
         departments: depts,
         segments: segments.ids,
@@ -377,6 +384,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       { key: 'sites', label: 'Site', width: 80 },
       { key: 'projectSegment', label: 'Segment', width: 120 },
       { key: 'hiringManager', label: 'Manager', width: 130 },
+      { key: 'recruiter', label: 'Recruiter', width: 130 },
       { key: 'hrbp', label: 'HRBP / Partner', width: 135 },
       { key: 'myhrRequestDate', label: 'Req Date', width: 100, disableFilter: true },
       {

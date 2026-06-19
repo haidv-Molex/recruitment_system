@@ -17,6 +17,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
   const [selectedTitles, setSelectedTitles] = useState<any[]>([]);
   const [selectedEmpLevels, setSelectedEmpLevels] = useState<any[]>([]);
   const [selectedManagers, setSelectedManagers] = useState<any[]>([]);
+  const [selectedRecruiter, setSelectedRecruiter] = useState<any | null>(null);
 
   useEffect(() => {
     if (job) {
@@ -26,6 +27,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
         candidateRequired: job.candidate_required || 1,
         note: job.note || '',
         requestDate: job.request_date ? String(job.request_date).slice(0, 10) : '',
+        recruiterId: job.recruiter?.user_id || job.recruiter_id || '',
         file: null,
         departments: Array.isArray(job.departments)
           ? job.departments.map((d: any) => (typeof d === 'object' ? d.department_id : d))
@@ -52,6 +54,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
       setSelectedTitles(Array.isArray(job.titles) ? job.titles : []);
       setSelectedEmpLevels(Array.isArray(job.employee_levels) ? job.employee_levels : []);
       setSelectedManagers(Array.isArray(job.managers) ? job.managers : []);
+      setSelectedRecruiter(job.recruiter || null);
     } else {
       setFormData(emptyJob);
       setSelectedDepts([]);
@@ -60,6 +63,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
       setSelectedTitles([]);
       setSelectedEmpLevels([]);
       setSelectedManagers([]);
+      setSelectedRecruiter(null);
     }
   }, [job]);
 
@@ -199,6 +203,8 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
           setSelectedEmpLevels={setSelectedEmpLevels}
           selectedManagers={selectedManagers}
           setSelectedManagers={setSelectedManagers}
+          selectedRecruiter={selectedRecruiter}
+          setSelectedRecruiter={setSelectedRecruiter}
         />
 
         <div className="flex flex-col gap-1.5">

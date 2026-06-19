@@ -18,7 +18,6 @@
  * - status (string, required): Trạng thái tuyển dụng của ứng viên
  * - note (string, optional): Ghi chú bổ sung
  * - platform_id (number, optional): ID kênh nguồn tuyển dụng (Platform ID)
- * - recruiter (number, optional): ID người phụ trách tuyển dụng (User ID)
  * - job_id (number, optional): ID vị trí công việc ứng tuyển (Job ID)
  * - targeted_company (number, optional): ID công ty đích (Company ID)
  * - reference (number, optional): ID người giới thiệu nội bộ (User ID)
@@ -94,10 +93,6 @@ const bodySchema = Joi.object({
     "number.base": "Platform ID phải là số nguyên",
     "number.integer": "Platform ID phải là số nguyên"
   }),
-  recruiter: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
-    "number.base": "Recruiter ID phải là số nguyên",
-    "number.integer": "Recruiter ID phải là số nguyên"
-  }),
   job_id: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
     "number.base": "Job ID phải là số nguyên",
     "number.integer": "Job ID phải là số nguyên"
@@ -133,7 +128,6 @@ createCandidateController.post("",
       status: req.body.status.trim(),
       note: req.body.note,
       platform_id: req.body.platform_id,
-      recruiter: req.body.recruiter,
       job_id: req.body.job_id,
       targeted_company: req.body.targeted_company,
       reference: req.body.reference,

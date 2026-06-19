@@ -34,14 +34,12 @@ const candidateItemSchema = Joi.object({
 
   // ID gốc
   job_id: Joi.number().integer().allow(null).optional(),
-  recruiter: Joi.number().integer().allow(null).optional(),
   platform_id: Joi.number().integer().allow(null).optional(),
   targeted_company: Joi.number().integer().allow(null).optional(),
   reference: Joi.number().integer().allow(null).optional(),
   candidate_levels: numberArray().optional(),
 
   // _name tự động tạo mới
-  recruiter_name: Joi.string().max(255).allow("", null).optional(),
   reference_name: Joi.string().max(255).allow("", null).optional(),
   platform_name: Joi.string().max(255).allow("", null).optional(),
   targeted_company_name: Joi.string().max(255).allow("", null).optional(),

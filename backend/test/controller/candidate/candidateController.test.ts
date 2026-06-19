@@ -123,8 +123,7 @@ describe("CandidateController API", () => {
         candidate_name: "John Doe",
         candidate_email: "john@example.com",
         status: "Applied",
-        platform_id: "1",
-        recruiter: "2"
+        platform_id: "1"
       })
       .withMultiPartFormData("file", Buffer.from("dummy cv content"), {
         filename: "cv.pdf",
@@ -147,7 +146,6 @@ describe("CandidateController API", () => {
     expectLocal(args.candidate_email).to.equal("john@example.com");
     expectLocal(args.status).to.equal("Applied");
     expectLocal(args.platform_id).to.equal(1);
-    expectLocal(args.recruiter).to.equal(2);
     expectLocal(args.file).to.not.be.null;
     expectLocal(args.file.originalname).to.equal("cv.pdf");
   });
@@ -255,7 +253,6 @@ describe("CandidateController API", () => {
       candidate_phone: "",
       agency: "",
       note: "",
-      recruiter: "",
       job_code: "",
       project: "",
       platform: "",
@@ -308,7 +305,6 @@ describe("CandidateController API", () => {
       candidate_phone: "",
       agency: "",
       note: "",
-      recruiter: "",
       job_code: "",
       project: "",
       platform: "",

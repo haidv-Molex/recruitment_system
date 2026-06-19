@@ -28,7 +28,7 @@ async function recruitmentFunnel(
 
   if (params.recruiter_id !== undefined) {
     sqlParams.push(params.recruiter_id);
-    conditions.push(`c.recruiter = $${sqlParams.length}`);
+    conditions.push(`j.recruiter_id = $${sqlParams.length}`);
   }
 
   if (params.job_ids && params.job_ids.length > 0) {
@@ -64,6 +64,7 @@ async function recruitmentFunnel(
       COUNT(CASE WHEN c.status IN ('Offer Accepted', 'Onboarded') THEN 1 END)::int AS accepted_count,
       COUNT(CASE WHEN c.status = 'Onboarded' THEN 1 END)::int AS onboarded_count
     FROM candidate c
+    LEFT JOIN job j ON c.job_id = j.job_id
     ${whereClause}
   `;
 

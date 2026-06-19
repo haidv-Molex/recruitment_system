@@ -13,6 +13,7 @@ type CreateJobWithAllData = {
   project: string;
   note?: string | null;
   request_date?: string | Date | null;
+  recruiter_id?: number | null;
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -40,6 +41,7 @@ type CreateJobWithAllData = {
   titles_name?: string[];
   managers_name?: string[];
   employee_levels_name?: string[];
+  recruiter_name?: string | null;
 };
 
 async function createWithAll(
@@ -50,6 +52,7 @@ async function createWithAll(
     job_code,
     project,
     note = null,
+    recruiter_id = null,
     file = null,
     partners = [],
     departments = [],
@@ -65,7 +68,14 @@ async function createWithAll(
     titles_name = [],
     managers_name = [],
     employee_levels_name = [],
+    recruiter_name = null,
   } = data;
+
+  let resolvedRecruiterId = recruiter_id;
+  if (!resolvedRecruiterId && recruiter_name?.trim()) {
+    const user = await User.create({ username: recruiter_name.trim() }, pool);
+    resolvedRecruiterId = user.user_id;
+  }
 
   // 1. Tạo user mới cho partners_name và lấy user_id
   const newPartnerIds: number[] = [];
@@ -183,6 +193,7 @@ async function createWithAll(
       note,
       file,
       request_date: data.request_date,
+      recruiter_id: resolvedRecruiterId,
       departments: mergedDepartments,
       segments: mergedSegments,
       sites: mergedSites,

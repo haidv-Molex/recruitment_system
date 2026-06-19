@@ -10,9 +10,8 @@ import { create, CreateCandidateInput } from "@services/candidate/create";
  * Input cho createCandidateWithAll.
  *
  * Hỗ trợ 2 cách truyền dữ liệu cho mỗi FK lookup:
- *   - ID (đã tồn tại trong DB): recruiter, platform_id, job_id, targeted_company, reference
+ *   - ID (đã tồn tại trong DB): platform_id, job_id, targeted_company, reference
  *   - _name (chưa có, sẽ tự tạo):
- *       recruiter_name       → tạo user mới rồi lấy user_id
  *       reference_name       → tạo user mới rồi lấy user_id
  *       platform_name        → tạo platform mới rồi lấy platform_id
  *       targeted_company_name → tạo company mới rồi lấy company_id
@@ -40,14 +39,12 @@ export interface CreateCandidateWithAllInput {
   file?: { originalname: string; buffer: Buffer } | null;
 
   // FK bằng ID gốc
-  recruiter?: number | null;
   platform_id?: number | null;
   targeted_company?: number | null;
   reference?: number | null;
   candidate_levels?: number[];
 
   // FK bằng tên – sẽ tự tạo bản ghi mới nếu không truyền ID tương ứng
-  recruiter_name?: string | null;
   platform_name?: string | null;
   targeted_company_name?: string | null;
   reference_name?: string | null;
@@ -60,16 +57,9 @@ export async function createWithAll(
   data: CreateCandidateWithAllInput,
   pool: PoolClient
 ) {
-  let recruiterId: number | null = data.recruiter ?? null;
   let platformId: number | null = data.platform_id ?? null;
   let targetedCompanyId: number | null = data.targeted_company ?? null;
   let referenceId: number | null = data.reference ?? null;
-
-  // 1. Nếu không có recruiter ID → tạo user mới từ recruiter_name
-  if (!recruiterId && data.recruiter_name) {
-    const user = await User.create({ username: data.recruiter_name }, pool);
-    recruiterId = user.user_id;
-  }
 
   // 2. Nếu không có reference ID → tạo user mới từ reference_name
   if (!referenceId && data.reference_name) {
@@ -140,7 +130,6 @@ export async function createWithAll(
     note: data.note ?? null,
     job_id: jobId,
     file: data.file ?? null,
-    recruiter: recruiterId,
     platform_id: platformId,
     targeted_company: targetedCompanyId,
     reference: referenceId,

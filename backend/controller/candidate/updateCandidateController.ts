@@ -64,10 +64,6 @@ const updateBodySchema = Joi.object({
     "number.base": "Platform ID phải là số nguyên",
     "number.integer": "Platform ID phải là số nguyên"
   }),
-  recruiter: Joi.number().integer().empty(["", "null"]).allow(null).optional().messages({
-    "number.base": "Recruiter ID phải là số nguyên",
-    "number.integer": "Recruiter ID phải là số nguyên"
-  }),
   job_id: Joi.number().integer().empty(["", "null"]).allow(null).optional().messages({
     "number.base": "Job ID phải là số nguyên",
     "number.integer": "Job ID phải là số nguyên"
@@ -109,7 +105,6 @@ updateCandidateController.put("",
     if (hasProp(body, "status")) updateData.status = body.status.trim();
     if (hasProp(body, "note")) updateData.note = body.note;
     if (hasProp(body, "platform_id")) updateData.platform_id = body.platform_id;
-    if (hasProp(body, "recruiter")) updateData.recruiter = body.recruiter;
     if (hasProp(body, "job_id")) updateData.job_id = body.job_id;
     if (hasProp(body, "targeted_company")) updateData.targeted_company = body.targeted_company;
     if (hasProp(body, "reference")) updateData.reference = body.reference;

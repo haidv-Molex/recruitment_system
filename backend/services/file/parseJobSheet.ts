@@ -140,6 +140,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     } as any));
 
     const managers = resolveEntities(row["Hiring manager"], userMap, createUserPlaceholder);
+    const recruiter = resolveEntities(row["Recruiter"], userMap, createUserPlaceholder)[0] || null;
 
     const request_date = getRowDate(row, "MyHR request date", { validate: true });
 
@@ -155,6 +156,7 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       sites,
       titles,
       managers,
+      recruiter,
       employee_levels
     });
   }

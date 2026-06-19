@@ -13,6 +13,9 @@ export async function createJobApi(formData: any): Promise<jobOutputModel> {
   if (formData.request_date) {
     fd.append('request_date', formData.request_date);
   }
+  if (formData.recruiter_id) {
+    fd.append('recruiter_id', String(formData.recruiter_id));
+  }
   if (formData.file) {
     fd.append('file', formData.file);
   }
@@ -40,6 +43,7 @@ export interface JobSearchParams {
   ee_level?: string;
   manager?: string;
   partner?: string;
+  recruiter?: string;
   note?: string;
   request_date_from?: string;
   request_date_to?: string;
@@ -85,6 +89,9 @@ export async function updateJobApi(id: number, formData: any): Promise<jobOutput
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
+  if (Object.prototype.hasOwnProperty.call(formData, 'recruiter_id')) {
+    fd.append('recruiter_id', formData.recruiter_id == null ? 'null' : String(formData.recruiter_id));
+  }
   if (formData.file) fd.append('file', formData.file);
 
   if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
@@ -120,6 +127,8 @@ export async function createJobExtendedApi(formData: any): Promise<jobOutputMode
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
+  if (formData.recruiter_id) fd.append('recruiter_id', String(formData.recruiter_id));
+  if (formData.recruiter_name) fd.append('recruiter_name', formData.recruiter_name);
   if (formData.file) fd.append('file', formData.file);
 
   if (formData.partners?.length) fd.append('partners', JSON.stringify(formData.partners));

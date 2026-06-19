@@ -28,12 +28,12 @@ const querySchema = Joi.object({
     Joi.array().items(
       Joi.string().valid(
         "name", "code", "email", "phone", "agency", "note", "current_salary", "expected_salary",
-        "job_name", "job_code", "platform", "recruiter", "reference", "company"
+        "job_name", "job_code", "platform", "platform_code", "reference", "company"
       )
     ),
     Joi.string().valid(
       "name", "code", "email", "phone", "agency", "note", "current_salary", "expected_salary",
-      "job_name", "job_code", "platform", "recruiter", "reference", "company"
+      "job_name", "job_code", "platform", "platform_code", "reference", "company"
     )
   ).optional().messages({
     "any.only": "Trường tìm kiếm không hợp lệ"
@@ -54,7 +54,6 @@ const querySchema = Joi.object({
   candidate_phone: Joi.string().optional().allow(""),
   agency: Joi.string().optional().allow(""),
   note: Joi.string().optional().allow(""),
-  recruiter: Joi.string().optional().allow(""),
   job_code: Joi.string().optional().allow(""),
   project: Joi.string().optional().allow(""),
   platform: Joi.string().optional().allow(""),
@@ -92,7 +91,6 @@ getAllCandidatesController.get("/",
     const candidate_phone = req.query.candidate_phone as string || "";
     const agency = req.query.agency as string || "";
     const note = req.query.note as string || "";
-    const recruiter = req.query.recruiter as string || "";
     const job_code = req.query.job_code as string || "";
     const project = req.query.project as string || "";
     const platform = req.query.platform as string || "";
@@ -107,7 +105,7 @@ getAllCandidatesController.get("/",
         expected_onboard_date_from, expected_onboard_date_to,
         feedback_date_from, feedback_date_to,
         candidate_code, candidate_name, candidate_email, candidate_phone,
-        agency, note, recruiter, job_code, project, platform, reference, company
+        agency, note, job_code, project, platform, reference, company
       }, pool);
     });
 

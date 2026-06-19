@@ -29,6 +29,9 @@ interface JobRelationFieldsProps {
 
   selectedManagers: any[];
   setSelectedManagers: (items: any[]) => void;
+
+  selectedRecruiter: any | null;
+  setSelectedRecruiter: (item: any | null) => void;
 }
 
 export default function JobRelationFields({
@@ -46,6 +49,8 @@ export default function JobRelationFields({
   setSelectedEmpLevels,
   selectedManagers,
   setSelectedManagers,
+  selectedRecruiter,
+  setSelectedRecruiter,
 }: JobRelationFieldsProps) {
 
   return (
@@ -225,6 +230,20 @@ export default function JobRelationFields({
         onChange={(ids, items) => {
           setFormData((prev: any) => ({ ...prev, managers: ids }));
           setSelectedManagers(items);
+        }}
+        disabled={saving}
+      />
+
+      <SingleSearchSelect
+        label="Recruiter"
+        placeholder="Search recruiter..."
+        initialItem={selectedRecruiter}
+        searchApi={(search) => fetchUsersApi({ search })}
+        displayFn={(u: any) => u.user_name || ''}
+        keyProp="user_id"
+        onChange={(id, item) => {
+          setFormData((prev: any) => ({ ...prev, recruiterId: id || '' }));
+          setSelectedRecruiter(item);
         }}
         disabled={saving}
       />

@@ -19,7 +19,6 @@ export interface CreateCandidateInput {
   status: string;
   note?: string | null;
   platform_id?: number | null;
-  recruiter?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
   reference?: number | null;
@@ -60,13 +59,12 @@ export async function create(
         status,
         note,
         platform_id,
-        recruiter,
         job_id,
         targeted_company,
         reference,
         file_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *
     `;
 
@@ -85,7 +83,6 @@ export async function create(
       data.status,
       data.note || null,
       data.platform_id || null,
-      data.recruiter || null,
       data.job_id || null,
       data.targeted_company || null,
       data.reference || null,

@@ -29,12 +29,6 @@ describe("Candidate getAll service", () => {
     );
     const platformId = platformRes.rows[0].platform_id;
 
-    const jobRes = await client.query(
-      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
-      ["UniqueJobCodeX", "DSS Talent Connector Unique"]
-    );
-    const jobId = jobRes.rows[0].job_id;
-
     const companyRes = await client.query(
       `INSERT INTO company (company_name, company_description) VALUES ($1, $2) RETURNING company_id`,
       ["UniqueCompanyX", "Company 1"]
@@ -47,6 +41,12 @@ describe("Candidate getAll service", () => {
     );
     const recruiterId = recruiterRes.rows[0].user_id;
 
+    const jobRes = await client.query(
+      `INSERT INTO job (job_code, project, recruiter_id) VALUES ($1, $2, $3) RETURNING job_id`,
+      ["UniqueJobCodeX", "DSS Talent Connector Unique", recruiterId]
+    );
+    const jobId = jobRes.rows[0].job_id;
+
     const referenceRes = await client.query(
       `INSERT INTO "user" (user_name, user_account, user_role) VALUES ($1, $2, $3) RETURNING user_id`,
       ["UniqueReferenceX", "doitac001@example.com", "user"]
@@ -57,11 +57,11 @@ describe("Candidate getAll service", () => {
     await client.query(
       `INSERT INTO candidate (
         candidate_code, candidate_name, candidate_email, candidate_phone, agency, status,
-        platform_id, recruiter, job_id, targeted_company, reference
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        platform_id, job_id, targeted_company, reference
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         "VUniqueCodeX", "UniqueNameX", "unique.email@example.com", "9999999999", "UniqueAgencyX", "OFFERED",
-        platformId, recruiterId, jobId, companyId, referenceId
+        platformId, jobId, companyId, referenceId
       ]
     );
 

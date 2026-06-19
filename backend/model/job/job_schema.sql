@@ -7,7 +7,9 @@ CREATE TABLE job (
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     file_id INT,
-    FOREIGN KEY (file_id) REFERENCES file(file_id)
+    recruiter_id INT,
+    FOREIGN KEY (file_id) REFERENCES file(file_id),
+    FOREIGN KEY (recruiter_id) REFERENCES "user"(user_id) ON DELETE SET NULL
 );
 
 CREATE TRIGGER set_updated_at_job

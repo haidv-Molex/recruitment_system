@@ -23,14 +23,12 @@ export type CandidateImportItem = {
   expected_salary?: string | null;
   note?: string | null;
   job_id?: number | null;
-  recruiter?: number | null;
   platform_id?: number | null;
   targeted_company?: number | null;
   reference?: number | null;
   candidate_levels?: number[];
 
   // FK by name
-  recruiter_name?: string | null;
   reference_name?: string | null;
   platform_name?: string | null;
   targeted_company_name?: string | null;
@@ -49,7 +47,6 @@ export async function batchImport(
   candidates: CandidateImportItem[],
   pool: PoolClient
 ): Promise<BatchImportResult> {
-  const recruiterNames = new Set<string>();
   const referenceNames = new Set<string>();
   const platformNames = new Set<string>();
   const targetedCompanyNames = new Set<string>();
@@ -57,7 +54,6 @@ export async function batchImport(
   const jobCodes = new Set<string>();
 
   for (const c of candidates) {
-    if (c.recruiter_name?.trim()) recruiterNames.add(c.recruiter_name.trim());
     if (c.reference_name?.trim()) referenceNames.add(c.reference_name.trim());
     if (c.platform_name?.trim()) platformNames.add(c.platform_name.trim());
     if (c.targeted_company_name?.trim()) targetedCompanyNames.add(c.targeted_company_name.trim());
@@ -66,19 +62,6 @@ export async function batchImport(
       if (n?.trim()) levelNames.add(n.trim());
     });
   }
-
-  // Resolve recruiters (User table)
-  const recruiterMap = await resolveAndCreateEntities({
-    names: recruiterNames,
-    tableName: "user",
-    idColumn: "user_id",
-    nameColumn: "user_name",
-    pool,
-    create: async (name) => {
-      const u = await User.create({ username: name }, pool);
-      return u.user_id;
-    }
-  });
 
   // Resolve references (User table)
   const referenceMap = await resolveAndCreateEntities({
@@ -89,21 +72,10 @@ export async function batchImport(
     pool,
     create: async (name) => {
       const lower = normalizeLookupKey(name);
-      if (recruiterMap.has(lower)) {
-        return recruiterMap.get(lower)!;
-      }
       const u = await User.create({ username: name }, pool);
       return u.user_id;
     }
   });
-
-  // Sync back new references to recruiterMap and vice-versa
-  for (const [k, v] of referenceMap.entries()) {
-    recruiterMap.set(k, v);
-  }
-  for (const [k, v] of recruiterMap.entries()) {
-    referenceMap.set(k, v);
-  }
 
   // Resolve platforms
   const platformMap = await resolveAndCreateEntities({
@@ -185,7 +157,6 @@ export async function batchImport(
         resolvedJobId = jobMap.get(normalizeLookupKey(c.job_code)) ?? null;
       }
 
-      const resolvedRecruiterId = c.recruiter || (c.recruiter_name?.trim() ? recruiterMap.get(normalizeLookupKey(c.recruiter_name)) : null) || null;
       const resolvedReferenceId = c.reference || (c.reference_name?.trim() ? referenceMap.get(normalizeLookupKey(c.reference_name)) : null) || null;
       const resolvedPlatformId = c.platform_id || (c.platform_name?.trim() ? platformMap.get(normalizeLookupKey(c.platform_name)) : null) || null;
       const resolvedCompanyId = c.targeted_company || (c.targeted_company_name?.trim() ? companyMap.get(normalizeLookupKey(c.targeted_company_name)) : null) || null;
@@ -211,7 +182,6 @@ export async function batchImport(
           status: c.status,
           note: c.note || null,
           job_id: resolvedJobId,
-          recruiter: resolvedRecruiterId,
           reference: resolvedReferenceId,
           platform_id: resolvedPlatformId,
           targeted_company: resolvedCompanyId,

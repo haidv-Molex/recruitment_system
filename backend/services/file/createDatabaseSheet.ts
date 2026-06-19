@@ -23,7 +23,6 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     note: string | null;
     create_at: Date;
     job_id: number | null;
-    recruiter: number | null;
     job_code: string | null;
     platform_name: string | null;
     recruiter_name: string | null;
@@ -38,7 +37,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
       c.candidate_code, c.agency, c.offer_date, c.onboard_date,
       c.expected_onboard_date, c.feedback_date, c.current_salary,
       c.expected_salary, c.status, c.note, c.create_at,
-      c.job_id, c.recruiter,
+      c.job_id,
       j.job_code,
       p.platform_name,
       u.user_name  AS recruiter_name,
@@ -50,7 +49,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     FROM candidate c
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
-    LEFT JOIN "user" u ON c.recruiter = u.user_id
+    LEFT JOIN "user" u ON j.recruiter_id = u.user_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id
     LEFT JOIN (
       SELECT user_id, STRING_AGG(department_name, ', ') AS department_names
@@ -81,7 +80,7 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     ee_level: job.employee_levels?.map((el) => el.level_name).filter(Boolean).join(", ") ?? "",
     project: job.project,
     hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
-    recruiter: "",
+    recruiter: job.recruiter?.user_name ?? "",
     sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
   }));
 

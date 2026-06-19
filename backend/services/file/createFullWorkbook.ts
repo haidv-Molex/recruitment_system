@@ -231,7 +231,6 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         note: string | null;
         create_at: Date;
         job_id: number | null;
-        recruiter: number | null;
         job_code: string | null;
         platform_name: string | null;
         recruiter_name: string | null;
@@ -246,7 +245,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
       c.candidate_code, c.agency, c.offer_date, c.onboard_date,
       c.expected_onboard_date, c.feedback_date, c.current_salary,
       c.expected_salary, c.status, c.note, c.create_at,
-      c.job_id, c.recruiter,
+    c.job_id,
       j.job_code,
       p.platform_name,
       u.user_name  AS recruiter_name,
@@ -258,7 +257,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
     FROM candidate c
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
-    LEFT JOIN "user" u ON c.recruiter = u.user_id
+    LEFT JOIN "user" u ON j.recruiter_id = u.user_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id
     LEFT JOIN (
       SELECT user_id, STRING_AGG(department_name, ', ') AS department_names
@@ -286,7 +285,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         ),
         pool.query<{ user_name: string }>(
             `SELECT DISTINCT u.user_name FROM "user" u
-       JOIN candidate c ON u.user_id = c.recruiter
+       JOIN job j ON u.user_id = j.recruiter_id
        WHERE u.user_name IS NOT NULL AND u.user_name <> '' ORDER BY u.user_name`
         ),
         pool.query<{ platform_name: string }>(
@@ -315,19 +314,6 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
     // 2. BUILD SHEET INPUTS
     // ─────────────────────────────────────────────
 
-    const recruiterSetByJobId = new Map<number, Set<string>>();
-    for (const row of rows) {
-        if (row.job_id && row.recruiter_name) {
-            if (!recruiterSetByJobId.has(row.job_id))
-                recruiterSetByJobId.set(row.job_id, new Set());
-            recruiterSetByJobId.get(row.job_id)!.add(row.recruiter_name);
-        }
-    }
-    const recruitersByJobId = new Map<number, string>();
-    for (const [jobId, names] of recruiterSetByJobId) {
-        recruitersByJobId.set(jobId, Array.from(names).join(", "));
-    }
-
     const jdList: JdRow[] = jobs.map((job) => ({
         job_code: job.job_code,
         project: job.project,
@@ -339,7 +325,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         project_segment: job.segments?.[0]?.segment_name ?? null,
         hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
         hrbp: job.departments?.map((d) => d.user?.user_name || "").filter(Boolean).join(", ") ?? "",
-        recruiter: recruitersByJobId.get(job.job_id) ?? "",
+        recruiter: job.recruiter?.user_name ?? "",
         myhr_request_date: (job as any).request_date ?? job.create_at,
         note: job.note ?? null,
     }));
@@ -361,7 +347,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         ee_level: job.employee_levels?.map((el) => el.level_name).filter(Boolean).join(", ") ?? "",
         project: job.project,
         hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
-        recruiter: "",
+        recruiter: job.recruiter?.user_name ?? "",
         sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
     }));
 

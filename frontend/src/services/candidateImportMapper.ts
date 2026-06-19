@@ -21,8 +21,6 @@ export interface CandidateBatchImportPayload {
   current_salary: string | null;
   expected_salary: string | null;
   note: string | null;
-  recruiter: number | null;
-  recruiter_name: string | null;
   targeted_company_name: string | null;
   reference_name: string | null;
   platform_name: string | null;
@@ -47,12 +45,10 @@ export interface CandidateExtendedFormPayload {
   note: string;
   file: null;
   platformId: string;
-  recruiterId: number | string;
   jobId: string;
   targetedCompanyId: string;
   referenceId: string;
   platformName: string;
-  recruiterName: string;
   targetedCompanyName: string;
   referenceName: string;
   candidateLevelsName: string[];
@@ -111,21 +107,6 @@ function splitList(value: unknown): string[] {
     .filter(Boolean);
 }
 
-function isPlaceholderUser(user: any): boolean {
-  return user && Object.prototype.hasOwnProperty.call(user, 'user_id') && user.user_id === null;
-}
-
-function getRecruiterId(user: any): number | null {
-  if (!user || isPlaceholderUser(user)) return null;
-  const userId = Number(user.user_id);
-  return Number.isInteger(userId) && userId > 0 ? userId : null;
-}
-
-function getRecruiterName(user: any): string | null {
-  if (!isPlaceholderUser(user)) return null;
-  return toNullableString(user.user_name);
-}
-
 export function mapParsedCandidateToBatchPayload(
   candidate: any,
   rowIndex = 0
@@ -155,8 +136,6 @@ export function mapParsedCandidateToBatchPayload(
       current_salary: toNullableString(candidate.current_salary),
       expected_salary: toNullableString(candidate.expected_salary),
       note: toNullableString(candidate.note),
-      recruiter: getRecruiterId(candidate.recruiter),
-      recruiter_name: getRecruiterName(candidate.recruiter),
       targeted_company_name: targetedCompanyName,
       reference_name: toNullableString(candidate.reference_name),
       platform_name: toNullableString(candidate.source),
@@ -216,12 +195,10 @@ export function mapParsedCandidateToExtendedFormPayload(
       note: payload.note || '',
       file: null,
       platformId: '',
-      recruiterId: payload.recruiter || '',
       jobId: '',
       targetedCompanyId: '',
       referenceId: '',
       platformName: payload.platform_name || '',
-      recruiterName: payload.recruiter_name || '',
       targetedCompanyName: payload.targeted_company_name || '',
       referenceName: payload.reference_name || '',
       candidateLevelsName: payload.candidate_levels_name,

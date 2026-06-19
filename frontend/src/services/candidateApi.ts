@@ -24,7 +24,6 @@ export async function createCandidateApi(formData: any): Promise<candidateModel>
 
   // FK fields
   if (formData.platformId) fd.append('platform_id', String(formData.platformId));
-  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
   if (formData.jobId) fd.append('job_id', String(formData.jobId));
   if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
   if (formData.referenceId) fd.append('reference', String(formData.referenceId));
@@ -58,7 +57,6 @@ export async function searchCandidatesApi({
   candidatePhone = '',
   agency = '',
   note = '',
-  recruiter = '',
   jobCode = '',
   project = '',
   platform = '',
@@ -84,7 +82,6 @@ export async function searchCandidatesApi({
   candidatePhone?: string;
   agency?: string;
   note?: string;
-  recruiter?: string;
   jobCode?: string;
   project?: string;
   platform?: string;
@@ -112,7 +109,6 @@ export async function searchCandidatesApi({
   if (candidatePhone) params.candidate_phone = candidatePhone;
   if (agency) params.agency = agency;
   if (note) params.note = note;
-  if (recruiter) params.recruiter = recruiter;
   if (jobCode) params.job_code = jobCode;
   if (project) params.project = project;
   if (platform) params.platform = platform;
@@ -161,14 +157,12 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
 
   // FK by ID
   if (formData.platformId) fd.append('platform_id', String(formData.platformId));
-  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
   if (formData.jobId) fd.append('job_id', String(formData.jobId));
   if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
   if (formData.referenceId) fd.append('reference', String(formData.referenceId));
 
   // FK by Name
   if (formData.platformName) fd.append('platform_name', formData.platformName);
-  if (formData.recruiterName) fd.append('recruiter_name', formData.recruiterName);
   if (formData.targetedCompanyName) fd.append('targeted_company_name', formData.targetedCompanyName);
   if (formData.referenceName) fd.append('reference_name', formData.referenceName);
   if (formData.candidateLevelsName?.length) fd.append('candidate_levels_name', JSON.stringify(formData.candidateLevelsName));
@@ -207,7 +201,6 @@ export async function updateCandidateApi(id: number, formData: any): Promise<can
 
   // FK fields
   appendIfPresent('platform_id', 'platformId');
-  appendIfPresent('recruiter', 'recruiterId');
   appendIfPresent('job_id', 'jobId');
   appendIfPresent('targeted_company', 'targetedCompanyId');
 

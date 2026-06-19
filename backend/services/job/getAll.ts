@@ -16,6 +16,7 @@ type GetAllJobsParams = PaginationQueryMetadata & {
   ee_level?: string;
   manager?: string;
   partner?: string;
+  recruiter?: string;
   note?: string;
   request_date_from?: string;
   request_date_to?: string;
@@ -54,6 +55,7 @@ async function getAll(
       OR EXISTS (SELECT 1 FROM job_title jt JOIN level l ON jt.level_id = l.level_id WHERE jt.job_id = j.job_id AND (l.level_code ILIKE ${placeholder} OR l.level_name ILIKE ${placeholder}))
       OR EXISTS (SELECT 1 FROM employee_level el JOIN level l ON el.level_id = l.level_id WHERE el.job_id = j.job_id AND (l.level_code ILIKE ${placeholder} OR l.level_name ILIKE ${placeholder}))
       OR EXISTS (SELECT 1 FROM hiring_manager hm JOIN "user" u ON hm.user_id = u.user_id WHERE hm.job_id = j.job_id AND u.user_name ILIKE ${placeholder})
+      OR EXISTS (SELECT 1 FROM "user" u WHERE j.recruiter_id = u.user_id AND u.user_name ILIKE ${placeholder})
       OR EXISTS (SELECT 1 FROM job_department jd JOIN department d ON jd.department_id = d.department_id JOIN "user" u ON d.user_id = u.user_id WHERE jd.job_id = j.job_id AND u.user_name ILIKE ${placeholder})
     )`);
   }
@@ -106,6 +108,10 @@ async function getAll(
   if (params.partner) {
     values.push(`%${params.partner}%`);
     conditions.push(`EXISTS (SELECT 1 FROM job_department jd JOIN department d ON jd.department_id = d.department_id JOIN "user" u ON d.user_id = u.user_id WHERE jd.job_id = j.job_id AND u.user_name ILIKE $${values.length})`);
+  }
+  if (params.recruiter) {
+    values.push(`%${params.recruiter}%`);
+    conditions.push(`EXISTS (SELECT 1 FROM "user" u WHERE j.recruiter_id = u.user_id AND u.user_name ILIKE $${values.length})`);
   }
 
   const whereClause = buildWhereClause(conditions);

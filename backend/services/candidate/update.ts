@@ -19,7 +19,6 @@ export interface UpdateCandidateInput {
   status?: string;
   note?: string | null;
   platform_id?: number | null;
-  recruiter?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
   reference?: number | null;
@@ -86,7 +85,6 @@ export async function update(
     if (data.status !== undefined) addParam(data.status, "status");
     if (data.note !== undefined) addParam(data.note, "note");
     if (data.platform_id !== undefined) addParam(data.platform_id, "platform_id");
-    if (data.recruiter !== undefined) addParam(data.recruiter, "recruiter");
     if (data.job_id !== undefined) addParam(data.job_id, "job_id");
     if (data.targeted_company !== undefined) addParam(data.targeted_company, "targeted_company");
     if (data.reference !== undefined) addParam(data.reference, "reference");

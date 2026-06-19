@@ -25,7 +25,6 @@ export interface GetAllCandidatesOptions {
   candidate_phone?: string;
   agency?: string;
   note?: string;
-  recruiter?: string;
   job_code?: string;
   project?: string;
   platform?: string;
@@ -54,9 +53,9 @@ export async function getAll(
       expected_salary: "c.expected_salary",
       job_name: "j.project",
       job_code: "j.job_code",
-      platform: "p.platform_code",
+      platform: "p.platform_name",
+      platform_code: "p.platform_code",
       platform_name: "p.platform_name",
-      recruiter: "u.user_name",
       reference: "ref.user_name",
       company: "comp.company_name"
     };
@@ -93,7 +92,6 @@ export async function getAll(
   addFilterCondition("c.candidate_phone", options.candidate_phone);
   addFilterCondition("c.agency", options.agency);
   addFilterCondition("c.note", options.note);
-  addFilterCondition("u.user_name", options.recruiter);
   addFilterCondition("j.job_code", options.job_code);
   addFilterCondition("j.project", options.project);
   if (options.platform && options.platform.trim()) {
@@ -127,7 +125,6 @@ export async function getAll(
     FROM candidate c
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
-    LEFT JOIN "user" u ON c.recruiter = u.user_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id
     LEFT JOIN company comp ON c.targeted_company = comp.company_id
   `;

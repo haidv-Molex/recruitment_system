@@ -145,7 +145,6 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
   const countNewUsers = () => {
     let count = 0;
     parsedCandidates.forEach((c) => {
-      if (c.recruiter?.user_id === null) count++;
       if (c.hiring_manager?.user_id === null) count++;
     });
     return count;
@@ -325,7 +324,6 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
                 { label: 'Job Code', widthClass: 'w-28' },
                 { label: 'Project', widthClass: 'w-40' },
                 { label: 'Status', widthClass: 'w-36' },
-                { label: 'Recruiter', widthClass: 'w-40' },
                 { label: 'Source', widthClass: 'w-36' },
                 { label: 'Input Date', widthClass: 'w-32' },
                 { label: 'Offer Date', widthClass: 'w-32' },
@@ -359,7 +357,6 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
                       : <span className="text-slate-300">—</span>
                     }
                   </td>
-                  <td className="p-2.5">{renderUserTag(c.recruiter, 'bg-violet-50 border border-violet-200 text-violet-700')}</td>
                   <td className="p-2.5 text-slate-600">{c.source || '—'}</td>
                   <td className="p-2.5 text-slate-500">{formatDate(c.input_date)}</td>
                   <td className="p-2.5 text-slate-500">{formatDate(c.offer_date)}</td>
@@ -378,7 +375,7 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200 flex-shrink-0">
                 <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                  <strong>{countNewUsers()} new users (Recruiter / Hiring Manager)</strong> will be auto-created in the system during import.
+                  <strong>{countNewUsers()} new users (Hiring Manager)</strong> will be auto-created in the system during import.
                 </p>
               </div>
             )}

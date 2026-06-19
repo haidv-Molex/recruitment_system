@@ -55,7 +55,6 @@ export interface ParsedCandidateRow {
   reference_department: string | null; // "Bộ phận"
 
   // Resolved user objects (or placeholder stubs)
-  recruiter: userOutputModel | null;
   hiring_manager: userOutputModel | null;
 }
 
@@ -102,7 +101,6 @@ export default async function parseCandidateSheet(
     const reference_department = getRowString(row, "Bộ phận");
 
     // Resolve user relations
-    const recruiter = resolveEntity(row["Recruiter"], userMap, createUserPlaceholder);
     const hiring_manager = resolveEntity(row["Hiring manager"], userMap, createUserPlaceholder);
 
     result.push({
@@ -130,7 +128,6 @@ export default async function parseCandidateSheet(
       employee_code,
       reference_name,
       reference_department,
-      recruiter,
       hiring_manager,
     });
   }

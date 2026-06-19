@@ -18,41 +18,22 @@ async function createIDLTrackingSheet(pool: PoolClient): Promise<ExcelJS.Workboo
     onboard_date: Date | null;
     offer_date: Date | null;
     job_id: number | null;
-    recruiter: number | null;
     job_code: string | null;
     source: string | null;
-    recruiter_name: string | null;
   }>(`
     SELECT
       c.candidate_id, c.candidate_name, c.status,
       c.expected_onboard_date, c.onboard_date, c.offer_date,
-      c.job_id, c.recruiter,
+      c.job_id,
       j.job_code,
-      p.platform_name AS source,
-      u.user_name     AS recruiter_name
+      p.platform_name AS source
     FROM candidate c
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
-    LEFT JOIN "user" u ON c.recruiter = u.user_id
     ORDER BY c.candidate_id ASC
   `);
 
   const candidateRows = candidateRes.rows;
-
-  // 3. Build recruitersByJobId: Map<job_id, comma-joined unique recruiter names>
-  const recruiterSetByJobId = new Map<number, Set<string>>();
-  for (const row of candidateRows) {
-    if (row.job_id && row.recruiter_name) {
-      if (!recruiterSetByJobId.has(row.job_id)) {
-        recruiterSetByJobId.set(row.job_id, new Set());
-      }
-      recruiterSetByJobId.get(row.job_id)!.add(row.recruiter_name);
-    }
-  }
-  const recruitersByJobId = new Map<number, string>();
-  for (const [jobId, names] of recruiterSetByJobId.entries()) {
-    recruitersByJobId.set(jobId, Array.from(names).join(", "));
-  }
 
   // 4. Map jobs → JdRow[]
   const jd_list: JdRow[] = jobs.map((job) => ({
@@ -66,7 +47,7 @@ async function createIDLTrackingSheet(pool: PoolClient): Promise<ExcelJS.Workboo
     project_segment: job.segments?.[0]?.segment_name ?? null,
     hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
     hrbp: job.departments?.map((d) => d.user?.user_name || "").filter(Boolean).join(", ") ?? "",
-    recruiter: recruitersByJobId.get(job.job_id) ?? "",
+    recruiter: job.recruiter?.user_name ?? "",
     myhr_request_date: (job as any).request_date ?? job.create_at,
     note: job.note ?? null,
   }));

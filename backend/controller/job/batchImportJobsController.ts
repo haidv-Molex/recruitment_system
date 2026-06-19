@@ -19,6 +19,7 @@ const jobItemSchema = Joi.object({
   }),
   note: Joi.string().max(5000).allow("", null).optional(),
   request_date: Joi.date().iso().empty(["", "null"]).allow(null).default(null),
+  recruiter_id: Joi.number().integer().allow(null).optional(),
 
   // ID gốc
   partners: numberArray().optional(),
@@ -37,6 +38,7 @@ const jobItemSchema = Joi.object({
   titles_name: stringArray().optional(),
   managers_name: stringArray().optional(),
   employee_levels_name: stringArray().optional(),
+  recruiter_name: Joi.string().max(255).allow("", null).optional(),
 });
 
 const bodySchema = Joi.object({

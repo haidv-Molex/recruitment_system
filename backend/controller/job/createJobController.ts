@@ -8,6 +8,7 @@
  * - project (string, required): Dự án tuyển dụng
  * - candidate_required (number, required): Số lượng ứng viên yêu cầu
  * - note (string, optional): Ghi chú bổ sung
+ * - recruiter_id (number, optional): ID recruiter phụ trách job
  * - file (file, optional): File mô tả công việc (JD), max 5MB
  * - partners (number[] / string, optional): Mảng danh sách user_id của đối tác
  * - departments (number[] / string, optional): Mảng danh sách department_id
@@ -52,6 +53,10 @@ const bodySchema = Joi.object({
     "date.format": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)",
     "date.base": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"
   }),
+  recruiter_id: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
+    "number.base": "Recruiter ID phải là số nguyên",
+    "number.integer": "Recruiter ID phải là số nguyên"
+  }),
   departments: departmentArray().optional(),
   segments: numberArray().optional(),
   sites: numberArray().optional(),
@@ -79,6 +84,7 @@ createJobController.post(
           project: body.project,
           note: body.note || null,
           request_date: body.request_date || null,
+          recruiter_id: body.recruiter_id,
           file,
           departments: body.departments ?? [],
           segments: body.segments ?? [],

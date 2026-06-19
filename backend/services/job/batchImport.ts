@@ -15,6 +15,7 @@ export type JobImportItem = {
   project: string;
   note?: string | null;
   request_date?: string | Date | null;
+  recruiter_id?: number | null;
   partners?: number[];
   departments?: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
   segments?: number[];
@@ -29,6 +30,7 @@ export type JobImportItem = {
   titles_name?: string[];
   managers_name?: string[];
   employee_levels_name?: string[];
+  recruiter_name?: string | null;
 };
 
 export type BatchImportResult = {
@@ -44,6 +46,7 @@ async function batchImport(
   // 1. Gather all new names across all jobs in the batch
   const partnerNames = new Set<string>();
   const managerNames = new Set<string>();
+  const recruiterNames = new Set<string>();
   const deptNames = new Set<string>();
   const segmentNames = new Set<string>();
   const siteNames = new Set<string>();
@@ -52,6 +55,7 @@ async function batchImport(
   for (const job of jobs) {
     (job.partners_name || []).forEach(n => { if (n?.trim()) partnerNames.add(n.trim()); });
     (job.managers_name || []).forEach(n => { if (n?.trim()) managerNames.add(n.trim()); });
+    if (job.recruiter_name?.trim()) recruiterNames.add(job.recruiter_name.trim());
     (job.departments_name || []).forEach(item => { if (item.name?.trim()) deptNames.add(item.name.trim()); });
     (job.segments_name || []).forEach(n => { if (n?.trim()) segmentNames.add(n.trim()); });
     (job.sites_name || []).forEach(n => { if (n?.trim()) siteNames.add(n.trim()); });
@@ -93,6 +97,21 @@ async function batchImport(
   for (const [k, v] of managerMap.entries()) {
     partnerMap.set(k, v);
   }
+
+  const recruiterMap = await resolveAndCreateEntities({
+    names: recruiterNames,
+    tableName: "user",
+    idColumn: "user_id",
+    nameColumn: "user_name",
+    pool,
+    create: async (name) => {
+      const lower = normalizeLookupKey(name);
+      if (partnerMap.has(lower)) return partnerMap.get(lower)!;
+      if (managerMap.has(lower)) return managerMap.get(lower)!;
+      const u = await User.create({ username: name }, pool);
+      return u.user_id;
+    }
+  });
   for (const [k, v] of partnerMap.entries()) {
     managerMap.set(k, v);
   }
@@ -215,6 +234,7 @@ async function batchImport(
         ...(job.employee_levels || []),
         ...(job.employee_levels_name || []).map(n => levelMap.get(normalizeLookupKey(n))).filter(Boolean) as number[]
       ];
+      const resolvedRecruiterId = job.recruiter_id || (job.recruiter_name?.trim() ? recruiterMap.get(normalizeLookupKey(job.recruiter_name)) : null) || null;
 
       // Use a nested savepoint to allow partial success
       await pool.query("SAVEPOINT import_job_savepoint");
@@ -225,6 +245,7 @@ async function batchImport(
           project: job.project,
           note: job.note || null,
           request_date: job.request_date || null,
+          recruiter_id: resolvedRecruiterId,
           file: null,
           departments: mergedDepartments,
           segments: Array.from(new Set(mergedSegments)),

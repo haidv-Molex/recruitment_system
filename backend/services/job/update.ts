@@ -17,6 +17,7 @@ type UpdateJobData = {
   project?: string;
   note?: string | null;
   request_date?: string | Date | null;
+  recruiter_id?: number | null;
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -81,6 +82,10 @@ async function update(
     if (data.request_date !== undefined) {
       fields.push(`request_date = $${index++}`);
       values.push(data.request_date);
+    }
+    if (data.recruiter_id !== undefined) {
+      fields.push(`recruiter_id = $${index++}`);
+      values.push(data.recruiter_id);
     }
     if (file_id !== undefined) {
       fields.push(`file_id = $${index++}`);
@@ -288,7 +293,7 @@ async function update(
 
     // 4. Retrieve complete job output info
     const query = `
-      SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
+      SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id, j.recruiter_id,
              f.file_path
       FROM job j
       LEFT JOIN file f ON j.file_id = f.file_id
@@ -308,11 +313,13 @@ async function update(
       request_date: row.request_date,
       create_at: row.create_at,
       update_at: row.update_at,
+      recruiter_id: row.recruiter_id,
       file: row.file_id ? {
         file_id: row.file_id,
         file_path: row.file_path,
         file_url: `${host}/file/${row.file_path}`
       } : null,
+      recruiter: row.recruiter_id ? await User.findById(row.recruiter_id, pool) : null,
       ...relations
     } satisfies jobOutputModel;
 
