@@ -8,7 +8,7 @@ function formatNotesToString(notes: any[] | null | undefined): string | null {
   if (!Array.isArray(notes) || notes.length === 0) return null;
   return notes
     .map((note) => {
-      const timeStr = note.create_at ? new Date(note.create_at).toLocaleString("vi-VN") : "";
+      const timeStr = note.update_at ? new Date(note.update_at).toLocaleString("vi-VN") : "";
       const userName = note.user?.user_name || "System";
       const text = note.text || "";
       return `${timeStr} | ${userName} | ${text}`;

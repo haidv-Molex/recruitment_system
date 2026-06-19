@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useItem } from '@/config/zustandStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { Plus, X } from 'lucide-react';
 import type { noteOutputModel } from '@/types/noteModel';
 
@@ -7,6 +7,7 @@ export type NoteItem = {
   note_id: number | null;
   text: string;
   create_at?: string | Date;
+  update_at?: string | Date;
   user?: {
     user_id: number;
     user_name: string;
@@ -22,7 +23,8 @@ interface NotesManagerProps {
 }
 
 export default function NotesManager({ existingNotes, onChange, disabled }: NotesManagerProps) {
-  const currentUserId = useItem('userId');
+  const { user } = useAuth();
+  const currentUserId = user?.user_id;
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [newNotes, setNewNotes] = useState<NoteItem[]>([]);
 
@@ -113,7 +115,11 @@ export default function NotesManager({ existingNotes, onChange, disabled }: Note
         {/* Existing notes */}
         {notes.map((note) => {
           const isOwner = note.user?.user_id === currentUserId;
-          const timeStr = note.create_at ? new Date(note.create_at).toLocaleString('vi-VN') : '';
+          const createTime = note.create_at ? new Date(note.create_at).toLocaleString('vi-VN') : '';
+          const updateTime = note.update_at ? new Date(note.update_at).toLocaleString('vi-VN') : '';
+          const timeStr = createTime && updateTime 
+            ? (createTime === updateTime ? createTime : `${createTime} | ${updateTime}`)
+            : (createTime || updateTime || '');
           const authorName = note.user?.user_name || 'System';
 
           return (

@@ -33,7 +33,7 @@ export function formatNotesToString(notes: any[]): string {
   if (!Array.isArray(notes)) return '';
   return notes
     .map((note) => {
-      const timeStr = note.create_at ? new Date(note.create_at).toLocaleString('vi-VN') : '';
+      const timeStr = note.update_at ? new Date(note.update_at).toLocaleString('vi-VN') : '';
       const userName = note.user?.user_name || 'System';
       const text = note.text || '';
       return `${timeStr} | ${userName} | ${text}`;

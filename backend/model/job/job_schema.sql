@@ -20,7 +20,7 @@ BEGIN
         IF NEW.job_id IS NULL THEN
             NEW.job_id = nextval(pg_get_serial_sequence('job', 'job_id'));
         END IF;
-        NEW.job_code = 'J' || LPAD(NEW.job_id::TEXT, 3, '0');
+        NEW.job_code = 'J' || LPAD(NEW.job_id::TEXT, GREATEST(3, LENGTH(NEW.job_id::TEXT)), '0');
     ELSE
         NEW.job_code = TRIM(NEW.job_code);
     END IF;
