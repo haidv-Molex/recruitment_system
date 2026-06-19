@@ -34,6 +34,8 @@ const emptyCandidate = {
   file: null as File | null,
 };
 
+const EMPTY_NOTES: any[] = [];
+
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?\d+(?:\.\d+)*$/;
 
@@ -517,7 +519,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attachments & Notes</h3>
           <NotesManager
-            existingNotes={Array.isArray(candidate?.note) ? candidate.note : []}
+            existingNotes={Array.isArray(candidate?.note) ? candidate.note : EMPTY_NOTES}
             onChange={setNotesPayload}
             disabled={saving}
           />

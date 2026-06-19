@@ -7,6 +7,8 @@ import Button from '../common/Button';
 import { FilePreviewModal } from '../common/FilePreview';
 import NotesManager from '@/components/common/NotesManager';
 
+const EMPTY_NOTES: any[] = [];
+
 export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps) {
   const [formData, setFormData] = useState(emptyJob);
   const [notesPayload, setNotesPayload] = useState<{ note_id: number | null; text: string }[]>([]);
@@ -209,7 +211,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
         />
 
         <NotesManager
-          existingNotes={Array.isArray(job?.note) ? job.note : []}
+          existingNotes={Array.isArray(job?.note) ? job.note : EMPTY_NOTES}
           onChange={setNotesPayload}
           disabled={saving}
         />

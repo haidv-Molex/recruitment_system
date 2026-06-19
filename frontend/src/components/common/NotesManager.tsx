@@ -33,7 +33,6 @@ export default function NotesManager({ existingNotes, onChange, disabled }: Note
     } else {
       setNotes([]);
     }
-    setNewNotes([]);
   }, [existingNotes]);
 
   // Report all changes back to parent

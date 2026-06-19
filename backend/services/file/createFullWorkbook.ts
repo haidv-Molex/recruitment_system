@@ -206,6 +206,18 @@ function applyDropdowns(
     }
 }
 
+function formatNotesToString(notes: any[] | null | undefined): string | null {
+  if (!Array.isArray(notes) || notes.length === 0) return null;
+  return notes
+    .map((note) => {
+      const timeStr = note.create_at ? new Date(note.create_at).toLocaleString("vi-VN") : "";
+      const userName = note.user?.user_name || "System";
+      const text = note.text || "";
+      return `${timeStr} | ${userName} | ${text}`;
+    })
+    .join("\n");
+}
+
 // ======================== MAIN FUNCTION ========================
 
 async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
@@ -327,7 +339,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         hrbp: job.departments?.map((d) => d.user?.user_name || "").filter(Boolean).join(", ") ?? "",
         recruiter: job.recruiter?.user_name ?? "",
         myhr_request_date: (job as any).request_date ?? job.create_at,
-        note: job.note ?? null,
+        note: formatNotesToString(job.note),
     }));
 
     const candidatesForJd: CandidateRowForJd[] = rows.map((row) => ({
