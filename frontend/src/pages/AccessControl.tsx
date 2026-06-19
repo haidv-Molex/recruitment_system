@@ -302,7 +302,7 @@ export const AccessControlPage = () => {
             <Button variant="secondary" onClick={closeModal} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleCreateAccessRule} loading={saving}>
+            <Button onClick={handleCreateAccessRule} isLoading={saving}>
               Save Restriction
             </Button>
           </div>

@@ -7,7 +7,7 @@ export interface TransactionClient extends PoolClient {
 
 export async function withTransaction<T>(
   callback: (client: TransactionClient) => Promise<T>,
-  user?: { user_id: number; user_role?: string | null }
+  user?: { user_id?: number; user_role?: string | null }
 ): Promise<T> {
   const client = await pool.connect() as TransactionClient;
   client.onRollback = [];

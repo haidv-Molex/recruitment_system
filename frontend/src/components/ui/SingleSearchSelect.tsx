@@ -48,11 +48,7 @@ export default function SingleSearchSelect<T>({
 
   useEffect(() => {
     setSelectedItem(initialItem);
-    if (initialItem) {
-      setInputValue(displayFn(initialItem));
-    } else {
-      setInputValue('');
-    }
+    setInputValue('');
   }, [initialItem]);
 
   // Recompute dropdown position when it opens or on scroll/resize
@@ -100,15 +96,11 @@ export default function SingleSearchSelect<T>({
   }, [showSuggestions]);
 
   useEffect(() => {
-    if (selectedItem && inputValue === displayFn(selectedItem)) {
+    if (selectedItem) {
       return;
     }
     if (!inputValue.trim()) {
       setSuggestions([]);
-      if (selectedItem) {
-        setSelectedItem(null);
-        onChange(null, null);
-      }
       return;
     }
     setIsLoading(true);
@@ -125,7 +117,7 @@ export default function SingleSearchSelect<T>({
       }
     }, 400);
     return () => clearTimeout(handler);
-  }, [inputValue]);
+  }, [inputValue, selectedItem]);
 
   const createItemFromInput = (value: string) => {
     const newItem = { [keyProp]: value } as unknown as T;
@@ -140,7 +132,7 @@ export default function SingleSearchSelect<T>({
 
   const handleSelect = (item: T) => {
     setSelectedItem(item);
-    setInputValue(displayFn(item));
+    setInputValue('');
     setSuggestions([]);
     setShowSuggestions(false);
     setActiveIndex(-1);
@@ -157,7 +149,8 @@ export default function SingleSearchSelect<T>({
         !(portal && portal.contains(target))
       ) {
         setShowSuggestions(false);
-        if (commitOnBlur && allowCreation && inputValue.trim()) {
+        // Only commit typed text as a new item if nothing is already selected
+        if (!selectedItem && commitOnBlur && allowCreation && inputValue.trim()) {
           const trimmed = inputValue.trim();
           const exactSuggestion = suggestions.find(
             (s) => displayFn(s).toLowerCase() === trimmed.toLowerCase()
@@ -165,9 +158,7 @@ export default function SingleSearchSelect<T>({
           handleSelect(exactSuggestion || createItemFromInput(trimmed));
           return;
         }
-        if (selectedItem) {
-          setInputValue(displayFn(selectedItem));
-        } else {
+        if (!selectedItem) {
           setInputValue('');
         }
       }
@@ -183,7 +174,9 @@ export default function SingleSearchSelect<T>({
     setSuggestions([]);
     setShowSuggestions(false);
     onChange(null, null);
-    inputRef.current?.focus();
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -277,7 +270,42 @@ export default function SingleSearchSelect<T>({
         </label>
       )}
 
-      <div className="relative">
+      <div
+        onClick={() => {
+          if (!selectedItem && !disabled) {
+            inputRef.current?.focus();
+          }
+        }}
+        className={
+          compact
+            ? `w-full min-h-[30px] flex items-center flex-wrap gap-1 px-2 py-0.5 border border-slate-200 rounded-md bg-white transition-all focus-within:ring-1 focus-within:ring-emerald-500 focus-within:border-emerald-500 ${
+                disabled ? 'opacity-60 pointer-events-none bg-slate-50' : 'cursor-text'
+              }`
+            : `w-full min-h-[38px] flex items-center flex-wrap gap-1.5 px-3 py-1 border border-slate-300 rounded-lg bg-white transition-all focus-within:ring-1 focus-within:ring-emerald-500 focus-within:border-emerald-500 ${
+                disabled ? 'opacity-60 pointer-events-none bg-slate-50' : 'cursor-text'
+              }`
+        }
+      >
+        {selectedItem && (
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-md shadow-sm select-none max-w-full"
+          >
+            <span className="truncate">{displayFn(selectedItem)}</span>
+            {!disabled && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClear(e);
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-full hover:bg-slate-200"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </span>
+        )}
+
         <input
           ref={inputRef}
           type="text"
@@ -289,36 +317,15 @@ export default function SingleSearchSelect<T>({
           onFocus={() => setShowSuggestions(true)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          placeholder={placeholder}
-          className={
-            compact
-              ? `w-full px-2 py-1 pr-6 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white transition-all disabled:bg-slate-50 disabled:text-slate-400 text-slate-900 ${
-                  disabled ? 'opacity-60 pointer-events-none' : ''
-                }`
-              : `w-full px-3 py-2 pr-8 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white transition-all disabled:bg-slate-50 disabled:text-slate-400 text-slate-900 ${
-                  disabled ? 'opacity-60 pointer-events-none' : ''
-                }`
-          }
+          placeholder={selectedItem ? '' : placeholder}
+          className={`flex-grow text-xs text-slate-800 bg-transparent border-none focus:ring-0 focus:outline-none p-0.5 ${
+            selectedItem ? 'w-0 h-0 opacity-0 pointer-events-none' : 'w-auto'
+          }`}
         />
-        <div
-          className={
-            compact
-              ? 'absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5'
-              : 'absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1'
-          }
-        >
+
+        <div className="ml-auto flex items-center gap-1">
           {isLoading && <Loader2 size={compact ? 12 : 14} className="text-slate-400 animate-spin" />}
-          {selectedItem && !disabled ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-full hover:bg-slate-100"
-            >
-              <X size={compact ? 12 : 14} />
-            </button>
-          ) : (
-            <ChevronDown size={compact ? 12 : 14} className="text-slate-400" />
-          )}
+          {!selectedItem && <ChevronDown size={compact ? 12 : 14} className="text-slate-400" />}
         </div>
       </div>
 
