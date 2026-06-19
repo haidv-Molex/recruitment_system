@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, Shield, User } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield, User, Mail, CheckCircle2 } from 'lucide-react';
 import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
 import { fetchUsersApi, createHRApi, deleteUserApi, fetchRolesApi, updateUserApi } from '@/services/userApi';
@@ -10,6 +10,8 @@ import { useHeader } from '@/contexts/HeaderContext';
 import { useAuth } from '@/contexts/AuthContext';
 import UserForm from '@/components/common/UserForm';
 import { useConfirm } from '@/components/ui/ConfirmModal';
+import OutlookLoginModal from '@/components/email/OutlookLoginModal';
+import { getOutlookSessionApi, type OutlookSession } from '@/services/emailApi';
 
 
 const roleColors: Record<string, string> = {
@@ -42,6 +44,8 @@ export const AdminPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showOutlookLogin, setShowOutlookLogin] = useState(false);
+  const [outlookSession, setOutlookSession] = useState<OutlookSession | null>(null);
 
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
 
@@ -61,6 +65,7 @@ export const AdminPage = () => {
 
   useEffect(() => {
     loadUsers(1, pageSize, searchQuery, selectedRole);
+    getOutlookSessionApi().then(setOutlookSession);
     const loadRoles = async () => {
       try {
         const rolesList = await fetchRolesApi();
@@ -153,10 +158,19 @@ export const AdminPage = () => {
   };
 
   const headerActions = useMemo(() => (
-    <Button onClick={openCreateForm} icon={<Plus size={16} />}>
-      Add Account
-    </Button>
-  ), []);
+    <div className="flex flex-wrap items-center gap-2">
+      <Button
+        variant="secondary"
+        onClick={() => setShowOutlookLogin(true)}
+        icon={outlookSession ? <CheckCircle2 size={16} /> : <Mail size={16} />}
+      >
+        {outlookSession ? `Outlook: ${outlookSession.email}` : 'Login With Outlook'}
+      </Button>
+      <Button onClick={openCreateForm} icon={<Plus size={16} />}>
+        Add Account
+      </Button>
+    </div>
+  ), [outlookSession]);
 
   useHeader({
     title: '👤 Account Management',
@@ -306,6 +320,15 @@ export const AdminPage = () => {
           saving={saving}
         />
       )}
+
+      <OutlookLoginModal
+        isOpen={showOutlookLogin}
+        onClose={() => setShowOutlookLogin(false)}
+        onVerified={(session) => {
+          setOutlookSession(session);
+          toast.success('Outlook login successful.');
+        }}
+      />
     </div>
   );
 };

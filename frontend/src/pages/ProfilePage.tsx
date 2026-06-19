@@ -4,7 +4,8 @@ import ProfileForm from '../components/profile/ProfileForm';
 import PasswordChangeForm from '../components/profile/PasswordChangeForm';
 import { useHeader } from '../contexts/HeaderContext';
 import Button from '../components/common/Button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Mail, CheckCircle2 } from 'lucide-react';
+import { getOutlookSessionApi, logoutOutlookApi, type OutlookSession } from '../services/emailApi';
 
 export const ProfilePage = () => {
   const { user, updateProfile, changePassword, logout } = useAuth() as any;
@@ -14,6 +15,11 @@ export const ProfilePage = () => {
 
   const [passwordMessage, setPasswordMessage] = useState({ text: '', type: '' });
   const [savingPassword, setSavingPassword] = useState(false);
+  const [outlookSession, setOutlookSession] = useState<OutlookSession | null>(null);
+
+  useEffect(() => {
+    getOutlookSessionApi().then(setOutlookSession);
+  }, []);
 
   useEffect(() => {
     if (profileMessage.text) {
@@ -76,6 +82,11 @@ export const ProfilePage = () => {
     }
   };
 
+  const handleOutlookDisconnect = async () => {
+    await logoutOutlookApi();
+    setOutlookSession(null);
+  };
+
   const headerActions = useMemo(() => (
     <Button
       onClick={logout}
@@ -129,6 +140,36 @@ export const ProfilePage = () => {
             message={passwordMessage}
             isLoading={savingPassword}
           />
+        </div>
+
+        {/* Outlook Card */}
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-6 md:col-span-2">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+              <Mail size={20} className="text-emerald-600" /> Outlook Integration
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              This email is used as the sender account for email features.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                {outlookSession ? <CheckCircle2 size={16} className="text-emerald-600" /> : <Mail size={16} className="text-slate-400" />}
+                <span>{outlookSession?.email || 'No Outlook account connected'}</span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                {outlookSession ? 'Outlook login is active for this browser session.' : 'Login with Outlook from Admin Panel or Email tab to enable sending mail.'}
+              </p>
+            </div>
+
+            {outlookSession && (
+              <Button variant="secondary" onClick={handleOutlookDisconnect} className="shrink-0">
+                Disconnect Outlook
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

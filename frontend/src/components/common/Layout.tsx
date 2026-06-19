@@ -11,6 +11,7 @@ import {
   LayoutGrid,
   MapPin,
   Award,
+  Mail,
   Menu,
   ChevronLeft,
   Settings,
@@ -58,6 +59,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/', label: 'Dashboard', icon: LayoutGrid },
     { path: '/job-tracking', label: 'Job Tracking', icon: Table2 },
     { path: '/candidates', label: 'Candidate Database', icon: Database },
+    { path: '/email', label: 'Email', icon: Mail },
   ];
 
   const configTabs = [

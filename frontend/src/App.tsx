@@ -14,6 +14,7 @@ import { SitePage } from '@/pages/SitePage';
 import { LevelPage } from '@/pages/LevelPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { EmailPage } from '@/pages/EmailPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { mockCandidates, mockJobs } from '@/services/mockData';
 import { HeaderProvider } from '@/contexts/HeaderContext';
@@ -48,6 +49,7 @@ function App() {
                       <Route path="/segments" element={<SegmentPage />} />
                       <Route path="/sites" element={<SitePage />} />
                       <Route path="/levels" element={<LevelPage />} />
+                      <Route path="/email" element={<EmailPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
 
                       {/* Admin route: requires admin role to access */}
