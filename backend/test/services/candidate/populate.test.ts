@@ -118,4 +118,36 @@ describe("Candidate populate service", () => {
     expect(result.candidate_levels[0].level_id).to.equal(levelId);
     expect(result.candidate_levels[0].level_name).to.equal("Lead");
   });
+
+  it("should successfully populate candidate notes in chronological order", async () => {
+    // 1. Seed candidate
+    const candidateRes = await client.query(
+      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING *`,
+      ["Candidate Notes Pop", "Applied"]
+    );
+    const candidateRow = candidateRes.rows[0];
+
+    // 2. Seed a user
+    const userRes = await client.query("SELECT user_id FROM \"user\" LIMIT 1");
+    const adminId = userRes.rows[0].user_id;
+
+    // 3. Seed notes
+    await client.query(
+      `INSERT INTO note (user_id, text, candidate_id, create_at) VALUES ($1, $2, $3, NOW() - INTERVAL '1 hour')`,
+      [adminId, "First candidate note", candidateRow.candidate_id]
+    );
+    await client.query(
+      `INSERT INTO note (user_id, text, candidate_id, create_at) VALUES ($1, $2, $3, NOW())`,
+      [adminId, "Second candidate note", candidateRow.candidate_id]
+    );
+
+    // 4. Call populateCandidateRelations
+    const result = await populateCandidateRelations(candidateRow, client);
+
+    expect(result).to.not.be.null;
+    expect(result.note).to.be.an("array").with.lengthOf(2);
+    expect(result.note[0].text).to.equal("First candidate note");
+    expect(result.note[1].text).to.equal("Second candidate note");
+    expect(result.note[0].user.user_id).to.equal(adminId);
+  });
 });

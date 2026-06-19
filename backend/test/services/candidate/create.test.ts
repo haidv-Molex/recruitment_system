@@ -91,7 +91,7 @@ describe("Candidate create service", () => {
       status: "OFFERED",
       note: "Strong backend developer, good communication",
       platform_id: platformId,
-      recruiter: recruiterId,
+      creator_id: recruiterId,
       job_id: jobId,
       targeted_company: companyId,
       reference: referenceId,
@@ -124,15 +124,15 @@ describe("Candidate create service", () => {
     expect(result.current_salary).to.equal("1500 USD");
     expect(result.expected_salary).to.equal("2000 USD");
     expect(result.status).to.equal("OFFERED");
-    expect(result.note).to.equal("Strong backend developer, good communication");
+
+    expect(result.note).to.be.an("array").with.lengthOf(1);
+    expect(result.note[0].text).to.equal("Strong backend developer, good communication");
+    expect(result.note[0].user.user_id).to.equal(recruiterId);
 
     // populated relations
     expect(result.platform).to.not.be.null;
     expect(result.platform.platform_id).to.equal(platformId);
     expect(result.platform.platform_name).to.equal("LinkedIn");
-
-    expect(result.recruiter).to.not.be.null;
-    expect(result.recruiter.user_id).to.equal(recruiterId);
 
     expect(result.job).to.not.be.null;
     expect(result.job.job_id).to.equal(jobId);

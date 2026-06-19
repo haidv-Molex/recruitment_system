@@ -33,7 +33,6 @@ describe("Candidate batchImport service", () => {
       {
         candidate_name: "Candidate Test Import A",
         status: "Applied",
-        recruiter_name: "Tracy", // will be created
         platform_name: "LinkedIn", // will be created
         targeted_company_name: "Molex", // will be created
         job_code: "J100",
@@ -41,7 +40,6 @@ describe("Candidate batchImport service", () => {
       {
         candidate_name: "Candidate Test Import B",
         status: "Interviewing",
-        recruiter_name: "tracy", // should resolve to existing Tracy
         platform_name: "linkedin", // should resolve to existing LinkedIn
         targeted_company_name: "molex", // should resolve to existing Molex
         job_code: "j100",
@@ -67,10 +65,7 @@ describe("Candidate batchImport service", () => {
     expect(candA.candidate_name).to.equal("Candidate Test Import A");
     expect(candB.candidate_name).to.equal("Candidate Test Import B");
 
-    // Verify they reference the same recruiter, platform, targeted_company
-    expect(candA.recruiter).to.not.be.null;
-    expect(candA.recruiter).to.equal(candB.recruiter);
-
+    // Verify they reference the same platform, targeted_company
     expect(candA.platform_id).to.not.be.null;
     expect(candA.platform_id).to.equal(candB.platform_id);
 
@@ -80,10 +75,6 @@ describe("Candidate batchImport service", () => {
     // Verify job mapping
     expect(candA.job_id).to.not.be.null;
     expect(candA.job_id).to.equal(candB.job_id);
-
-    // Verify created user "Tracy"
-    const userRes = await client.query("SELECT * FROM \"user\" WHERE user_id = $1", [candA.recruiter]);
-    expect(userRes.rows[0].user_name).to.equal("Tracy");
 
     // Verify created platform "LinkedIn"
     const platformRes = await client.query("SELECT * FROM platform WHERE platform_id = $1", [candA.platform_id]);

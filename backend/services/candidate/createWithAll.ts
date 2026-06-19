@@ -51,6 +51,7 @@ export interface CreateCandidateWithAllInput {
   candidate_levels_name?: string[];
   job_code?: string | null;
   project?: string | null;
+  creator_id?: number | null;
 }
 
 export async function createWithAll(
@@ -134,6 +135,7 @@ export async function createWithAll(
     targeted_company: targetedCompanyId,
     reference: referenceId,
     candidate_levels: mergedCandidateLevels.length > 0 ? mergedCandidateLevels : undefined,
+    creator_id: data.creator_id,
   };
 
   return create(input, pool);

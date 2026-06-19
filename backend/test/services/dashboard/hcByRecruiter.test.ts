@@ -38,16 +38,16 @@ describe("hcByRecruiter", () => {
     );
     rec2Id = rec2.rows[0].user_id;
 
-    // Seed jobs
+    // Seed jobs (linking recruiter_id to job)
     const jobA = await client.query(
-      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
-      ["JOB-A", "Project A"]
+      `INSERT INTO job (job_code, project, recruiter_id) VALUES ($1, $2, $3) RETURNING job_id`,
+      ["JOB-A", "Project A", rec1Id]
     );
     jobAId = jobA.rows[0].job_id;
 
     const jobB = await client.query(
-      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
-      ["JOB-B", "Project B"]
+      `INSERT INTO job (job_code, project, recruiter_id) VALUES ($1, $2, $3) RETURNING job_id`,
+      ["JOB-B", "Project B", rec2Id]
     );
     jobBId = jobB.rows[0].job_id;
 
@@ -74,19 +74,19 @@ describe("hcByRecruiter", () => {
       [jobBId, deptBId]
     );
 
-    // Seed candidates
-    // Annie recruited 2 candidates: one for Job A (June), one for Job B (July)
-    // Cindy recruited 1 candidate for Job A (June)
+    // Seed candidates (recruiter column is removed from candidate)
+    // Job A (Annie) has 2 candidates (one in June, one in July)
+    // Job B (Cindy) has 1 candidate (in June)
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, recruiter, job_id, create_at)
+      `INSERT INTO candidate (candidate_name, status, job_id, create_at)
        VALUES 
-       ($1, 'Onboarded', $2, $3, $4),
-       ($5, 'Onboarded', $6, $7, $8),
-       ($9, 'Onboarded', $10, $11, $12)`,
+       ($1, 'Onboarded', $2, $3),
+       ($4, 'Onboarded', $5, $6),
+       ($7, 'Onboarded', $8, $9)`,
       [
-        "Cand A1", rec1Id, jobAId, "2025-06-15 10:00:00",
-        "Cand A2", rec1Id, jobBId, "2025-07-15 10:00:00",
-        "Cand B1", rec2Id, jobAId, "2025-06-15 10:00:00",
+        "Cand A1", jobAId, "2025-06-15 10:00:00",
+        "Cand A2", jobAId, "2025-07-15 10:00:00",
+        "Cand B1", jobBId, "2025-06-15 10:00:00",
       ]
     );
   });
@@ -117,9 +117,9 @@ describe("hcByRecruiter", () => {
     const annie = result.find((d: any) => d.label === "Recruiter Annie");
     const cindy = result.find((d: any) => d.label === "Recruiter Cindy");
 
-    expect(annie).to.exist;
-    expect(annie.value).to.equal(1);
-    expect(cindy).to.not.exist;
+    expect(cindy).to.exist;
+    expect(cindy.value).to.equal(1);
+    expect(annie).to.not.exist;
   });
 
   it("should filter by department_id", async () => {
@@ -129,9 +129,8 @@ describe("hcByRecruiter", () => {
     const cindy = result.find((d: any) => d.label === "Recruiter Cindy");
 
     expect(annie).to.exist;
-    expect(annie.value).to.equal(1);
-    expect(cindy).to.exist;
-    expect(cindy.value).to.equal(1);
+    expect(annie.value).to.equal(2);
+    expect(cindy).to.not.exist;
   });
 
   it("should filter by date range on create_at", async () => {

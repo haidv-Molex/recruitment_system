@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
+import Note from "@services/note/_Note";
 import { populateCandidateRelations } from "./populate";
 import { insertLinkRows } from "@utilities/db/linking";
 
@@ -24,6 +25,7 @@ export interface CreateCandidateInput {
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
   candidate_levels?: number[];
+  creator_id?: number | null;
 }
 
 export async function create(
@@ -96,6 +98,15 @@ export async function create(
 
     const candidateRow = result.rows[0];
     const candidateId = candidateRow.candidate_id;
+
+    if (data.note && data.creator_id) {
+      await Note.create({
+        user_id: data.creator_id,
+        text: data.note,
+        candidate_id: candidateId,
+        job_id: data.job_id
+      }, pool);
+    }
 
     if (data.candidate_levels && data.candidate_levels.length > 0) {
       await insertLinkRows(

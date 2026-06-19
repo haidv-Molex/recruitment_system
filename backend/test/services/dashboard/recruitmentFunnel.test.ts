@@ -44,16 +44,16 @@ describe("recruitmentFunnel", () => {
 
     // Seed jobs
     const job1 = await client.query(
-      `INSERT INTO job (job_code, project, request_date)
-       VALUES ($1, $2, $3) RETURNING job_id`,
-      ["JOB-F-001", "Funnel Project 1", "2025-01-15"]
+      `INSERT INTO job (job_code, project, request_date, recruiter_id)
+       VALUES ($1, $2, $3, $4) RETURNING job_id`,
+      ["JOB-F-001", "Funnel Project 1", "2025-01-15", recruiterId]
     );
     jobId1 = job1.rows[0].job_id;
 
     const job2 = await client.query(
-      `INSERT INTO job (job_code, project, request_date)
-       VALUES ($1, $2, $3) RETURNING job_id`,
-      ["JOB-F-002", "Funnel Project 2", "2025-01-20"]
+      `INSERT INTO job (job_code, project, request_date, recruiter_id)
+       VALUES ($1, $2, $3, $4) RETURNING job_id`,
+      ["JOB-F-002", "Funnel Project 2", "2025-01-20", recruiterId]
     );
     jobId2 = job2.rows[0].job_id;
 
@@ -77,25 +77,25 @@ describe("recruitmentFunnel", () => {
     );
 
     // Seed candidates
-    // Candidate 1: status = 'Interview', job = job1, recruiter = recruiter
+    // Candidate 1: status = 'Interview', job = job1
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, recruiter, job_id)
-       VALUES ($1, $2, $3, $4)`,
-      ["Cand Interview", "Interview", recruiterId, jobId1]
+      `INSERT INTO candidate (candidate_name, status, job_id)
+       VALUES ($1, $2, $3)`,
+      ["Cand Interview", "Interview", jobId1]
     );
 
-    // Candidate 2: status = 'Onboarded', job = job1, recruiter = recruiter
+    // Candidate 2: status = 'Onboarded', job = job1
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, recruiter, job_id)
-       VALUES ($1, $2, $3, $4)`,
-      ["Cand Onboarded", "Onboarded", recruiterId, jobId1]
+      `INSERT INTO candidate (candidate_name, status, job_id)
+       VALUES ($1, $2, $3)`,
+      ["Cand Onboarded", "Onboarded", jobId1]
     );
 
-    // Candidate 3: status = 'Searching', job = job2, recruiter = recruiter
+    // Candidate 3: status = 'Searching', job = job2
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, recruiter, job_id)
-       VALUES ($1, $2, $3, $4)`,
-      ["Cand Searching", "Searching", recruiterId, jobId2]
+      `INSERT INTO candidate (candidate_name, status, job_id)
+       VALUES ($1, $2, $3)`,
+      ["Cand Searching", "Searching", jobId2]
     );
   });
 
@@ -154,9 +154,9 @@ describe("recruitmentFunnel", () => {
   it("should filter cumulative counts by department_id", async () => {
     // Insert another job recruiting for otherDeptId
     const otherJob = await client.query(
-      `INSERT INTO job (job_code, project, request_date)
-       VALUES ($1, $2, $3) RETURNING job_id`,
-      ["JOB-F-003", "Funnel Project 3", "2025-01-25"]
+      `INSERT INTO job (job_code, project, request_date, recruiter_id)
+       VALUES ($1, $2, $3, $4) RETURNING job_id`,
+      ["JOB-F-003", "Funnel Project 3", "2025-01-25", recruiterId]
     );
     const otherJobId = otherJob.rows[0].job_id;
 
@@ -176,9 +176,9 @@ describe("recruitmentFunnel", () => {
 
     // Candidate 4 linked to otherJob (which belongs to otherDeptId)
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, recruiter, job_id)
-       VALUES ($1, $2, $3, $4)`,
-      ["Cand Other Dept", "Onboarded", recruiterId, otherJobId]
+      `INSERT INTO candidate (candidate_name, status, job_id)
+       VALUES ($1, $2, $3)`,
+      ["Cand Other Dept", "Onboarded", otherJobId]
     );
 
     const data = await recruitmentFunnel({ department_ids: [otherDeptId], recruiter_id: recruiterId }, client);

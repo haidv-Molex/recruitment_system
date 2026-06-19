@@ -3,6 +3,7 @@ import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
 import { populateJobRelations } from "./populate";
 import User from "@services/user/_User";
+import Note from "@services/note/_Note";
 
 async function getById(
   id: number,
@@ -24,13 +25,16 @@ async function getById(
   const row = result.rows[0];
   const host = process.env.HOST || "http://localhost:3000";
 
-  const relations = await populateJobRelations(row.job_id, pool);
+  const [relations, notes] = await Promise.all([
+    populateJobRelations(row.job_id, pool),
+    Note.getAll({ job_id: row.job_id }, pool)
+  ]);
 
   return {
     job_id: row.job_id,
     job_code: row.job_code,
     project: row.project,
-    note: row.note,
+    note: notes,
     request_date: row.request_date,
     create_at: row.create_at,
     update_at: row.update_at,

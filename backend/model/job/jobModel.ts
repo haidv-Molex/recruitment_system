@@ -3,6 +3,7 @@ import type { departmentModel } from "@model/department/departmentModel";
 import type { segmentModel } from "@model/segment/segmentModel";
 import type { siteModel } from "@model/site/siteModel";
 import type { levelModel } from "@model/level/levelModel";
+import type { noteOutputModel } from "@model/note/noteModel";
 
 export type jobModel = {
   job_id: number;
@@ -16,7 +17,8 @@ export type jobModel = {
   recruiter_id: number | null;
 }
 
-export type jobOutputModel = Omit<jobModel, 'file_id'> & {
+export type jobOutputModel = Omit<jobModel, 'file_id' | 'note'> & {
+  note: noteOutputModel[];
   file: {
     file_id: number;
     file_path: string;

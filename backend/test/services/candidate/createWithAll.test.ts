@@ -32,29 +32,12 @@ describe("candidate/createWithAll service", () => {
     expect(result).to.have.property("candidate_id").that.is.a("number");
     expect(result.candidate_name).to.equal("Nguyễn Văn A");
     expect(result.status).to.equal("CV Sent");
-    expect(result.recruiter).to.be.null;
     expect(result.platform).to.be.null;
     expect(result.targeted_company).to.be.null;
     expect(result.reference).to.be.null;
   });
 
-  // ─── Auto-create recruiter từ recruiter_name ────────────────────────────────
 
-  it("should auto-create a new user for recruiter_name and link it", async () => {
-    const result = await createWithAll(
-      {
-        candidate_name: "Trần Thị B",
-        status: "Interview",
-        recruiter_name: "Annie Auto",
-      },
-      client
-    );
-
-    expect(result.candidate_name).to.equal("Trần Thị B");
-    expect(result.recruiter).to.not.be.null;
-    expect(result.recruiter.user_name).to.equal("Annie Auto");
-    expect(result.recruiter.user_id).to.be.a("number");
-  });
 
   // ─── Auto-create platform từ platform_name ──────────────────────────────────
 
@@ -107,31 +90,7 @@ describe("candidate/createWithAll service", () => {
     expect(result.reference.user_id).to.be.a("number");
   });
 
-  // ─── ID có sẵn ưu tiên hơn _name ───────────────────────────────────────────
 
-  it("should use existing recruiter ID when both recruiter and recruiter_name are provided", async () => {
-    // Seed a user to get a real recruiter ID
-    const userRes = await client.query(
-      `INSERT INTO "user" (user_name, user_role) VALUES ($1, $2) RETURNING user_id`,
-      ["Seeded Recruiter", "user"]
-    );
-    const seededId = userRes.rows[0].user_id;
-
-    const result = await createWithAll(
-      {
-        candidate_name: "Đoàn Văn F",
-        status: "Hold",
-        recruiter: seededId,
-        recruiter_name: "Should Be Ignored",
-      },
-      client
-    );
-
-    // Should link to the seeded recruiter, not create a new one
-    expect(result.recruiter).to.not.be.null;
-    expect(result.recruiter.user_id).to.equal(seededId);
-    expect(result.recruiter.user_name).to.equal("Seeded Recruiter");
-  });
 
   // ─── Tất cả _name cùng lúc ─────────────────────────────────────────────────
 
@@ -140,7 +99,6 @@ describe("candidate/createWithAll service", () => {
       {
         candidate_name: "Nguyễn Thị G",
         status: "Onboarded",
-        recruiter_name: "Recruiter Auto",
         platform_name: "Platform Auto",
         targeted_company_name: "Company Auto",
         reference_name: "Reference Auto",
@@ -152,8 +110,6 @@ describe("candidate/createWithAll service", () => {
     );
 
     expect(result.candidate_name).to.equal("Nguyễn Thị G");
-    expect(result.recruiter).to.not.be.null;
-    expect(result.recruiter.user_name).to.equal("Recruiter Auto");
     expect(result.platform).to.not.be.null;
     expect(result.platform.platform_name).to.equal("Platform Auto");
     expect(result.targeted_company).to.not.be.null;
@@ -170,7 +126,6 @@ describe("candidate/createWithAll service", () => {
       client
     );
 
-    expect(result.recruiter).to.be.null;
     expect(result.platform).to.be.null;
     expect(result.targeted_company).to.be.null;
     expect(result.reference).to.be.null;

@@ -135,7 +135,8 @@ createCandidateController.post("",
       file: req.file ? {
         originalname: req.file.originalname,
         buffer: req.file.buffer
-      } : null
+      } : null,
+      creator_id: req.user!.user_id
     };
 
     const result = await withTransaction(async (pool) => {

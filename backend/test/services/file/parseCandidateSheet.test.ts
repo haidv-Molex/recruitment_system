@@ -134,10 +134,6 @@ describe("parseCandidateSheet service", () => {
     expect(c.onboard_date).to.be.null;
 
     // Resolved users
-    expect(c.recruiter).to.not.be.null;
-    expect(c.recruiter!.user_id).to.equal(seededRecruiterId);
-    expect(c.recruiter!.user_name).to.equal("Annie");
-
     expect(c.hiring_manager).to.not.be.null;
     expect(c.hiring_manager!.user_id).to.equal(seededManagerId);
     expect(c.hiring_manager!.user_name).to.equal("Nguyễn Lê Hoàng");
@@ -205,10 +201,6 @@ describe("parseCandidateSheet service", () => {
     expect(result).to.be.an("array").with.lengthOf(1);
     const c = result[0];
 
-    expect(c.recruiter).to.not.be.null;
-    expect(c.recruiter!.user_id).to.be.null;
-    expect(c.recruiter!.user_name).to.equal("Unknown Recruiter");
-
     expect(c.hiring_manager).to.not.be.null;
     expect(c.hiring_manager!.user_id).to.be.null;
     expect(c.hiring_manager!.user_name).to.equal("Unknown Manager");
@@ -229,7 +221,6 @@ describe("parseCandidateSheet service", () => {
     const result = await parseCandidateSheet(rawRows, client);
 
     expect(result).to.be.an("array").with.lengthOf(1);
-    expect(result[0].recruiter).to.be.null;
     expect(result[0].hiring_manager).to.be.null;
   });
 

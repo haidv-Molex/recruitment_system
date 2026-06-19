@@ -31,10 +31,10 @@ describe("createDatabaseSheet Service", () => {
   }
 
   // ─── Helper: seed a minimal job ──────────────────────────────────────────
-  async function seedJob(jobCode: string, project: string): Promise<number> {
+  async function seedJob(jobCode: string, project: string, recruiterId?: number): Promise<number> {
     const res = await client.query<{ job_id: number }>(
-      `INSERT INTO job (job_code, project) VALUES ($1, $2) RETURNING job_id`,
-      [jobCode, project]
+      `INSERT INTO job (job_code, project, recruiter_id) VALUES ($1, $2, $3) RETURNING job_id`,
+      [jobCode, project, recruiterId ?? null]
     );
     return res.rows[0].job_id;
   }
@@ -63,13 +63,12 @@ describe("createDatabaseSheet Service", () => {
     status: string;
     jobId?: number;
     platformId?: number;
-    recruiterId?: number;
   }): Promise<number> {
     const res = await client.query<{ candidate_id: number }>(
-      `INSERT INTO candidate (candidate_name, status, job_id, platform_id, recruiter)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO candidate (candidate_name, status, job_id, platform_id)
+       VALUES ($1, $2, $3, $4)
        RETURNING candidate_id`,
-      [opts.name, opts.status, opts.jobId ?? null, opts.platformId ?? null, opts.recruiterId ?? null]
+      [opts.name, opts.status, opts.jobId ?? null, opts.platformId ?? null]
     );
     return res.rows[0].candidate_id;
   }
@@ -96,13 +95,12 @@ describe("createDatabaseSheet Service", () => {
   it("should return a workbook with a 'Database' sheet", async () => {
     const recruiterId = await seedUser("Test_Recruiter_" + Date.now());
     const platformId = await seedPlatform("LinkedIn_" + Date.now());
-    const jobId = await seedJob("JOB-DB-001_" + Date.now(), "Project Alpha");
+    const jobId = await seedJob("JOB-DB-001_" + Date.now(), "Project Alpha", recruiterId);
     await seedCandidate({
       name: "Test Candidate DB",
       status: "CV Sent",
       jobId,
       platformId,
-      recruiterId,
     });
 
     const workbook = await createDatabaseSheet(client);
@@ -126,14 +124,13 @@ describe("createDatabaseSheet Service", () => {
     const recruiterId = await seedUser("Recruiter_Pop_" + ts);
     const platformId = await seedPlatform("Platform_Pop_" + ts);
     const jobCode = "JOB-POP-" + ts;
-    const jobId = await seedJob(jobCode, "Project Pop");
+    const jobId = await seedJob(jobCode, "Project Pop", recruiterId);
     const candidateName = "Candidate_Pop_" + ts;
     await seedCandidate({
       name: candidateName,
       status: "Interview",
       jobId,
       platformId,
-      recruiterId,
     });
 
     const workbook = await createDatabaseSheet(client);
@@ -267,8 +264,8 @@ describe("createDatabaseSheet Service", () => {
     const recruiterName = "Recruiter_Col_" + ts;
     const recruiterId = await seedUser(recruiterName);
     const jobCode = "JOB-REC-" + ts;
-    const jobId = await seedJob(jobCode, "Project Rec " + ts);
-    await seedCandidate({ name: "Cand_Rec_" + ts, status: "CV Sent", jobId, recruiterId });
+    const jobId = await seedJob(jobCode, "Project Rec " + ts, recruiterId);
+    await seedCandidate({ name: "Cand_Rec_" + ts, status: "CV Sent", jobId });
 
     const workbook = await createDatabaseSheet(client);
     const sheet = workbook.getWorksheet("Database")!;

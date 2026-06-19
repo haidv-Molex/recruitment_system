@@ -54,9 +54,10 @@ describe("createValidationSheet Service", () => {
     );
     const userId = userRes.rows[0].user_id;
 
+    // Seed a job linked to this recruiter user
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, recruiter) VALUES ($1, $2, $3)`,
-      ["Test Candidate", "CV Sent", userId]
+      `INSERT INTO job (job_code, project, recruiter_id) VALUES ($1, $2, $3)`,
+      ["JOB-VAL-" + Date.now(), "Validation Project", userId]
     );
 
     // Call service with our active transaction client

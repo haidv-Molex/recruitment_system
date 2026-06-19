@@ -150,6 +150,7 @@ createCandidateWithAllController.post(
           job_code: body.job_code,
           project: body.project,
           file,
+          creator_id: req.user!.user_id,
 
           // FK bằng ID gốc
           platform_id: body.platform_id,
