@@ -66,7 +66,7 @@ recruitmentFunnelController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.recruitmentFunnel({ site_ids, job_ids, department_ids, recruiter_id }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,

@@ -35,7 +35,7 @@ hcRequestedByHiringManagerController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.hcRequestedByHiringManager({ job_id, department_id, from, to }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,

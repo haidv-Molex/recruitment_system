@@ -62,7 +62,7 @@ getAllJobsController.get("",
         sort_by: query.sort_by,
         sort_order: query.sort_order,
       }, pool);
-    });
+    }, req.user);
 
     const totalPages = unlimited ? 1 : Math.ceil(result.total / limit);
 

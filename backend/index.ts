@@ -22,6 +22,7 @@ import CandidateController from "@controller/candidate/_CandidateController";
 import FileController from "@controller/file/_FileController";
 import DashboardController from "@controller/dashboard/_DashboardController";
 import NoteController from "@controller/note/_NoteController";
+import AccessController from "@controller/access/_AccessController";
 
 app.get('/', (req, res) => {
   const clientUrl =
@@ -51,6 +52,7 @@ app.use("/job", JobController);
 app.use("/candidate", CandidateController);
 app.use("/dashboard", DashboardController);
 app.use("/note", NoteController);
+app.use("/access", AccessController);
 
 // Route không khớp → 404
 app.all("*", (req, _res, next) => {

@@ -6,13 +6,23 @@ export interface TransactionClient extends PoolClient {
 }
 
 export async function withTransaction<T>(
-  callback: (client: TransactionClient) => Promise<T>
+  callback: (client: TransactionClient) => Promise<T>,
+  user?: { user_id: number; user_role?: string | null }
 ): Promise<T> {
   const client = await pool.connect() as TransactionClient;
   client.onRollback = [];
 
   try {
     await client.query("BEGIN");
+    if (user) {
+      await client.query("SET ROLE app_user");
+      if (user.user_id !== undefined) {
+        await client.query("SELECT set_config('app.current_user_id', $1, true)", [String(user.user_id)]);
+      }
+      if (user.user_role) {
+        await client.query("SELECT set_config('app.current_user_role', $1, true)", [user.user_role]);
+      }
+    }
     const result = await callback(client);
     await client.query("COMMIT");
     return result;
@@ -31,6 +41,13 @@ export async function withTransaction<T>(
     }
     throw err;
   } finally {
+    if (user) {
+      try {
+        await client.query("RESET ROLE");
+      } catch (resetErr) {
+        console.error("Lỗi khi reset role trong database client:", resetErr);
+      }
+    }
     delete client.onRollback;
     client.release();
   }

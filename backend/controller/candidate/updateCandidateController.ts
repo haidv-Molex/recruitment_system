@@ -124,7 +124,7 @@ updateCandidateController.put("",
 
     const result = await withTransaction(async (pool) => {
       return await Candidate.update(id, updateData, pool);
-    });
+    }, req.user);
 
     res.status(200).json({
       result: true,

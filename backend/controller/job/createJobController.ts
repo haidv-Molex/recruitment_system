@@ -92,7 +92,7 @@ createJobController.post(
         },
         pool
       );
-    });
+    }, req.user);
 
     res.status(201).json({
       result: true,

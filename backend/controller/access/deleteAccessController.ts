@@ -1,30 +1,39 @@
 import express from "express";
 import Joi from "joi";
 import joiValidate from "@middlewares/joiValidate";
-import Job from "@services/job/_Job";
+import Access from "@services/access/_Access";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
+import { AppError } from "@middlewares/AppError";
+import type { userOutputModel } from "@model/user/userModel";
 
-const deleteJobController = express.Router({ mergeParams: true });
+const deleteAccessController = express.Router({ mergeParams: true });
 
 const paramsSchema = Joi.object({
   id: Joi.number().integer().positive().optional().messages({
-    "number.base": "Mã công việc phải là số",
-    "number.integer": "Mã công việc phải là số nguyên",
-    "number.positive": "Mã công việc phải là số dương"
+    "number.base": "Mã phân quyền phải là số",
+    "number.integer": "Mã phân quyền phải là số nguyên",
+    "number.positive": "Mã phân quyền phải là số dương"
   }),
   ids: Joi.alternatives().try(
     Joi.string(),
     Joi.array().items(Joi.number().integer().positive())
   ).optional().messages({
-    "any.only": "Danh sách mã công việc không hợp lệ"
+    "any.only": "Danh sách mã phân quyền không hợp lệ"
   })
 }).or('id', 'ids');
 
-deleteJobController.delete("",
+deleteAccessController.delete("",
   passport.authenticate("jwt", { session: false }),
   joiValidate(paramsSchema, "query"),
   async (req, res) => {
+    const requestor = req.user as userOutputModel;
+
+    // Chỉ Admin mới được phép thao tác phân quyền
+    if (requestor.user_role !== "admin") {
+      throw new AppError("Chỉ Admin mới có quyền quản lý phân quyền", 403);
+    }
+
     let ids: number[] = [];
     if (req.query.id) {
       ids.push(parseInt(req.query.id as string, 10));
@@ -40,19 +49,19 @@ deleteJobController.delete("",
     if (ids.length === 0) {
       return res.status(400).json({
         result: false,
-        message: "Không có mã công việc nào được cung cấp để xóa"
+        message: "Không có mã phân quyền nào được cung cấp để xóa"
       });
     }
 
     await withTransaction(async (pool) => {
-      await Job.delete(ids, pool);
-    }, req.user);
+      await Access.deleteAccess(ids, pool);
+    }, requestor);
 
     res.status(200).json({
       result: true,
-      message: ids.length === 1 ? "Xóa công việc thành công" : "Xóa các công việc thành công"
+      message: ids.length === 1 ? "Xóa phân quyền thành công" : "Xóa các phân quyền thành công"
     });
   }
 );
 
-export default deleteJobController;
+export default deleteAccessController;

@@ -46,7 +46,7 @@ deleteCandidateController.delete("",
 
     await withTransaction(async (pool) => {
       await Candidate.delete(ids, pool);
-    });
+    }, req.user);
 
     res.status(200).json({
       result: true,

@@ -76,7 +76,7 @@ candidatesByPlatformController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.candidatesByPlatform({ status, department_ids, job_ids }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,

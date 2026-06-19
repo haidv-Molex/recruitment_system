@@ -26,7 +26,7 @@ jobHCTrackingController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.jobHCTracking({ department_id }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,

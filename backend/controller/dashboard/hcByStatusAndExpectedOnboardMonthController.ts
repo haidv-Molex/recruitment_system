@@ -32,7 +32,7 @@ hcByStatusAndExpectedOnboardMonthController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.hcByStatusAndExpectedOnboardMonth({ status, from, to }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,

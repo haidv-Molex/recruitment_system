@@ -35,7 +35,7 @@ hcRequestedByHrbpController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.hcRequestedByHrbp({ job_id, department_id, from, to }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,

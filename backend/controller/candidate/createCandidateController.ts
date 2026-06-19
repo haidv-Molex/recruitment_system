@@ -141,7 +141,7 @@ createCandidateController.post("",
 
     const result = await withTransaction(async (pool) => {
       return await Candidate.create(candidateData, pool);
-    });
+    }, req.user);
 
     res.status(201).json({
       result: true,

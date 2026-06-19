@@ -55,8 +55,8 @@ batchImportJobsController.post(
     const { jobs } = req.body;
 
     const result = await withTransaction(async (pool) => {
-      return await Job.batchImport(jobs, pool);
-    });
+       return await Job.batchImport(jobs, pool);
+    }, req.user);
 
     res.status(200).json({
       result: true,

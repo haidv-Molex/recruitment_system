@@ -30,7 +30,7 @@ hcRequestedByDepartmentController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.hcRequestedByDepartment({ from, to, job_id }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,

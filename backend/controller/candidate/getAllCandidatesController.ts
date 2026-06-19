@@ -107,7 +107,7 @@ getAllCandidatesController.get("/",
         candidate_code, candidate_name, candidate_email, candidate_phone,
         agency, note, job_code, project, platform, reference, company
       }, pool);
-    });
+    }, req.user);
 
     res.status(200).json({
       result: true,

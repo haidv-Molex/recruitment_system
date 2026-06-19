@@ -24,7 +24,7 @@ getJobByIdController.get("",
 
     const result = await withTransaction(async (pool) => {
       return await Job.getById(id, pool);
-    });
+    }, req.user);
 
     res.status(200).json({
       result: true,

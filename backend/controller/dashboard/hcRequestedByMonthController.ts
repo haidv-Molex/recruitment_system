@@ -32,7 +32,7 @@ hcRequestedByMonthController.get(
 
     const data = await withTransaction((pool) =>
       Dashboard.hcRequestedByMonth({ department_id, from, to }, pool)
-    );
+    , req.user);
 
     res.status(200).json({
       result: true,
