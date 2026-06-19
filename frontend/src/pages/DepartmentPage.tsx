@@ -22,6 +22,7 @@ export const DepartmentPage = () => {
 
   // HRBP selection state
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
   // Pagination state
@@ -70,6 +71,7 @@ export const DepartmentPage = () => {
   const openCreateForm = () => {
     setEditingDept(null);
     setSelectedUserId(null);
+    setSelectedUserName(null);
     setSelectedUser(null);
     setFormError('');
     setShowForm(true);
@@ -78,6 +80,7 @@ export const DepartmentPage = () => {
   const openEditForm = (dept: any) => {
     setEditingDept(dept);
     setSelectedUserId(dept.user?.user_id || null);
+    setSelectedUserName(null);
     setSelectedUser(dept.user || null);
     setFormError('');
     setShowForm(true);
@@ -110,7 +113,8 @@ export const DepartmentPage = () => {
           data.code.trim(),
           data.name.trim(),
           data.description.trim(),
-          selectedUserId
+          selectedUserId,
+          selectedUserName
         );
         toast.success('Department updated successfully.');
         closeForm();
@@ -124,7 +128,8 @@ export const DepartmentPage = () => {
           data.code.trim(),
           data.name.trim(),
           data.description.trim(),
-          selectedUserId
+          selectedUserId,
+          selectedUserName
         );
         toast.success('Department created successfully.');
         closeForm();
@@ -309,15 +314,23 @@ export const DepartmentPage = () => {
           >
             <SingleSearchSelect
               label="HRBP (Manager)"
-              placeholder="Search HRBP..."
+              placeholder="Search or enter HRBP..."
               initialItem={selectedUser}
               searchApi={(search) => fetchUsersApi({ search })}
               displayFn={(u: any) => u.user_name || ''}
               keyProp="user_id"
-              onChange={(id, item) => {
-                setSelectedUserId(id);
+              onChange={(_id, item) => {
+                const userId = item ? (item as any).user_id : null;
+                const isExistingUser = typeof userId === 'number';
+
+                setSelectedUserId(isExistingUser ? userId : null);
+                setSelectedUserName(
+                  !isExistingUser && item ? ((item as any).user_name || '').trim() || null : null
+                );
                 setSelectedUser(item);
               }}
+              allowCreation={true}
+              commitOnBlur={true}
               disabled={saving}
             />
           </MasterDataForm>

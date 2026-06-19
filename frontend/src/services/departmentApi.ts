@@ -2,13 +2,36 @@ import axiosInstance from '@/config/axiosInstance';
 import type { departmentModel } from '@/types/departmentModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
-export async function createDepartmentApi(code: string, name: string, description: string, userId?: number | null): Promise<departmentModel> {
-  const response = await axiosInstance.post('/department', {
+function buildDepartmentPayload(
+  code: string,
+  name: string,
+  description: string,
+  userId?: number | null,
+  userName?: string | null
+) {
+  const payload: Record<string, any> = {
     department_code: code,
     department_name: name,
     department_description: description,
     user_id: userId,
-  });
+  };
+
+  const trimmedUserName = userName?.trim();
+  if (userId == null && trimmedUserName) {
+    payload.user_name = trimmedUserName;
+  }
+
+  return payload;
+}
+
+export async function createDepartmentApi(
+  code: string,
+  name: string,
+  description: string,
+  userId?: number | null,
+  userName?: string | null
+): Promise<departmentModel> {
+  const response = await axiosInstance.post('/department', buildDepartmentPayload(code, name, description, userId, userName));
   return response.data.data!;
 }
 
@@ -43,16 +66,12 @@ export async function updateDepartmentApi(
   code: string,
   name: string,
   description: string,
-  userId?: number | null
+  userId?: number | null,
+  userName?: string | null
 ): Promise<departmentModel> {
   const response = await axiosInstance.put(
     '/department',
-    {
-      department_code: code,
-      department_name: name,
-      department_description: description,
-      user_id: userId,
-    },
+    buildDepartmentPayload(code, name, description, userId, userName),
     { params: { id } }
   );
   return response.data.data!;

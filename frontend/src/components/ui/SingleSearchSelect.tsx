@@ -14,6 +14,7 @@ interface SingleSearchSelectProps<T> {
   required?: boolean;
   compact?: boolean;
   allowCreation?: boolean;
+  commitOnBlur?: boolean;
 }
 
 export default function SingleSearchSelect<T>({
@@ -28,6 +29,7 @@ export default function SingleSearchSelect<T>({
   required = false,
   compact = false,
   allowCreation = false,
+  commitOnBlur = false,
 }: SingleSearchSelectProps<T>) {
   const [selectedItem, setSelectedItem] = useState<T | null>(initialItem);
   const [inputValue, setInputValue] = useState('');
@@ -125,6 +127,26 @@ export default function SingleSearchSelect<T>({
     return () => clearTimeout(handler);
   }, [inputValue]);
 
+  const createItemFromInput = (value: string) => {
+    const newItem = { [keyProp]: value } as unknown as T;
+    if (keyProp === 'user_id') {
+      (newItem as any).user_name = value;
+    } else if (keyProp === 'department_id') {
+      (newItem as any).department_code = value;
+      (newItem as any).department_name = value;
+    }
+    return newItem;
+  };
+
+  const handleSelect = (item: T) => {
+    setSelectedItem(item);
+    setInputValue(displayFn(item));
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setActiveIndex(-1);
+    onChange(item[keyProp], item);
+  };
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -135,6 +157,14 @@ export default function SingleSearchSelect<T>({
         !(portal && portal.contains(target))
       ) {
         setShowSuggestions(false);
+        if (commitOnBlur && allowCreation && inputValue.trim()) {
+          const trimmed = inputValue.trim();
+          const exactSuggestion = suggestions.find(
+            (s) => displayFn(s).toLowerCase() === trimmed.toLowerCase()
+          );
+          handleSelect(exactSuggestion || createItemFromInput(trimmed));
+          return;
+        }
         if (selectedItem) {
           setInputValue(displayFn(selectedItem));
         } else {
@@ -144,16 +174,7 @@ export default function SingleSearchSelect<T>({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [selectedItem]);
-
-  const handleSelect = (item: T) => {
-    setSelectedItem(item);
-    setInputValue(displayFn(item));
-    setSuggestions([]);
-    setShowSuggestions(false);
-    setActiveIndex(-1);
-    onChange(item[keyProp], item);
-  };
+  }, [selectedItem, inputValue, suggestions, allowCreation, commitOnBlur]);
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -178,14 +199,7 @@ export default function SingleSearchSelect<T>({
         handleSelect(suggestions[activeIndex]);
       } else if (allowCreation && inputValue.trim()) {
         const trimmed = inputValue.trim();
-        const newItem = { [keyProp]: trimmed } as unknown as T;
-        if (keyProp === 'user_id') {
-          (newItem as any).user_name = trimmed;
-        } else if (keyProp === 'department_id') {
-          (newItem as any).department_code = trimmed;
-          (newItem as any).department_name = trimmed;
-        }
-        handleSelect(newItem);
+        handleSelect(createItemFromInput(trimmed));
       }
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
@@ -241,14 +255,7 @@ export default function SingleSearchSelect<T>({
                       onMouseDown={(e) => {
                         e.preventDefault();
                         const trimmed = inputValue.trim();
-                        const newItem = { [keyProp]: trimmed } as unknown as T;
-                        if (keyProp === 'user_id') {
-                          (newItem as any).user_name = trimmed;
-                        } else if (keyProp === 'department_id') {
-                          (newItem as any).department_code = trimmed;
-                          (newItem as any).department_name = trimmed;
-                        }
-                        handleSelect(newItem);
+                        handleSelect(createItemFromInput(trimmed));
                       }}
                       className="px-3 py-2 text-xs text-emerald-600 hover:bg-emerald-50 cursor-pointer font-semibold transition-colors"
                     >

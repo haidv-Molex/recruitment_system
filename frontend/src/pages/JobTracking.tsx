@@ -13,7 +13,6 @@ import {
   updateJobApi,
   deleteJobApi,
   downloadIdlTrackingSheetApi,
-  downloadFullWorkbookApi,
   getJobApi,
   batchImportJobsApi,
 } from '@/services/jobApi';
@@ -357,15 +356,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     }
   }, [toast]);
 
-  const handleExportWorkbook = useCallback(async () => {
-    try {
-      await downloadFullWorkbookApi();
-      toast.success('Downloaded Full Workbook.');
-    } catch (err: any) {
-      toast.error('Download Full Workbook failed: ' + err.message);
-    }
-  }, [toast]);
-
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
     loadJobsFromApi(page, pageSize, { ...activeSearchParams, ...sortParams });
@@ -473,14 +463,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       </button>
       <button
         type="button"
-        onClick={handleExportWorkbook}
-        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
-      >
-        <Download size={14} />
-        <span>Export Workbook</span>
-      </button>
-      <button
-        type="button"
         onClick={() => {
           setEditingJob(null);
           setShowJobForm(true);
@@ -491,7 +473,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         <span>Add Job</span>
       </button>
     </div>
-  ), [handleExportIDL, handleExportWorkbook]);
+  ), [handleExportIDL]);
 
   useHeader({
     title: '📊 Job Tracking Sheet',
