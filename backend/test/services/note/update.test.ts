@@ -1,9 +1,9 @@
 import { PoolClient } from "pg";
 import { pool } from "@middlewares/database";
-import deleteNote from "@services/note/delete";
+import update from "@services/note/update";
 import { AppError } from "@middlewares/AppError";
 
-describe("Note delete service", () => {
+describe("Note update service", () => {
   let client: PoolClient;
   let expect: any;
   let adminId: number;
@@ -26,7 +26,7 @@ describe("Note delete service", () => {
     client.release();
   });
 
-  it("should successfully delete a note", async () => {
+  it("should successfully update a note if owner", async () => {
     const candidateRes = await client.query(
       `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
       ["Test Candidate", "Applied"]
@@ -35,17 +35,23 @@ describe("Note delete service", () => {
 
     const noteRes = await client.query(
       `INSERT INTO note (user_id, text, candidate_id) VALUES ($1, $2, $3) RETURNING note_id`,
-      [adminId, "Some text", candidateId]
+      [adminId, "Old text", candidateId]
     );
     const noteId = noteRes.rows[0].note_id;
 
-    await deleteNote(noteId, adminId, "admin", client);
+    const result = await update({
+      id: noteId,
+      text: "New text",
+      userId: adminId,
+      userRole: "hr"
+    }, client);
 
-    const check = await client.query("SELECT note_id FROM note WHERE note_id = $1", [noteId]);
-    expect(check.rows.length).to.equal(0);
+    expect(result.note_id).to.equal(noteId);
+    expect(result.text).to.equal("New text");
+    expect(result.user.user_id).to.equal(adminId);
   });
 
-  it("should throw AppError 403 if user is not owner and not admin", async () => {
+  it("should successfully update a note if admin but not owner", async () => {
     const candidateRes = await client.query(
       `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
       ["Test Candidate", "Applied"]
@@ -54,13 +60,42 @@ describe("Note delete service", () => {
 
     const noteRes = await client.query(
       `INSERT INTO note (user_id, text, candidate_id) VALUES ($1, $2, $3) RETURNING note_id`,
-      [adminId, "Some text", candidateId]
+      [adminId, "Old text", candidateId]
     );
     const noteId = noteRes.rows[0].note_id;
 
-    // Try deleting with another user id (e.g. adminId + 1) and role "hr"
+    const result = await update({
+      id: noteId,
+      text: "Admin updated text",
+      userId: adminId + 1, // different user ID
+      userRole: "admin"
+    }, client);
+
+    expect(result.note_id).to.equal(noteId);
+    expect(result.text).to.equal("Admin updated text");
+    expect(result.user.user_id).to.equal(adminId);
+  });
+
+  it("should throw AppError 403 if not owner and not admin", async () => {
+    const candidateRes = await client.query(
+      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
+      ["Test Candidate", "Applied"]
+    );
+    const candidateId = candidateRes.rows[0].candidate_id;
+
+    const noteRes = await client.query(
+      `INSERT INTO note (user_id, text, candidate_id) VALUES ($1, $2, $3) RETURNING note_id`,
+      [adminId, "Old text", candidateId]
+    );
+    const noteId = noteRes.rows[0].note_id;
+
     try {
-      await deleteNote(noteId, adminId + 1, "hr", client);
+      await update({
+        id: noteId,
+        text: "New text",
+        userId: adminId + 1, // different user ID
+        userRole: "hr"
+      }, client);
       expect.fail("Should have thrown AppError");
     } catch (err) {
       expect(err).to.be.instanceOf(AppError);
@@ -68,9 +103,14 @@ describe("Note delete service", () => {
     }
   });
 
-  it("should throw AppError 404 if deleting non-existent note", async () => {
+  it("should throw AppError 404 if note does not exist", async () => {
     try {
-      await deleteNote(999999, adminId, "admin", client);
+      await update({
+        id: 999999,
+        text: "New text",
+        userId: adminId,
+        userRole: "hr"
+      }, client);
       expect.fail("Should have thrown AppError");
     } catch (err) {
       expect(err).to.be.instanceOf(AppError);

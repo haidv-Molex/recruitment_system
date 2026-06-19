@@ -4,10 +4,9 @@ import joiValidate from "@middlewares/joiValidate";
 import Note from "@services/note/_Note";
 import { withTransaction } from "@middlewares/withTransaction";
 import passport from "@middlewares/passport";
-import { AppError } from "@middlewares/AppError";
 import type { userOutputModel } from "@model/user/userModel";
 
-const deleteNoteController = express.Router();
+const updateNoteController = express.Router();
 
 const querySchema = Joi.object({
   id: Joi.number().integer().positive().required().messages({
@@ -18,22 +17,37 @@ const querySchema = Joi.object({
   })
 });
 
-deleteNoteController.delete("",
+const bodySchema = Joi.object({
+  text: Joi.string().required().messages({
+    "any.required": "Nội dung ghi chú là bắt buộc",
+    "string.empty": "Nội dung ghi chú không được để trống"
+  })
+});
+
+updateNoteController.put("",
   passport.authenticate("jwt", { session: false }),
   joiValidate(querySchema, "query"),
+  joiValidate(bodySchema, "body"),
   async (req, res) => {
     const requestor = req.user as userOutputModel;
     const noteId = parseInt(req.query.id as string, 10);
+    const { text } = req.body;
 
-    await withTransaction(async (pool) => {
-      await Note.delete(noteId, requestor.user_id, requestor.user_role || "hr", pool);
+    const result = await withTransaction(async (pool) => {
+      return await Note.update({
+        id: noteId,
+        text,
+        userId: requestor.user_id,
+        userRole: requestor.user_role || "hr"
+      }, pool);
     });
 
     res.status(200).json({
       result: true,
-      message: "Xóa ghi chú thành công"
+      message: "Cập nhật ghi chú thành công",
+      data: result
     });
   }
 );
 
-export default deleteNoteController;
+export default updateNoteController;

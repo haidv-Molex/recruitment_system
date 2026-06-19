@@ -28,6 +28,7 @@ describe("NoteController API", () => {
   let createStub: sinon.SinonStub;
   let getByIdStub: sinon.SinonStub;
   let deleteStub: sinon.SinonStub;
+  let updateStub: sinon.SinonStub;
 
   before(async () => {
     const { expect: localExpect } = await new Function('specifier', 'return import(specifier)')('chai');
@@ -65,6 +66,7 @@ describe("NoteController API", () => {
     createStub = sinon.stub(Note, "create");
     getByIdStub = sinon.stub(Note, "getById");
     deleteStub = sinon.stub(Note, "delete");
+    updateStub = sinon.stub(Note, "update");
   });
 
   afterEach(() => {
@@ -74,6 +76,7 @@ describe("NoteController API", () => {
     createStub.restore();
     getByIdStub.restore();
     deleteStub.restore();
+    updateStub.restore();
   });
 
   after((done) => {
@@ -107,9 +110,7 @@ describe("NoteController API", () => {
     expectLocal(createStub.calledOnce).to.be.true;
   });
 
-  it("DELETE /note - should delete note successfully if requestor is owner", async () => {
-    const mockNote = { note_id: 1, text: "Some text", user: { user_id: 1, user_name: "Test User", user_role: "hr" } };
-    getByIdStub.resolves(mockNote);
+  it("DELETE /note - should delete note successfully", async () => {
     deleteStub.resolves();
 
     const token = generateTestToken(1, "Test User");
@@ -124,6 +125,36 @@ describe("NoteController API", () => {
         message: "Xóa ghi chú thành công"
       });
 
-    expectLocal(deleteStub.calledOnceWith(1)).to.be.true;
+    expectLocal(deleteStub.calledOnce).to.be.true;
+    expectLocal(deleteStub.firstCall.args[0]).to.equal(1);
+    expectLocal(deleteStub.firstCall.args[1]).to.equal(1);
+    expectLocal(deleteStub.firstCall.args[2]).to.equal("hr");
+  });
+
+  it("PUT /note - should update note successfully", async () => {
+    const mockUpdatedNote = { note_id: 1, text: "Updated text", user: mockCurrentUser };
+    updateStub.resolves(mockUpdatedNote);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .put("/note")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withQueryParams({ id: 1 })
+      .withJson({ text: "Updated text" })
+      .expectStatus(200)
+      .expectJson({
+        result: true,
+        message: "Cập nhật ghi chú thành công",
+        data: mockUpdatedNote
+      });
+
+    expectLocal(updateStub.calledOnce).to.be.true;
+    expectLocal(updateStub.firstCall.args[0]).to.deep.equal({
+      id: 1,
+      text: "Updated text",
+      userId: 1,
+      userRole: "hr"
+    });
   });
 });
