@@ -6,9 +6,7 @@ CREATE TABLE "user" (
     user_description VARCHAR(255),
     user_role VARCHAR(255),
     create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    department_id INT,
-    FOREIGN KEY (department_id) REFERENCES department(department_id) ON DELETE SET NULL
+    update_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TRIGGER set_updated_at_user

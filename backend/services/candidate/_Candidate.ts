@@ -8,17 +8,17 @@ import { getAgencies } from "./getAgencies";
 import { getStatuses } from "./getStatuses";
 import { batchImport } from "./batchImport";
 
-const Candidate = {
-  create,
-  createWithAll,
-  update,
-  getAll,
-  getById,
-  delete: deleteCandidate,
-  getAgencies,
-  getStatuses,
-  batchImport,
-};
+class Candidate {
+  static create = create;
+  static createWithAll = createWithAll;
+  static update = update;
+  static getAll = getAll;
+  static getById = getById;
+  static delete = deleteCandidate;
+  static getAgencies = getAgencies;
+  static getStatuses = getStatuses;
+  static batchImport = batchImport;
+}
 
 export default Candidate;
 

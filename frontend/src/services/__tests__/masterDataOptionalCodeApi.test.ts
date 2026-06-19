@@ -1,0 +1,67 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import axiosInstance from '@/config/axiosInstance';
+import { createLevelApi } from '../levelApi';
+import { createSegmentApi } from '../segmentApi';
+import { createSiteApi } from '../siteApi';
+
+vi.mock('@/config/axiosInstance', () => {
+  return {
+    default: {
+      post: vi.fn(),
+    },
+  };
+});
+
+describe('master data optional code API tests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('createLevelApi should allow omitted code via undefined', async () => {
+    const mockLevel = { level_id: 1, level_name: 'Engineer' };
+    vi.mocked(axiosInstance.post).mockResolvedValueOnce({
+      data: { result: true, data: mockLevel },
+    });
+
+    const result = await createLevelApi(undefined, 'Engineer', '');
+
+    expect(axiosInstance.post).toHaveBeenCalledWith('/level', {
+      level_code: '',
+      level_name: 'Engineer',
+      level_description: '',
+    });
+    expect(result).toEqual(mockLevel);
+  });
+
+  it('createSegmentApi should allow omitted code via undefined', async () => {
+    const mockSegment = { segment_id: 1, segment_name: 'Operations' };
+    vi.mocked(axiosInstance.post).mockResolvedValueOnce({
+      data: { result: true, data: mockSegment },
+    });
+
+    const result = await createSegmentApi(undefined, 'Operations', '');
+
+    expect(axiosInstance.post).toHaveBeenCalledWith('/segment', {
+      segment_code: '',
+      segment_name: 'Operations',
+      segment_description: '',
+    });
+    expect(result).toEqual(mockSegment);
+  });
+
+  it('createSiteApi should allow omitted code via undefined', async () => {
+    const mockSite = { site_id: 1, site_name: 'MXV' };
+    vi.mocked(axiosInstance.post).mockResolvedValueOnce({
+      data: { result: true, data: mockSite },
+    });
+
+    const result = await createSiteApi(undefined, 'MXV', '');
+
+    expect(axiosInstance.post).toHaveBeenCalledWith('/site', {
+      site_code: '',
+      site_name: 'MXV',
+      site_description: '',
+    });
+    expect(result).toEqual(mockSite);
+  });
+});

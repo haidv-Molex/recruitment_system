@@ -15,11 +15,6 @@ const bodySchema = Joi.object({
   }),
   description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả tối đa 255 ký tự"
-  }),
-  departmentId: Joi.number().integer().positive().optional().messages({
-    "number.base": "Mã phòng ban phải là số",
-    "number.integer": "Mã phòng ban phải là số nguyên",
-    "number.positive": "Mã phòng ban phải là số dương"
   })
 });
 
@@ -30,8 +25,7 @@ createUserController.post("",
     const result = await withTransaction(async (pool) => {
       return await User.create({
         username: req.body.username,
-        description: req.body.description,
-        departmentId: req.body.departmentId
+        description: req.body.description
       }, pool);
     });
 

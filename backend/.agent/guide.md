@@ -237,6 +237,7 @@ export default myServiceFunction;
 - Sử dụng parameterized query (`$1`, `$2`, ...) để phòng chống SQL Injection.
 - **Cấm dùng `as Type` để ép kiểu dữ liệu trả về từ DB.** Phải map tường minh từng thuộc tính của object và sử dụng từ khóa `satisfies Type` của TypeScript để trình biên dịch kiểm tra tính hợp lệ của kiểu dữ liệu.
 - Mọi câu lệnh SQL `SELECT` hoặc `RETURNING` khi truy vấn thông tin người dùng **chỉ được liệt kê tường minh các cột public**, cấm dùng `SELECT *` hoặc `RETURNING *`.
+- Trước khi viết SQL, mapper hoặc logic nghiệp vụ mới, **bắt buộc tìm trong `services/`, `utilities/` và `model/` xem đã có hàm, type hoặc helper tương đương chưa**. Nếu đã có, phải tái sử dụng hoặc tách phần chung thành helper/service dùng chung thay vì viết lại.
 
 ### 4.3 Facade Class Pattern
 Để tránh việc controller phải import trực tiếp hàng chục file service nhỏ lẻ, mỗi domain sẽ có một file Facade class đặt tên theo dạng `_ClassName.ts` (ví dụ: `_User.ts`) tổng hợp và export tất cả các service.
@@ -253,9 +254,26 @@ class User {
 export default User;
 ```
 
-Trong controller, hãy luôn gọi service thông qua Facade class: `User.create(...)`, `User.findById(...)`.
+Trong controller và service khác, hãy luôn gọi service thông qua Facade class: `User.create(...)`, `User.findById(...)`, `Department.getById(...)`. Cách này làm rõ logic đang truy cập domain/bảng nào, tránh tình trạng nhiều file cùng có `findById` nhưng callsite không biết thuộc domain nào.
 
-### 4.4 Model & Sensitive Data Protection
+**Quy tắc import service bắt buộc:**
+- Khi một file cần dùng logic của domain khác, import Facade class của domain đó, ví dụ `import User from "@services/user/_User"`, rồi gọi `User.findById(...)`.
+- Khi một service trong cùng domain cần dùng service khác của chính domain đó, vẫn ưu tiên gọi qua Facade class nếu không tạo vòng import runtime. Nếu Facade dùng import tĩnh và việc import ngược `_ClassName.ts` gây circular dependency, được phép import trực tiếp service cùng domain đó như ngoại lệ kỹ thuật có chủ đích.
+- Không import trực tiếp service function như `import findById from "@services/user/findById"` trong code nghiệp vụ, ngoại trừ bên trong file Facade class hoặc trường hợp kỹ thuật bắt buộc đã được ghi rõ trong plan.
+- Giữ Facade class gọn nhẹ bằng import tĩnh và static assignment (`static getById = getById`). Không dùng `typeof import(...)` hoặc dynamic `await import(...)` trong Facade chỉ để né vòng import; nếu vòng import thực sự xảy ra, tách helper hoặc điều chỉnh cấu trúc ownership cho rõ ràng.
+
+### 4.4 Quy tắc chống lặp code (DRY)
+
+Không được lặp lại logic đã tồn tại chỉ vì viết lại nhanh hơn. Code mới phải ưu tiên tái sử dụng service, helper, model type và mapper hiện có để giữ một nguồn sự thật duy nhất.
+
+**Quy tắc bắt buộc:**
+- Trước khi thêm service/query/mapper mới, dùng tìm kiếm trong repo để kiểm tra chức năng tương tự đã tồn tại chưa.
+- Logic thuộc domain nào thì domain đó làm chủ. Service của domain khác khi cần dữ liệu này phải gọi Facade class của domain chủ sở hữu bằng cùng `PoolClient`, ví dụ `User.findById(userId, pool)` hoặc `Department.getById(departmentId, pool)`.
+- Không copy lại danh sách cột public, object mapper, validation, cache key hoặc xử lý lỗi đã có ở service khác.
+- Nếu cần thông tin user theo `user_id`, dùng Facade `User.findById(...)` cho trường hợp một user. Nếu cần lấy user cho danh sách nhiều bản ghi, dùng Facade service có sẵn như `User.getAll(...)` hoặc tạo service batch trong `services/user/` và gọi qua `User.findByIds(...)`; không tự lặp lại `SELECT` và mapping public user trong service domain khác như `services/department/getAll.ts`.
+- Chỉ viết query custom có join sang domain khác khi thật sự cần để filter, sort hoặc aggregate ở cấp SQL. Khi query custom chỉ lấy id của domain khác, hãy dùng service của domain đó để dựng object trả về thay vì tự copy mapper của domain đó.
+
+### 4.5 Model & Sensitive Data Protection
 Tất cả các thực thể dữ liệu trong cơ sở dữ liệu đều có kiểu định nghĩa trong thư mục `model/`.
 Đối với các bảng nhạy cảm như `user`, chúng ta định nghĩa hai loại model:
 
@@ -496,6 +514,8 @@ AI Agent **bắt buộc** phải đọc tài liệu hướng dẫn viết test t
 - ❌ Không ép kiểu bằng `as Type` cho kết quả truy vấn từ DB → Dùng ánh xạ tường minh và `satisfies`.
 - ❌ Không trả về kiểu `userModel` (chứa password/account) ra client → Luôn dùng `userOutputModel`.
 - ❌ Không dùng `SELECT *` hoặc `RETURNING *` khi truy cập bảng `user` → Liệt kê chi tiết cột public.
+- ❌ Không lặp lại SQL, mapper, validation, cache key hoặc xử lý lỗi đã có ở service/helper khác → Tái sử dụng logic hiện có hoặc tách phần chung trước khi viết code mới.
+- ❌ Không import trực tiếp service function kiểu `findById`, `getById`, `create` từ domain khác hoặc từ cùng domain trong code nghiệp vụ → Gọi qua Facade class như `User.findById(...)`, `Department.getById(...)` để callsite luôn rõ domain.
 
 ---
 

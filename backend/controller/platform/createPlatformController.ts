@@ -8,6 +8,9 @@ import passport from "@middlewares/passport";
 const createPlatformController = express.Router();
 
 const bodySchema = Joi.object({
+  platform_code: Joi.string().max(255).optional().allow("", null).messages({
+    "string.max": "Mã nền tảng tối đa 255 ký tự"
+  }),
   platform_name: Joi.string().max(255).required().messages({
     "any.required": "Tên nền tảng là bắt buộc",
     "string.empty": "Tên nền tảng không được để trống",
@@ -24,6 +27,7 @@ createPlatformController.post("",
   async (req, res) => {
     const result = await withTransaction(async (pool) => {
       return await Platform.create({
+        platform_code: req.body.platform_code,
         platform_name: req.body.platform_name,
         platform_description: req.body.platform_description
       }, pool);

@@ -2,13 +2,14 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
 import { populateJobRelations } from "./populate";
+import User from "@services/user/_User";
 
 async function getById(
   id: number,
   pool: PoolClient
 ): Promise<jobOutputModel> {
   const query = `
-    SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
+    SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id, j.recruiter_id,
            f.file_path
     FROM job j
     LEFT JOIN file f ON j.file_id = f.file_id
@@ -33,11 +34,13 @@ async function getById(
     request_date: row.request_date,
     create_at: row.create_at,
     update_at: row.update_at,
+    recruiter_id: row.recruiter_id,
     file: row.file_id ? {
       file_id: row.file_id,
       file_path: row.file_path,
       file_url: `${host}/file/${row.file_path}`
     } : null,
+    recruiter: row.recruiter_id ? await User.findById(row.recruiter_id, pool) : null,
     ...relations
   } satisfies jobOutputModel;
 }

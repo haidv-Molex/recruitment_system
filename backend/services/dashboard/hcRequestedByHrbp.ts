@@ -1,5 +1,8 @@
 import { PoolClient } from "pg";
 import type { ChartDateRange, ChartDataPoint } from "@type/chart.d";
+import buildDateRangeConditions from "@utilities/query/buildDateRangeConditions";
+import buildWhereClause from "@utilities/query/buildWhereClause";
+import mapChartRows from "@utilities/query/mapChartRows";
 
 type Props = ChartDateRange & {
   job_id?: number;
@@ -23,36 +26,28 @@ async function hcRequestedByHrbp(
   const { job_id, department_id, from, to } = props;
   const conditions: string[] = [];
   const params: any[] = [];
-  let paramIndex = 1;
 
   if (job_id !== undefined) {
-    conditions.push(`jd.job_id = $${paramIndex++}`);
     params.push(job_id);
+    conditions.push(`jd.job_id = $${params.length}`);
   }
 
   if (department_id !== undefined) {
-    conditions.push(`jd.department_id = $${paramIndex++}`);
     params.push(department_id);
+    conditions.push(`jd.department_id = $${params.length}`);
   }
 
-  if (from !== undefined) {
-    conditions.push(`j.request_date >= $${paramIndex++}`);
-    params.push(from);
-  }
+  buildDateRangeConditions({ from, to }, "j.request_date", conditions, params);
 
-  if (to !== undefined) {
-    conditions.push(`j.request_date <= $${paramIndex++}`);
-    params.push(to);
-  }
-
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT
       u.user_name AS label,
       COALESCE(SUM(jd.candidate_required), 0)::int AS value
     FROM "user" u
-    INNER JOIN job_department jd ON jd.user_id = u.user_id
+    INNER JOIN department d ON d.user_id = u.user_id
+    INNER JOIN job_department jd ON jd.department_id = d.department_id
     INNER JOIN job j ON j.job_id = jd.job_id
     ${whereClause}
     GROUP BY u.user_id, u.user_name
@@ -61,10 +56,7 @@ async function hcRequestedByHrbp(
 
   const result = await pool.query(query, params);
 
-  return result.rows.map((row) => ({
-    label: row.label as string,
-    value: row.value as number,
-  }));
+  return mapChartRows(result.rows);
 }
 
 export default hcRequestedByHrbp;

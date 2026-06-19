@@ -2,7 +2,7 @@ import axiosInstance from '@/config/axiosInstance';
 import type { segmentModel } from '@/types/segmentModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
-export async function createSegmentApi(code: string, name: string, description: string): Promise<segmentModel> {
+export async function createSegmentApi(code: string = '', name: string, description: string = ''): Promise<segmentModel> {
   const response = await axiosInstance.post('/segment', {
     segment_code: code,
     segment_name: name,

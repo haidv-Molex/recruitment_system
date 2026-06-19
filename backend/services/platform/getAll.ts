@@ -1,6 +1,9 @@
 import { PoolClient } from "pg";
 import type { platformModel } from "@model/platform/platformModel";
 import type { PaginationQueryMetadata } from "@type/pagination";
+import Platform from "@services/platform/_Platform";
+import buildPagination from "@utilities/query/buildPagination";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 type GetAllPlatformsParams = PaginationQueryMetadata & {
   search?: string;
@@ -15,23 +18,20 @@ async function getAll(
   params: GetAllPlatformsParams,
   pool: PoolClient
 ): Promise<GetAllPlatformsResult> {
-  const unlimited = params.unlimited === true;
-  const page = params.page && params.page > 0 ? params.page : 1;
-  const limit = params.limit && params.limit > 0 ? params.limit : 10;
-  const offset = (page - 1) * limit;
+  const { unlimited, limit, offset } = buildPagination(params);
   const search = params.search ? params.search.trim() : "";
 
-  let countQuery = `SELECT COUNT(*) AS total FROM platform`;
-  let query = `SELECT platform_id, platform_name, platform_description FROM platform`;
   const values: any[] = [];
-  let index = 1;
+  const conditions: string[] = [];
 
   if (search) {
-    const filter = ` WHERE platform_name ILIKE $${index++}`;
-    countQuery += filter;
-    query += filter;
     values.push(`%${search}%`);
+    conditions.push(`(platform_code ILIKE $${values.length} OR platform_name ILIKE $${values.length})`);
   }
+
+  const whereClause = buildWhereClause(conditions);
+  const countQuery = `SELECT COUNT(*) AS total FROM platform ${whereClause}`;
+  let query = `SELECT platform_id FROM platform ${whereClause}`;
 
   // Get total count
   const countResult = await pool.query(countQuery, values);
@@ -42,17 +42,15 @@ async function getAll(
 
   // Append pagination if not unlimited
   if (!unlimited) {
-    query += ` LIMIT $${index++} OFFSET $${index++}`;
     values.push(limit, offset);
+    query += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
   }
 
   const result = await pool.query(query, values);
 
-  const items = result.rows.map((row) => ({
-    platform_id: row.platform_id,
-    platform_name: row.platform_name,
-    platform_description: row.platform_description
-  })) satisfies platformModel[];
+  const items = await Promise.all(
+    result.rows.map((row) => Platform.getById(row.platform_id, pool))
+  ) satisfies platformModel[];
 
   return {
     items,

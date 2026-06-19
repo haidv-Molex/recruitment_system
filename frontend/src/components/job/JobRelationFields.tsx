@@ -27,11 +27,11 @@ interface JobRelationFieldsProps {
   selectedEmpLevels: any[];
   setSelectedEmpLevels: (items: any[]) => void;
 
-  selectedPartners: any[];
-  setSelectedPartners: (items: any[]) => void;
-
   selectedManagers: any[];
   setSelectedManagers: (items: any[]) => void;
+
+  selectedRecruiter: any | null;
+  setSelectedRecruiter: (item: any | null) => void;
 }
 
 export default function JobRelationFields({
@@ -47,10 +47,10 @@ export default function JobRelationFields({
   setSelectedTitles,
   selectedEmpLevels,
   setSelectedEmpLevels,
-  selectedPartners,
-  setSelectedPartners,
   selectedManagers,
   setSelectedManagers,
+  selectedRecruiter,
+  setSelectedRecruiter,
 }: JobRelationFieldsProps) {
 
   return (
@@ -78,47 +78,19 @@ export default function JobRelationFields({
               const key = dept.department_id;
               const name = dept.department_name || dept.department_code || 'Unnamed Department';
               const count = dept.candidate_required !== undefined ? dept.candidate_required : 1;
+              const user_name = dept.user_name || (dept.user && dept.user.user_name);
+              const hrbpLabel = user_name
+                ? `${dept.department_code || ''} - ${user_name}`
+                : `${dept.department_code || ''} - Unassigned`;
               return (
                 <div key={key} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm gap-2">
                   <div className="flex flex-col min-w-0 flex-1">
                     <span className="text-xs font-semibold text-slate-700 truncate" title={name}>
                       {name}
                     </span>
-                    <div className="mt-1">
-                      <SingleSearchSelect
-                        label=""
-                        placeholder="Search partner..."
-                        initialItem={dept.user_id ? { user_id: dept.user_id, user_name: dept.user_name || '' } : dept.partner_name ? { user_id: dept.partner_name, user_name: dept.partner_name } : null}
-                        searchApi={(search) => fetchUsersApi({ search })}
-                        displayFn={(u: any) => u.user_name || ''}
-                        keyProp="user_id"
-                        compact={true}
-                        allowCreation={true}
-                        disabled={saving}
-                        onChange={(selectedId, selectedItem) => {
-                          const updated = selectedDepts.map((d) => {
-                            if (d.department_id === key) {
-                              if (!selectedItem) {
-                                return { ...d, user_id: null, user_name: null, partner_name: null };
-                              }
-                              const isNew = typeof selectedId === 'string';
-                              return {
-                                ...d,
-                                user_id: isNew ? null : Number(selectedId),
-                                user_name: selectedItem.user_name,
-                                partner_name: isNew ? selectedItem.user_name : null,
-                              };
-                            }
-                            return d;
-                          });
-                          setSelectedDepts(updated);
-                          setFormData((prev: any) => ({
-                            ...prev,
-                            departments: updated,
-                          }));
-                        }}
-                      />
-                    </div>
+                    <span className="text-[11px] text-slate-500 font-medium truncate mt-0.5" title={hrbpLabel}>
+                      HRBP: <span className="font-semibold text-emerald-700">{hrbpLabel}</span>
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex items-center border border-slate-300 rounded bg-slate-50 overflow-hidden h-7">
@@ -189,7 +161,7 @@ export default function JobRelationFields({
 
       <OutlookSearchSelect
         label="📦 Segments"
-        placeholder="Search segments..."
+        placeholder="Search or type a new segment..."
         initialItems={selectedSegs}
         searchApi={(search) => searchSegmentsApi({ search })}
         displayFn={(s: any) => s.segment_name || ''}
@@ -200,11 +172,13 @@ export default function JobRelationFields({
           setSelectedSegs(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
 
       <OutlookSearchSelect
         label="📍 Sites"
-        placeholder="Search sites..."
+        placeholder="Search or type a new site..."
         initialItems={selectedSites}
         searchApi={(search) => searchSitesApi({ search })}
         displayFn={(s: any) => s.site_name || ''}
@@ -215,6 +189,8 @@ export default function JobRelationFields({
           setSelectedSites(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
 
       <OutlookSearchSelect
@@ -234,7 +210,7 @@ export default function JobRelationFields({
 
       <OutlookSearchSelect
         label="🏅 Employee Levels"
-        placeholder="Search employee levels..."
+        placeholder="Search or type a new employee level..."
         initialItems={selectedEmpLevels}
         searchApi={(search) => searchLevelsApi({ search })}
         displayFn={(l: any) => l.level_name || ''}
@@ -245,11 +221,13 @@ export default function JobRelationFields({
           setSelectedEmpLevels(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
 
       <OutlookSearchSelect
         label="👔 Hiring Managers"
-        placeholder="Search managers..."
+        placeholder="Search or type a new manager..."
         initialItems={selectedManagers}
         searchApi={(search) => fetchUsersApi({ search })}
         displayFn={(u: any) => u.user_name || ''}
@@ -260,6 +238,29 @@ export default function JobRelationFields({
           setSelectedManagers(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
+      />
+
+      <SingleSearchSelect
+        label="Recruiter"
+        placeholder="Search or type a new recruiter..."
+        initialItem={selectedRecruiter}
+        searchApi={(search) => fetchUsersApi({ search })}
+        displayFn={(u: any) => u.user_name || ''}
+        keyProp="user_id"
+        onChange={(id, item) => {
+          const numericId = id !== null && id !== undefined && !isNaN(Number(id)) ? Number(id) : null;
+          setFormData((prev: any) => ({
+            ...prev,
+            recruiterId: numericId || '',
+            recruiterName: numericId ? '' : (item?.user_name || ''),
+          }));
+          setSelectedRecruiter(item);
+        }}
+        disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
     </div>
   );

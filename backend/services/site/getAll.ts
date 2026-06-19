@@ -1,6 +1,9 @@
 import { PoolClient } from "pg";
 import type { siteModel } from "@model/site/siteModel";
 import type { PaginationQueryMetadata } from "@type/pagination";
+import Site from "@services/site/_Site";
+import buildPagination from "@utilities/query/buildPagination";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 type GetAllSitesParams = PaginationQueryMetadata & {
   search?: string;
@@ -15,24 +18,20 @@ async function getAll(
   params: GetAllSitesParams,
   pool: PoolClient
 ): Promise<GetAllSitesResult> {
-  const unlimited = params.unlimited === true;
-  const page = params.page && params.page > 0 ? params.page : 1;
-  const limit = params.limit && params.limit > 0 ? params.limit : 10;
-  const offset = (page - 1) * limit;
+  const { unlimited, limit, offset } = buildPagination(params);
   const search = params.search ? params.search.trim() : "";
 
-  let countQuery = `SELECT COUNT(*) AS total FROM site`;
-  let query = `SELECT site_id, site_code, site_name, site_description, create_at, update_at FROM site`;
   const values: any[] = [];
-  let index = 1;
+  const conditions: string[] = [];
 
   if (search) {
-    const filter = ` WHERE site_name ILIKE $${index} OR site_code ILIKE $${index}`;
-    countQuery += filter;
-    query += filter;
     values.push(`%${search}%`);
-    index++;
+    conditions.push(`site_name ILIKE $${values.length} OR site_code ILIKE $${values.length}`);
   }
+
+  const whereClause = buildWhereClause(conditions);
+  const countQuery = `SELECT COUNT(*) AS total FROM site ${whereClause}`;
+  let query = `SELECT site_id FROM site ${whereClause}`;
 
   // Get total count
   const countResult = await pool.query(countQuery, values);
@@ -43,20 +42,15 @@ async function getAll(
 
   // Append pagination if not unlimited
   if (!unlimited) {
-    query += ` LIMIT $${index++} OFFSET $${index++}`;
     values.push(limit, offset);
+    query += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
   }
 
   const result = await pool.query(query, values);
 
-  const items = result.rows.map((row) => ({
-    site_id: row.site_id,
-    site_code: row.site_code,
-    site_name: row.site_name,
-    site_description: row.site_description,
-    create_at: row.create_at,
-    update_at: row.update_at
-  })) satisfies siteModel[];
+  const items = await Promise.all(
+    result.rows.map((row) => Site.getById(row.site_id, pool))
+  ) satisfies siteModel[];
 
   return {
     items,

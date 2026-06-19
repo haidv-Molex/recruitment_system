@@ -4,6 +4,8 @@
  * Content-Type: multipart/form-data
  *
  * Request Fields (tất cả các trường của /job gốc, cộng thêm):
+ * - recruiter_id   (number, optional): ID recruiter phụ trách job
+ * - recruiter_name (string, optional): Tên recruiter mới – user sẽ được tạo mới
  * - partners_name   (string / JSON array, optional): Tên các đối tác mới – user sẽ được tạo mới
  * - managers_name   (string / JSON array, optional): Tên các hiring manager mới – user sẽ được tạo mới
  * - departments_name(string / JSON array, optional): Tên phòng ban mới (code = name.toUpperCase())
@@ -30,10 +32,8 @@ const upload = multer({
 
 
 const bodySchema = Joi.object({
-  // --- Trường Job bắt buộc ---
-  job_code: Joi.string().min(1).max(255).required().messages({
-    "any.required": "Mã công việc là bắt buộc",
-    "string.empty": "Mã công việc không được để trống",
+  // --- Trường Job ---
+  job_code: Joi.string().min(1).max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Mã công việc không được vượt quá 255 ký tự",
   }),
   project: Joi.string().min(1).max(255).required().messages({
@@ -46,6 +46,10 @@ const bodySchema = Joi.object({
     "date.format": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)",
     "date.base": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"
   }),
+  recruiter_id: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
+    "number.base": "Recruiter ID phải là số nguyên",
+    "number.integer": "Recruiter ID phải là số nguyên"
+  }),
 
   // --- ID gốc (các record đã tồn tại) ---
   partners: numberArray().optional(),
@@ -57,6 +61,9 @@ const bodySchema = Joi.object({
   employee_levels: numberArray().optional(),
 
   // --- _name: tự động tạo record mới ---
+  recruiter_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
+    "string.max": "Tên recruiter không được vượt quá 255 ký tự",
+  }),
   partners_name: stringArray().optional(),
   managers_name: stringArray().optional(),
   departments_name: departmentNameArray().optional(),
@@ -85,6 +92,7 @@ createJobWithAllController.post(
           project: body.project,
           note: body.note || null,
           request_date: body.request_date || null,
+          recruiter_id: body.recruiter_id,
           file,
 
           // ID gốc
@@ -97,6 +105,7 @@ createJobWithAllController.post(
           employee_levels: body.employee_levels ?? [],
 
           // _name: tự động tạo mới
+          recruiter_name: body.recruiter_name,
           partners_name: body.partners_name ?? [],
           managers_name: body.managers_name ?? [],
           departments_name: body.departments_name ?? [],

@@ -23,7 +23,6 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
     note: string | null;
     create_at: Date;
     job_id: number | null;
-    recruiter: number | null;
     job_code: string | null;
     platform_name: string | null;
     recruiter_name: string | null;
@@ -38,21 +37,25 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
       c.candidate_code, c.agency, c.offer_date, c.onboard_date,
       c.expected_onboard_date, c.feedback_date, c.current_salary,
       c.expected_salary, c.status, c.note, c.create_at,
-      c.job_id, c.recruiter,
+      c.job_id,
       j.job_code,
       p.platform_name,
       u.user_name  AS recruiter_name,
       ref.user_name AS reference_name,
-      ref_dept.department_name AS reference_department,
+      ref_dept.department_names AS reference_department,
       (c.targeted_company IS NOT NULL) AS targeted_company_is_set,
       comp.company_name AS targeted_company_name,
       cl_level.level_name AS candidate_level_name
     FROM candidate c
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
-    LEFT JOIN "user" u ON c.recruiter = u.user_id
+    LEFT JOIN "user" u ON j.recruiter_id = u.user_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id
-    LEFT JOIN department ref_dept ON ref.department_id = ref_dept.department_id
+    LEFT JOIN (
+      SELECT user_id, STRING_AGG(department_name, ', ') AS department_names
+      FROM department
+      GROUP BY user_id
+    ) ref_dept ON ref.user_id = ref_dept.user_id
     LEFT JOIN company comp ON c.targeted_company = comp.company_id
     LEFT JOIN (
       SELECT cl.candidate_id, STRING_AGG(l.level_name, ', ') AS level_name
@@ -72,12 +75,12 @@ async function createDatabaseSheet(pool: PoolClient): Promise<ExcelJS.Workbook> 
   // 3. Map jobs → JdLookupRow[]
   const jd_list: JdLookupRow[] = jobs.map((job) => ({
     job_code: job.job_code,
-    dept: job.departments?.[0]?.department_code || job.departments?.[0]?.department_name || "",
-    job_title: job.titles?.[0]?.level_name ?? "",
-    ee_level: job.employee_levels?.[0]?.level_name ?? "",
+    dept: job.departments?.map((d) => d.department_code || d.department_name || "").filter(Boolean).join(", ") || "",
+    job_title: job.titles?.map((t) => t.level_name).filter(Boolean).join(", ") ?? "",
+    ee_level: job.employee_levels?.map((el) => el.level_name).filter(Boolean).join(", ") ?? "",
     project: job.project,
     hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
-    recruiter: "",
+    recruiter: job.recruiter?.user_name ?? "",
     sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
   }));
 

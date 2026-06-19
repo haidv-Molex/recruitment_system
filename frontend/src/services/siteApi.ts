@@ -2,7 +2,7 @@ import axiosInstance from '@/config/axiosInstance';
 import type { siteModel } from '@/types/siteModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
-export async function createSiteApi(code: string, name: string, description: string): Promise<siteModel> {
+export async function createSiteApi(code: string = '', name: string, description: string = ''): Promise<siteModel> {
   const response = await axiosInstance.post('/site', {
     site_code: code,
     site_name: name,

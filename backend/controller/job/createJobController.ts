@@ -4,10 +4,11 @@
  * Content-Type: multipart/form-data
  *
  * Request Fields:
- * - job_code (string, required): Mã công việc
+ * - job_code (string, optional): Mã công việc; tự sinh nếu không nhập
  * - project (string, required): Dự án tuyển dụng
  * - candidate_required (number, required): Số lượng ứng viên yêu cầu
  * - note (string, optional): Ghi chú bổ sung
+ * - recruiter_id (number, optional): ID recruiter phụ trách job
  * - file (file, optional): File mô tả công việc (JD), max 5MB
  * - partners (number[] / string, optional): Mảng danh sách user_id của đối tác
  * - departments (number[] / string, optional): Mảng danh sách department_id
@@ -35,10 +36,7 @@ const upload = multer({
 
 
 const bodySchema = Joi.object({
-  job_code: Joi.string().min(1).max(255).required().messages({
-    "any.required": "Mã công việc là bắt buộc",
-    "string.empty": "Mã công việc không được để trống",
-    "string.min": "Mã công việc phải có ít nhất 1 ký tự",
+  job_code: Joi.string().min(1).max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Mã công việc không được vượt quá 255 ký tự",
   }),
   project: Joi.string().min(1).max(255).required().messages({
@@ -52,7 +50,10 @@ const bodySchema = Joi.object({
     "date.format": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)",
     "date.base": "Trường request_date không đúng định dạng ngày (YYYY-MM-DD hoặc ISO)"
   }),
-  partners: numberArray().optional(),
+  recruiter_id: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
+    "number.base": "Recruiter ID phải là số nguyên",
+    "number.integer": "Recruiter ID phải là số nguyên"
+  }),
   departments: departmentArray().optional(),
   segments: numberArray().optional(),
   sites: numberArray().optional(),
@@ -80,8 +81,8 @@ createJobController.post(
           project: body.project,
           note: body.note || null,
           request_date: body.request_date || null,
+          recruiter_id: body.recruiter_id,
           file,
-          partners: body.partners ?? [],
           departments: body.departments ?? [],
           segments: body.segments ?? [],
           sites: body.sites ?? [],

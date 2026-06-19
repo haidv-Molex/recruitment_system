@@ -1,5 +1,7 @@
 import { PoolClient } from "pg";
 import type { ChartDateRange, ChartDataPoint } from "@type/chart.d";
+import buildDateRangeConditions from "@utilities/query/buildDateRangeConditions";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 type Props = ChartDateRange & {
   department_id?: number;
@@ -23,24 +25,15 @@ async function hcRequestedByMonth(
   const { department_id, from, to } = props;
   const conditions: string[] = ["j.request_date IS NOT NULL"];
   const params: any[] = [];
-  let paramIndex = 1;
 
   if (department_id !== undefined) {
-    conditions.push(`jd.department_id = $${paramIndex++}`);
     params.push(department_id);
+    conditions.push(`jd.department_id = $${params.length}`);
   }
 
-  if (from !== undefined) {
-    conditions.push(`j.request_date >= $${paramIndex++}`);
-    params.push(from);
-  }
+  buildDateRangeConditions({ from, to }, "j.request_date", conditions, params);
 
-  if (to !== undefined) {
-    conditions.push(`j.request_date <= $${paramIndex++}`);
-    params.push(to);
-  }
-
-  const whereClause = `WHERE ${conditions.join(" AND ")}`;
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT

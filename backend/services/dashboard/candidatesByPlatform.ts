@@ -1,5 +1,7 @@
 import { PoolClient } from "pg";
 import type { ChartDataPoint } from "@type/chart.d";
+import buildWhereClause from "@utilities/query/buildWhereClause";
+import mapChartRows from "@utilities/query/mapChartRows";
 
 export interface CandidatesByPlatformParams {
   status?: string | string[];
@@ -44,25 +46,22 @@ async function candidatesByPlatform(
     conditions.push(`c.job_id IN (SELECT job_id FROM job_department WHERE department_id = ANY($${sqlParams.length}))`);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const query = `
     SELECT
-      p.platform_name AS label,
+      COALESCE(NULLIF(p.platform_code, ''), p.platform_name) AS label,
       COUNT(c.candidate_id)::int AS value
     FROM candidate c
     INNER JOIN platform p ON p.platform_id = c.platform_id
     ${whereClause}
-    GROUP BY p.platform_id, p.platform_name
+    GROUP BY p.platform_id, p.platform_code, p.platform_name
     ORDER BY value DESC
   `;
 
   const result = await pool.query(query, sqlParams);
 
-  return result.rows.map((row) => ({
-    label: row.label as string,
-    value: row.value as number,
-  }));
+  return mapChartRows(result.rows);
 }
 
 export default candidatesByPlatform;

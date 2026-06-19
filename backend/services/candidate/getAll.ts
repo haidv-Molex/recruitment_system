@@ -1,5 +1,7 @@
 import { PoolClient } from "pg";
-import { populateCandidateList } from "./populate";
+import Candidate from "@services/candidate/_Candidate";
+import buildPagination from "@utilities/query/buildPagination";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 export interface GetAllCandidatesOptions {
   page?: number;
@@ -23,7 +25,24 @@ export interface GetAllCandidatesOptions {
   candidate_phone?: string;
   agency?: string;
   note?: string;
-  recruiter?: string;
+  summary?: string;
+  nationality?: string;
+  location?: string;
+  skills?: string;
+  languages?: string;
+  education?: string;
+  experience_years?: string;
+  current_position?: string;
+  current_level?: string;
+  current_salary?: string;
+  last_company?: string;
+  work_experience?: string;
+  certifications?: string;
+  expected_position?: string;
+  expected_level?: string;
+  expected_salary?: string;
+  expected_work_location?: string;
+  salary_currency?: string;
   job_code?: string;
   project?: string;
   platform?: string;
@@ -35,13 +54,10 @@ export async function getAll(
   options: GetAllCandidatesOptions,
   pool: PoolClient
 ) {
-  const page = options.page || 1;
-  const limit = options.limit || 10;
-  const offset = (page - 1) * limit;
+  const { limit, offset } = buildPagination({ page: options.page, limit: options.limit });
 
   const conditions: string[] = [];
   const values: any[] = [];
-  let placeholderIndex = 1;
 
   if (options.search) {
     const columnMap: Record<string, string> = {
@@ -51,12 +67,33 @@ export async function getAll(
       phone: "c.candidate_phone",
       agency: "c.agency",
       note: "c.note",
-      current_salary: "c.current_salary",
-      expected_salary: "c.expected_salary",
+      summary: "cd.summary",
+      nationality: "cd.nationality",
+      location: "cd.location",
+      skills: "array_to_string(cd.skills, ' ')",
+      languages: "array_to_string(cd.languages, ' ')",
+      education: "cd.education",
+      experience_years: "cd.experience_years",
+      current_position: "cd.current_position",
+      current_level: "cd.current_level",
+      current_salary: "cd.current_salary::text",
+      last_company: "cd.last_company",
+      work_experience: "cd.work_experience",
+      certifications: "array_to_string(cd.certifications, ' ')",
+      expected_position: "cd.expected_position",
+      expected_level: "cd.expected_level",
+      expected_salary: "cd.expected_salary::text",
+      expected_work_location: "cd.expected_work_location",
+      salary_currency: "cd.salary_currency",
+      offer_date: "cd.offer_date::text",
+      onboard_date: "cd.onboard_date::text",
+      expected_onboard_date: "cd.expected_onboard_date::text",
+      feedback_date: "cd.feedback_date::text",
       job_name: "j.project",
       job_code: "j.job_code",
       platform: "p.platform_name",
-      recruiter: "u.user_name",
+      platform_code: "p.platform_code",
+      platform_name: "p.platform_name",
       reference: "ref.user_name",
       company: "comp.company_name"
     };
@@ -67,25 +104,23 @@ export async function getAll(
       : defaultSearchColumns;
 
     if (searchColumns.length > 0) {
-      const orConditions = searchColumns.map(col => `${col} ILIKE $${placeholderIndex}`).join(" OR ");
-      conditions.push(`(${orConditions})`);
       values.push(`%${options.search}%`);
-      placeholderIndex++;
+      const placeholder = `$${values.length}`;
+      const orConditions = searchColumns.map(col => `${col} ILIKE ${placeholder}`).join(" OR ");
+      conditions.push(`(${orConditions})`);
     }
   }
 
   if (options.status) {
-    conditions.push(`c.status = $${placeholderIndex}`);
     values.push(options.status);
-    placeholderIndex++;
+    conditions.push(`c.status = $${values.length}`);
   }
 
   // Handle specific advanced filters
   const addFilterCondition = (field: string, val: string | undefined) => {
     if (val && val.trim()) {
-      conditions.push(`${field} ILIKE $${placeholderIndex}`);
       values.push(`%${val.trim()}%`);
-      placeholderIndex++;
+      conditions.push(`${field} ILIKE $${values.length}`);
     }
   };
 
@@ -95,41 +130,58 @@ export async function getAll(
   addFilterCondition("c.candidate_phone", options.candidate_phone);
   addFilterCondition("c.agency", options.agency);
   addFilterCondition("c.note", options.note);
-  addFilterCondition("u.user_name", options.recruiter);
+  addFilterCondition("cd.summary", options.summary);
+  addFilterCondition("cd.nationality", options.nationality);
+  addFilterCondition("cd.location", options.location);
+  addFilterCondition("array_to_string(cd.skills, ' ')", options.skills);
+  addFilterCondition("array_to_string(cd.languages, ' ')", options.languages);
+  addFilterCondition("cd.education", options.education);
+  addFilterCondition("cd.experience_years", options.experience_years);
+  addFilterCondition("cd.current_position", options.current_position);
+  addFilterCondition("cd.current_level", options.current_level);
+  addFilterCondition("cd.current_salary::text", options.current_salary);
+  addFilterCondition("cd.last_company", options.last_company);
+  addFilterCondition("cd.work_experience", options.work_experience);
+  addFilterCondition("array_to_string(cd.certifications, ' ')", options.certifications);
+  addFilterCondition("cd.expected_position", options.expected_position);
+  addFilterCondition("cd.expected_level", options.expected_level);
+  addFilterCondition("cd.expected_salary::text", options.expected_salary);
+  addFilterCondition("cd.expected_work_location", options.expected_work_location);
+  addFilterCondition("cd.salary_currency", options.salary_currency);
   addFilterCondition("j.job_code", options.job_code);
   addFilterCondition("j.project", options.project);
-  addFilterCondition("p.platform_name", options.platform);
+  if (options.platform && options.platform.trim()) {
+    values.push(`%${options.platform.trim()}%`);
+    conditions.push(`(p.platform_code ILIKE $${values.length} OR p.platform_name ILIKE $${values.length})`);
+  }
   addFilterCondition("ref.user_name", options.reference);
   addFilterCondition("comp.company_name", options.company);
 
   const addDateCondition = (field: string, fromVal: Date | undefined, toVal: Date | undefined) => {
     if (fromVal && toVal) {
-      conditions.push(`${field} >= $${placeholderIndex} AND ${field} <= $${placeholderIndex + 1}`);
       values.push(fromVal, toVal);
-      placeholderIndex += 2;
+      conditions.push(`${field} >= $${values.length - 1} AND ${field} <= $${values.length}`);
     } else if (fromVal) {
-      conditions.push(`${field} = $${placeholderIndex}`);
       values.push(fromVal);
-      placeholderIndex++;
+      conditions.push(`${field} = $${values.length}`);
     } else if (toVal) {
-      conditions.push(`${field} = $${placeholderIndex}`);
       values.push(toVal);
-      placeholderIndex++;
+      conditions.push(`${field} = $${values.length}`);
     }
   };
 
-  addDateCondition("c.offer_date", options.offer_date_from, options.offer_date_to);
-  addDateCondition("c.onboard_date", options.onboard_date_from, options.onboard_date_to);
-  addDateCondition("c.expected_onboard_date", options.expected_onboard_date_from, options.expected_onboard_date_to);
-  addDateCondition("c.feedback_date", options.feedback_date_from, options.feedback_date_to);
+  addDateCondition("cd.offer_date", options.offer_date_from, options.offer_date_to);
+  addDateCondition("cd.onboard_date", options.onboard_date_from, options.onboard_date_to);
+  addDateCondition("cd.expected_onboard_date", options.expected_onboard_date_from, options.expected_onboard_date_to);
+  addDateCondition("cd.feedback_date", options.feedback_date_from, options.feedback_date_to);
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const whereClause = buildWhereClause(conditions);
 
   const fromClause = `
     FROM candidate c
+    LEFT JOIN candidate_detail cd ON c.candidate_detail_id = cd.candidate_detail_id
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
-    LEFT JOIN "user" u ON c.recruiter = u.user_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id
     LEFT JOIN company comp ON c.targeted_company = comp.company_id
   `;
@@ -145,16 +197,18 @@ export async function getAll(
 
   // Get items
   const selectQuery = `
-    SELECT c.* 
+    SELECT DISTINCT c.candidate_id
     ${fromClause}
     ${whereClause}
     ORDER BY c.candidate_id DESC
-    LIMIT $${placeholderIndex} OFFSET $${placeholderIndex + 1}
   `;
   const selectValues = [...values, limit, offset];
-  const itemsResult = await pool.query(selectQuery, selectValues);
+  const paginatedSelectQuery = `${selectQuery} LIMIT $${selectValues.length - 1} OFFSET $${selectValues.length}`;
+  const itemsResult = await pool.query(paginatedSelectQuery, selectValues);
 
-  const populatedItems = await populateCandidateList(itemsResult.rows, pool);
+  const populatedItems = await Promise.all(
+    itemsResult.rows.map((row) => Candidate.getById(row.candidate_id, pool))
+  );
 
   return {
     items: populatedItems,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { searchJobsApi } from '@/services/jobApi';
 import { searchPlatformsApi } from '@/services/platformApi';
 import { searchCompaniesApi } from '@/services/companyApi';
@@ -6,35 +6,29 @@ import { fetchUsersApi } from '@/services/userApi';
 import { FilePreviewModal } from '@/components/common/FilePreview';
 import { fetchAgenciesApi, fetchStatusesApi } from '@/services/candidateApi';
 import Modal from '@/components/ui/Modal';
-import InputField from '@/components/common/InputField';
-import SelectField from '@/components/common/SelectField';
 import Button from '@/components/common/Button';
-import SingleSearchSelect from '@/components/ui/SingleSearchSelect';
-import FileUploadField from '@/components/common/FileUploadField';
-
-const emptyCandidate = {
-  candidateCode: '',
-  candidateName: '',
-  candidateEmail: '',
-  candidatePhone: '',
-  agency: '',
-  offerDate: '',
-  onboardDate: '',
-  expectedOnboardDate: '',
-  feedbackDate: '',
-  currentSalary: '',
-  expectedSalary: '',
-  status: 'CV Sent',
-  note: '',
-  platformId: '',
-  recruiterId: '',
-  jobId: '',
-  targetedCompanyId: '',
-  referenceId: '',
-  file: null as File | null,
-};
-
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import BasicInfoSection from './CandidateForm/BasicInfoSection';
+import ContactSection from './CandidateForm/ContactSection';
+import SourcingSection from './CandidateForm/SourcingSection';
+import DetailSection from './CandidateForm/DetailSection';
+import TimelineSection from './CandidateForm/TimelineSection';
+import NotesSection from './CandidateForm/NotesSection';
+import {
+  createEmptyCandidate,
+  emptyCandidate,
+  type CandidateFormChangeEvent,
+  type CandidateFormOptions,
+} from './CandidateForm/types';
+import {
+  dateInputValue,
+  emailRegex,
+  hasAnyValue,
+  hasInvalidOptionalNumber,
+  normalizeLinks,
+  phoneRegex,
+  toObjectList,
+  toStringList,
+} from './CandidateForm/utils';
 
 export interface CandidateFormProps {
   candidate?: any;
@@ -44,49 +38,122 @@ export interface CandidateFormProps {
 }
 
 export default function CandidateForm({ candidate, onSubmit, onClose, saving }: CandidateFormProps) {
-  const [formData, setFormData] = useState(emptyCandidate);
+  const [formData, setFormData] = useState(createEmptyCandidate());
   const [error, setError] = useState('');
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
+  const [selectedReference, setSelectedReference] = useState<any | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<any | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<any | null>(null);
+  const [selectedAgency, setSelectedAgency] = useState<any | null>(null);
+  const [selectedLevels, setSelectedLevels] = useState<any[]>([]);
+  const [showDetailSection, setShowDetailSection] = useState(false);
 
-  const [options, setOptions] = useState({
-    jobs: [] as any[],
-    platforms: [] as any[],
-    companies: [] as any[],
-    users: [] as any[],
-    agencies: [] as string[],
-    statuses: [] as string[],
+  const [options, setOptions] = useState<CandidateFormOptions>({
+    jobs: [],
+    platforms: [],
+    companies: [],
+    users: [],
+    agencies: [],
+    statuses: [],
   });
 
   useEffect(() => {
-    if (candidate) {
-      setFormData({
-        candidateCode: candidate.candidate_code || '',
-        candidateName: candidate.candidate_name || '',
-        candidateEmail: candidate.candidate_email || '',
-        candidatePhone: candidate.candidate_phone || '',
-        agency: candidate.agency || '',
-        offerDate: candidate.offer_date ? String(candidate.offer_date).slice(0, 10) : '',
-        onboardDate: candidate.onboard_date ? String(candidate.onboard_date).slice(0, 10) : '',
-        expectedOnboardDate: candidate.expected_onboard_date ? String(candidate.expected_onboard_date).slice(0, 10) : '',
-        feedbackDate: candidate.feedback_date ? String(candidate.feedback_date).slice(0, 10) : '',
-        currentSalary: candidate.current_salary || '',
-        expectedSalary: candidate.expected_salary || '',
-        status: candidate.status || 'CV Sent',
-        note: candidate.note || '',
-        platformId: candidate.platform?.platform_id || candidate.platform_id || '',
-        recruiterId: candidate.recruiter?.user_id || candidate.recruiter || '',
-        jobId: candidate.job?.job_id || candidate.job_id || '',
-        targetedCompanyId: candidate.targeted_company?.company_id || candidate.targeted_company || '',
-        referenceId: candidate.reference?.user_id || candidate.reference || '',
-        file: null,
-      });
-      setSelectedJob(candidate.job || null);
-    } else {
-      setFormData(emptyCandidate);
+    if (!candidate) {
+      setFormData(createEmptyCandidate());
       setSelectedJob(null);
+      setSelectedReference(null);
+      setSelectedPlatform(null);
+      setSelectedCompany(null);
+      setSelectedAgency(null);
+      setSelectedLevels([]);
+      setShowDetailSection(false);
+      return;
     }
+
+    const detail = candidate.candidate_detail || {};
+    const candidateLevels = Array.isArray(candidate.candidate_levels)
+      ? candidate.candidate_levels
+      : Array.isArray(candidate.candidateLevels)
+        ? candidate.candidateLevels
+        : [];
+    const normalizedLevels = candidateLevels
+      .map((level: any) => (typeof level === 'object' ? level : { level_id: level, level_name: String(level) }))
+      .filter((level: any) => level.level_id !== undefined && level.level_id !== null);
+    const targetedCompany = candidate.targeted_company;
+    const targetedCompanyId = targetedCompany && typeof targetedCompany === 'object'
+      ? targetedCompany.company_id
+      : targetedCompany || '';
+
+    setFormData({
+      candidateCode: candidate.candidate_code || '',
+      candidateName: candidate.candidate_name || '',
+      candidateEmail: candidate.candidate_email || '',
+      candidatePhone: candidate.candidate_phone || '',
+      agency: candidate.agency || '',
+      offerDate: dateInputValue(detail.offer_date || candidate.offer_date),
+      onboardDate: dateInputValue(detail.onboard_date || candidate.onboard_date),
+      expectedOnboardDate: dateInputValue(detail.expected_onboard_date || candidate.expected_onboard_date),
+      feedbackDate: dateInputValue(detail.feedback_date || candidate.feedback_date),
+      currentSalary: detail.current_salary ?? '',
+      expectedSalary: detail.expected_salary ?? '',
+      status: candidate.status || 'CV Sent',
+      note: candidate.note || '',
+      platformId: candidate.platform?.platform_id || candidate.platform_id || '',
+      jobId: candidate.job?.job_id || candidate.job_id || '',
+      targetedCompanyId,
+      targetedCompanyName: '',
+      referenceId: candidate.reference?.user_id || candidate.reference || '',
+      candidateLevels: normalizedLevels.map((level: any) => Number(level.level_id)).filter(Number.isFinite),
+      file: null,
+      summary: detail.summary || '',
+      dateOfBirth: dateInputValue(detail.date_of_birth),
+      gender: detail.gender || '',
+      maritalStatus: detail.marital_status || '',
+      nationality: detail.nationality || '',
+      location: detail.location || '',
+      links: normalizeLinks(detail.links),
+      skills: toStringList(detail.skills),
+      languages: toStringList(detail.languages),
+      languageDetails: toObjectList<any>(detail.language_details).map((item) => ({
+        language: item.language || '',
+        proficiency: item.proficiency || '',
+      })),
+      education: detail.education || '',
+      educationDetails: toObjectList<any>(detail.education_details).map((item) => ({
+        institution: item.institution || '',
+        degree: item.degree || '',
+        field: item.field || '',
+        start_date: dateInputValue(item.start_date),
+        end_date: dateInputValue(item.end_date),
+      })),
+      experienceYears: detail.experience_years || '',
+      currentPosition: detail.current_position || '',
+      currentLevel: detail.current_level || '',
+      lastCompany: detail.last_company || '',
+      workExperience: detail.work_experience || '',
+      workExperienceDetails: toObjectList<any>(detail.work_experience_details).map((item) => ({
+        title: item.title || '',
+        company: item.company || '',
+        start_date: dateInputValue(item.start_date),
+        end_date: dateInputValue(item.end_date),
+        is_current: Boolean(item.is_current),
+        responsibilities: toStringList(item.responsibilities),
+      })),
+      certifications: toStringList(detail.certifications),
+      expectedPosition: detail.expected_position || '',
+      expectedLevel: detail.expected_level || '',
+      expectedWorkLocation: detail.expected_work_location || '',
+      salaryCurrency: detail.salary_currency || 'VND',
+    });
+    setSelectedJob(candidate.job || null);
+    setSelectedReference(candidate.reference || null);
+    setSelectedPlatform(candidate.platform || null);
+    setSelectedCompany(targetedCompany && typeof targetedCompany === 'object' ? targetedCompany : null);
+    setSelectedAgency(candidate.agency ? { name: candidate.agency } : null);
+    setSelectedLevels(normalizedLevels);
+    setShowDetailSection(false);
   }, [candidate]);
 
   useEffect(() => {
@@ -95,12 +162,31 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
 
   useEffect(() => {
     if (formData.jobId && options.jobs.length > 0 && !selectedJob) {
-      const found = options.jobs.find((j) => String(j.job_id) === String(formData.jobId));
-      if (found) {
-        setSelectedJob(found);
-      }
+      const found = options.jobs.find((job) => String(job.job_id) === String(formData.jobId));
+      if (found) setSelectedJob(found);
     }
   }, [formData.jobId, options.jobs, selectedJob]);
+
+  useEffect(() => {
+    if (formData.referenceId && options.users.length > 0 && !selectedReference) {
+      const found = options.users.find((user) => String(user.user_id) === String(formData.referenceId));
+      if (found) setSelectedReference(found);
+    }
+  }, [formData.referenceId, options.users, selectedReference]);
+
+  useEffect(() => {
+    if (formData.platformId && options.platforms.length > 0 && !selectedPlatform) {
+      const found = options.platforms.find((platform) => String(platform.platform_id) === String(formData.platformId));
+      if (found) setSelectedPlatform(found);
+    }
+  }, [formData.platformId, options.platforms, selectedPlatform]);
+
+  useEffect(() => {
+    if (formData.targetedCompanyId && options.companies.length > 0 && !selectedCompany) {
+      const found = options.companies.find((company) => String(company.company_id) === String(formData.targetedCompanyId));
+      if (found) setSelectedCompany(found);
+    }
+  }, [formData.targetedCompanyId, options.companies, selectedCompany]);
 
   const loadOptions = async () => {
     setLoadingOptions(true);
@@ -128,23 +214,63 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
     setLoadingOptions(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const handleChange = (event: CandidateFormChangeEvent) => {
+    const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handlePhoneInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digitsOnly = e.target.value.replace(/\D/g, '');
-    setFormData((prev) => ({ ...prev, candidatePhone: digitsOnly }));
+  const handlePhoneInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const phoneValue = event.target.value.replace(/[^\d+.]/g, '').replace(/(?!^)\+/g, '');
+    setFormData((prev) => ({ ...prev, candidatePhone: phoneValue }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
     setFormData((prev) => ({ ...prev, file }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const getSubmitData = () => ({
+    ...formData,
+    candidateLevels: formData.candidateLevels.map(Number).filter(Number.isFinite),
+    targetedCompanyId: formData.targetedCompanyId || '',
+    targetedCompanyName: formData.targetedCompanyId ? '' : formData.targetedCompanyName.trim(),
+    links: formData.links.map((item) => item.trim()).filter(Boolean),
+    skills: formData.skills.map((item) => item.trim()).filter(Boolean),
+    languages: formData.languages.map((item) => item.trim()).filter(Boolean),
+    languageDetails: formData.languageDetails
+      .map((item) => ({ language: item.language.trim(), proficiency: item.proficiency.trim() }))
+      .filter((item) => hasAnyValue([item.language, item.proficiency])),
+    educationDetails: formData.educationDetails
+      .map((item) => ({
+        institution: item.institution.trim(),
+        degree: item.degree.trim(),
+        field: item.field.trim(),
+        start_date: item.start_date,
+        end_date: item.end_date,
+      }))
+      .filter((item) => hasAnyValue([item.institution, item.degree, item.field, item.start_date, item.end_date])),
+    workExperienceDetails: formData.workExperienceDetails
+      .map((item) => ({
+        title: item.title.trim(),
+        company: item.company.trim(),
+        start_date: item.start_date,
+        end_date: item.end_date,
+        is_current: item.is_current,
+        responsibilities: item.responsibilities.map((responsibility) => responsibility.trim()).filter(Boolean),
+      }))
+      .filter((item) => hasAnyValue([
+        item.title,
+        item.company,
+        item.start_date,
+        item.end_date,
+        item.is_current,
+        item.responsibilities,
+      ])),
+    certifications: formData.certifications.map((item) => item.trim()).filter(Boolean),
+  });
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
 
     if (!formData.candidateName.trim()) {
@@ -155,42 +281,21 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       setError('Email format is invalid.');
       return;
     }
-    if (formData.candidatePhone && !/^\d+$/.test(formData.candidatePhone)) {
-      setError('Phone number must contain numeric characters only.');
+    if (formData.candidatePhone && !phoneRegex.test(formData.candidatePhone)) {
+      setError('Phone number must contain digits, optional dot separators, and may start with +.');
+      return;
+    }
+    if (hasInvalidOptionalNumber(formData.currentSalary) || hasInvalidOptionalNumber(formData.expectedSalary)) {
+      setError('Salary fields must be valid non-negative numbers.');
       return;
     }
 
-    onSubmit(formData);
+    onSubmit(getSubmitData());
   };
 
   const statusOptions = [
     { value: '', label: 'Select Status' },
-    ...options.statuses.map((s) => ({ value: s, label: s })),
-  ];
-
-  const platformOptions = [
-    { value: '', label: 'Select Platform' },
-    ...options.platforms.map((p) => ({ value: p.platform_id, label: p.platform_name })),
-  ];
-
-  const recruiterOptions = [
-    { value: '', label: 'Select Recruiter' },
-    ...options.users.map((u) => ({ value: u.user_id, label: `${u.user_name} (${u.user_role})` })),
-  ];
-
-  const companyOptions = [
-    { value: '', label: 'Select Company' },
-    ...options.companies.map((c) => ({ value: c.company_id, label: c.company_name })),
-  ];
-
-  const referenceOptions = [
-    { value: '', label: 'None' },
-    ...options.users.map((u) => ({ value: u.user_id, label: u.user_name })),
-  ];
-
-  const agencyOptions = [
-    { value: '', label: 'Select Agency' },
-    ...options.agencies.map((a) => ({ value: a, label: a })),
+    ...options.statuses.map((status) => ({ value: status, label: status })),
   ];
 
   const fileToDisplay = formData.file || candidate?.file;
@@ -205,11 +310,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
           onClick={() => {
             if (fileToDisplay instanceof File) {
               const fileUrl = URL.createObjectURL(fileToDisplay);
-              setPreviewFile({
-                file_name: fileToDisplay.name,
-                file_path: fileUrl,
-                file_url: fileUrl,
-              });
+              setPreviewFile({ file_name: fileToDisplay.name, file_path: fileUrl, file_url: fileUrl });
             } else {
               setPreviewFile(fileToDisplay);
             }
@@ -229,12 +330,10 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       isOpen={true}
       onClose={onClose}
       title={modalTitle}
-      maxWidthClass="max-w-4xl"
+      maxWidthClass="max-w-6xl"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
           <Button onClick={handleSubmit} isLoading={saving}>
             {saving ? 'Saving...' : candidate ? 'Save Candidate' : 'Create Candidate'}
           </Button>
@@ -242,232 +341,51 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       }
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
-          <div className="bg-red-50 text-red-600 text-xs px-3.5 py-2 rounded-lg border border-red-200">
-            {error}
-          </div>
-        )}
+        {error && <div className="bg-red-50 text-red-600 text-xs px-3.5 py-2 rounded-lg border border-red-200">{error}</div>}
+        {loadingOptions && <p className="text-xs text-slate-400">Loading form options from server...</p>}
 
-        {loadingOptions && (
-          <p className="text-xs text-slate-400">Loading form options from server...</p>
-        )}
-
-        {/* Section 1: Required & Key Information */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Required & Key Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InputField
-              label="Candidate Name *"
-              name="candidateName"
-              value={formData.candidateName}
-              onChange={handleChange}
-              placeholder="e.g. Nguyễn Văn A"
-              disabled={saving}
-            />
-            <SelectField
-              label="Status *"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              options={statusOptions}
-              disabled={saving}
-            />
-            <div>
-              <FileUploadField
-                label="CV File (optional)"
-                fileName={
-                  formData.file
-                    ? formData.file.name
-                    : candidate?.file
-                    ? (candidate.file.file_name || candidate.file.file_path?.split('/').pop())
-                    : null
-                }
-                placeholder="Click to select CV file..."
-                onChange={handleFileChange}
-                disabled={saving}
-                accept=".pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.jpg,.png"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SingleSearchSelect
-              label="Job (Requisition)"
-              placeholder="Type job code or project to search..."
-              initialItem={selectedJob}
-              searchApi={(search) => searchJobsApi({ search })}
-              displayFn={(j: any) => `${j.job_code} — ${j.project}`}
-              keyProp="job_id"
-              onChange={(id, item) => {
-                setFormData((prev) => ({ ...prev, jobId: id || '' }));
-                setSelectedJob(item);
-              }}
-              disabled={saving}
-            />
-            <InputField
-              label="Candidate Code"
-              name="candidateCode"
-              value={formData.candidateCode}
-              onChange={handleChange}
-              placeholder="e.g. CAND-001 (Optional)"
-              disabled={saving}
-            />
-          </div>
-        </div>
-
-        {/* Section 2: Contact Information */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contact Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField
-              label="Email"
-              type="email"
-              name="candidateEmail"
-              value={formData.candidateEmail}
-              onChange={handleChange}
-              placeholder="e.g. email@example.com"
-              disabled={saving}
-            />
-            <InputField
-              label="Phone"
-              type="tel"
-              name="candidatePhone"
-              value={formData.candidatePhone}
-              onChange={handlePhoneInput}
-              placeholder="Numeric only"
-              disabled={saving}
-            />
-          </div>
-        </div>
-
-        {/* Section 3: Sourcing & Assignment */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sourcing & Assignment</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SelectField
-              label="Recruiter"
-              name="recruiterId"
-              value={formData.recruiterId}
-              onChange={handleChange}
-              options={recruiterOptions}
-              disabled={saving}
-            />
-            <SelectField
-              label="Reference (Internal User)"
-              name="referenceId"
-              value={formData.referenceId}
-              onChange={handleChange}
-              options={referenceOptions}
-              disabled={saving}
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SelectField
-              label="Platform (Source)"
-              name="platformId"
-              value={formData.platformId}
-              onChange={handleChange}
-              options={platformOptions}
-              disabled={saving}
-            />
-            <SelectField
-              label="Agency"
-              name="agency"
-              value={formData.agency}
-              onChange={handleChange}
-              options={agencyOptions}
-              disabled={saving}
-            />
-          </div>
-        </div>
-
-        {/* Section 4: Employment & Salary Details */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Employment & Salary Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InputField
-              label="Current Salary"
-              name="currentSalary"
-              value={formData.currentSalary}
-              onChange={handleChange}
-              placeholder="e.g. 2200 USD"
-              disabled={saving}
-            />
-            <InputField
-              label="Expected Salary"
-              name="expectedSalary"
-              value={formData.expectedSalary}
-              onChange={handleChange}
-              placeholder="e.g. 2800 USD"
-              disabled={saving}
-            />
-            <SelectField
-              label="Targeted Company"
-              name="targetedCompanyId"
-              value={formData.targetedCompanyId}
-              onChange={handleChange}
-              options={companyOptions}
-              disabled={saving}
-            />
-          </div>
-        </div>
-
-        {/* Section 5: Recruitment Timeline */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recruitment Timeline</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <InputField
-              label="Offer Date"
-              type="date"
-              name="offerDate"
-              value={formData.offerDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-            <InputField
-              label="Onboard Date"
-              type="date"
-              name="onboardDate"
-              value={formData.onboardDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-            <InputField
-              label="Expected Onboard Date"
-              type="date"
-              name="expectedOnboardDate"
-              value={formData.expectedOnboardDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-            <InputField
-              label="Feedback Date"
-              type="date"
-              name="feedbackDate"
-              value={formData.feedbackDate}
-              onChange={handleChange}
-              disabled={saving}
-            />
-          </div>
-        </div>
-
-        {/* Section 6: Attachments & Notes */}
-        <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attachments & Notes</h3>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700">Note</label>
-            <textarea
-              name="note"
-              value={formData.note}
-              onChange={handleChange}
-              rows={3}
-              disabled={saving}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-            />
-          </div>
-        </div>
+        <BasicInfoSection
+          formData={formData}
+          setFormData={setFormData}
+          statusOptions={statusOptions}
+          selectedLevels={selectedLevels}
+          setSelectedLevels={setSelectedLevels}
+          handleChange={handleChange}
+          handleFileChange={handleFileChange}
+          saving={saving}
+          candidate={candidate}
+        />
+        <ContactSection formData={formData} handleChange={handleChange} handlePhoneInput={handlePhoneInput} saving={saving} />
+        <SourcingSection
+          formData={formData}
+          setFormData={setFormData}
+          options={options}
+          selectedJob={selectedJob}
+          setSelectedJob={setSelectedJob}
+          selectedReference={selectedReference}
+          setSelectedReference={setSelectedReference}
+          selectedPlatform={selectedPlatform}
+          setSelectedPlatform={setSelectedPlatform}
+          selectedAgency={selectedAgency}
+          setSelectedAgency={setSelectedAgency}
+          saving={saving}
+        />
+        <TimelineSection formData={formData} handleChange={handleChange} saving={saving} />
+        <DetailSection
+          formData={formData}
+          setFormData={setFormData}
+          handleChange={handleChange}
+          selectedCompany={selectedCompany}
+          setSelectedCompany={setSelectedCompany}
+          showDetailSection={showDetailSection}
+          setShowDetailSection={setShowDetailSection}
+          saving={saving}
+        />
+        <NotesSection formData={formData} handleChange={handleChange} saving={saving} />
       </form>
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
     </Modal>
   );
 }
+
 export { CandidateForm };

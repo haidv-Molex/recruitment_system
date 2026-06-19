@@ -30,8 +30,9 @@ export interface ExcelColumn<T> {
 }
 
 export interface ExcelAction<T> {
-  label: string;
-  icon?: React.ReactNode;
+  label: string | ((rows: T[]) => string);
+  icon?: React.ReactNode | ((rows: T[]) => React.ReactNode);
+  isVisible?: (rows: T[]) => boolean;
   /** Called when exactly 1 row is selected (or action is always single-only) */
   onClick: (row: T) => void;
   /**
@@ -258,11 +259,13 @@ export default function ExcelTable<T extends Record<string, any>>({
                   {selectionCount} selected
                 </span>
               )}
-              {actions.map((act) => {
+              {actions.filter((act) => !act.isVisible || act.isVisible(selectedRows)).map((act, index) => {
                 const enabled = isActionEnabled(act);
+                const actionLabel = typeof act.label === 'function' ? act.label(selectedRows) : act.label;
+                const actionIcon = typeof act.icon === 'function' ? act.icon(selectedRows) : act.icon;
                 return (
                   <button
-                    key={act.label}
+                    key={`${actionLabel}-${index}`}
                     type="button"
                     disabled={!enabled}
                     onClick={() => enabled && handleActionClick(act)}
@@ -271,7 +274,7 @@ export default function ExcelTable<T extends Record<string, any>>({
                         ? 'Select a row first'
                         : selectionCount > 1 && !act.onBulkClick
                         ? 'Only available for single selection'
-                        : act.label
+                        : actionLabel
                     }
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-all ${
                       enabled
@@ -279,8 +282,8 @@ export default function ExcelTable<T extends Record<string, any>>({
                         : 'bg-slate-50 border-slate-200 text-slate-400 opacity-40 cursor-not-allowed'
                     }`}
                   >
-                    {act.icon}
-                    <span>{act.label}</span>
+                    {actionIcon}
+                    <span>{actionLabel}</span>
                   </button>
                 );
               })}

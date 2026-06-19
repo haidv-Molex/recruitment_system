@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
-import FileService from "@services/file/_File";
+import uploadFile from "@services/file/upload";
 import { populateJobRelations } from "./populate";
 import fs from "fs";
 import path from "path";
@@ -10,26 +10,27 @@ import User from "@services/user/_User";
 import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import Level from "@services/level/_Level";
+import { replaceLinkRows, type LinkRow } from "@utilities/db/linking";
 
 type UpdateJobData = {
   job_code?: string;
   project?: string;
   note?: string | null;
   request_date?: string | Date | null;
+  recruiter_id?: number | null;
+  recruiter_name?: string | null;
   file?: {
     originalname: string;
     buffer: Buffer;
   } | null;
-  partners?: number[];
-  departments?: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
+  departments?: { department_id: number; candidate_required: number }[];
   segments?: number[];
   sites?: number[];
   titles?: number[];
   managers?: number[];
   employee_levels?: number[];
 
-  partners_name?: string[];
-  departments_name?: { name: string; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
+  departments_name?: { name: string; candidate_required: number }[];
   segments_name?: string[];
   sites_name?: string[];
   titles_name?: string[];
@@ -53,7 +54,7 @@ async function update(
   try {
     // 1. If file is provided, upload it first (create new file record)
     if (data.file) {
-      const fileRes = await FileService.upload({
+      const fileRes = await uploadFile({
         type: "jd",
         originalname: data.file.originalname,
         buffer: data.file.buffer
@@ -68,8 +69,12 @@ async function update(
     let index = 1;
 
     if (data.job_code !== undefined) {
+      const jobCode = data.job_code.trim();
+      if (!jobCode) {
+        throw new AppError("Mã công việc không được để trống", 400);
+      }
       fields.push(`job_code = $${index++}`);
-      values.push(data.job_code);
+      values.push(jobCode);
     }
     if (data.project !== undefined) {
       fields.push(`project = $${index++}`);
@@ -82,6 +87,16 @@ async function update(
     if (data.request_date !== undefined) {
       fields.push(`request_date = $${index++}`);
       values.push(data.request_date);
+    }
+    let resolvedRecruiterId = data.recruiter_id;
+    if ((resolvedRecruiterId === null || resolvedRecruiterId === undefined) && data.recruiter_name?.trim()) {
+      const recruiter = await User.create({ username: data.recruiter_name.trim() }, pool);
+      resolvedRecruiterId = recruiter.user_id;
+    }
+
+    if (data.recruiter_id !== undefined || data.recruiter_name !== undefined) {
+      fields.push(`recruiter_id = $${index++}`);
+      values.push(resolvedRecruiterId ?? null);
     }
     if (file_id !== undefined) {
       fields.push(`file_id = $${index++}`);
@@ -100,128 +115,66 @@ async function update(
 
     // 3. Update linking records if provided
     const isDeptUpdated = data.departments !== undefined || data.departments_name !== undefined;
-    const isPartnerUpdated = data.partners !== undefined || data.partners_name !== undefined;
 
-    if (isDeptUpdated || isPartnerUpdated) {
-      // Get existing departments for this job
-      const existingDeptsRes = await pool.query(
-        `SELECT department_id, candidate_required, user_id FROM job_department WHERE job_id = $1`,
-        [id]
-      );
-      const existingDepts = existingDeptsRes.rows;
-
+    if (isDeptUpdated) {
       // Resolve departments list
-      let targetDepts: { department_id: number; candidate_required: number; user_id?: number | null }[] = [];
-      if (isDeptUpdated) {
-        const deptsList = data.departments || [];
-        const resolvedDeptsList = [];
-        for (const dept of deptsList) {
-          let uId = dept.user_id;
-          if (dept.partner_name) {
-            const user = await User.create({ username: dept.partner_name }, pool);
-            uId = user.user_id;
-          }
-          resolvedDeptsList.push({
-            department_id: dept.department_id,
-            candidate_required: dept.candidate_required,
-            user_id: uId,
+      let targetDepts: { department_id: number; candidate_required: number; name?: string }[] = [];
+      const deptsList = data.departments || [];
+      const resolvedDeptsList = [];
+      for (const dept of deptsList) {
+        resolvedDeptsList.push({
+          department_id: dept.department_id,
+          candidate_required: dept.candidate_required
+        });
+      }
+
+      const newDepts: { department_id: number; candidate_required: number; name?: string }[] = [];
+      if (data.departments_name) {
+        for (const item of data.departments_name) {
+          newDepts.push({
+            department_id: 0,
+            candidate_required: item.candidate_required,
+            name: item.name
           });
         }
+      }
+      targetDepts = [...resolvedDeptsList, ...newDepts];
 
-        const newDepts: { department_id: number; candidate_required: number; user_id?: number | null }[] = [];
-        if (data.departments_name) {
-          for (const item of data.departments_name) {
-            const dept = await Department.create({
-              department_code: item.name.toUpperCase(),
-              department_name: item.name,
-            }, pool);
+      const finalDeptsToInsert = [];
 
-            let resolvedUserId = item.user_id;
-            if (item.partner_name) {
-              const user = await User.create({ username: item.partner_name }, pool);
-              resolvedUserId = user.user_id;
-            }
-
-            newDepts.push({
-              department_id: dept.department_id,
-              candidate_required: item.candidate_required,
-              user_id: resolvedUserId,
-            });
-          }
+      for (const item of targetDepts) {
+        let deptId = item.department_id;
+        if (deptId === 0) {
+          // Create new department
+          const dept = await Department.create({
+            department_code: item.name!.toUpperCase(),
+            department_name: item.name!,
+            user_id: null,
+          }, pool);
+          deptId = dept.department_id;
         }
-        targetDepts = [...resolvedDeptsList, ...newDepts];
-      } else {
-        targetDepts = existingDepts.map(d => ({
-          department_id: d.department_id,
-          candidate_required: d.candidate_required,
-          user_id: d.user_id
-        }));
+
+        finalDeptsToInsert.push({
+          department_id: deptId,
+          candidate_required: item.candidate_required
+        });
       }
 
-      // Resolve partners list
-      let targetPartners: number[] = [];
-      if (isPartnerUpdated) {
-        const partnersList = data.partners || [];
-        const newPartnerIds: number[] = [];
-        if (data.partners_name) {
-          for (const name of data.partners_name) {
-            const user = await User.create({ username: name }, pool);
-            newPartnerIds.push(user.user_id);
-          }
-        }
-        targetPartners = [...partnersList, ...newPartnerIds];
-      } else {
-        targetPartners = existingDepts.map(d => d.user_id).filter(Boolean) as number[];
-      }
-
-      // Map targetPartners to targetDepts
-      const mappedDepts = targetDepts.map((d, index) => {
-        let userId = d.user_id;
-        // Map top-level partners to departments if not explicitly set
-        if (userId === undefined || userId === null) {
-          if (targetPartners.length > 0) {
-            if (targetPartners.length === 1) {
-              userId = targetPartners[0];
-            } else {
-              userId = targetPartners[index] !== undefined ? targetPartners[index] : null;
-            }
-          } else {
-            userId = null;
-          }
-        }
-        return {
-          department_id: d.department_id,
-          candidate_required: d.candidate_required,
-          user_id: userId
-        };
-      });
-
-      // Clear existing departments
-      await pool.query(`DELETE FROM job_department WHERE job_id = $1`, [id]);
-
-      // Insert new/updated departments
-      for (const item of mappedDepts) {
+      const departmentLinkRows: LinkRow[] = [];
+      for (const item of finalDeptsToInsert) {
         const departmentId = item.department_id;
         const candidateRequired = item.candidate_required;
-        const userId = item.user_id;
 
-        const depCheck = await pool.query(`SELECT department_id FROM department WHERE department_id = $1`, [departmentId]);
-        if (depCheck.rows.length === 0) {
+        try {
+          await Department.getById(departmentId, pool);
+        } catch (error) {
           throw new AppError(`Phòng ban (department_id = ${departmentId}) không tồn tại`, 400);
         }
 
-        if (userId) {
-          const userCheck = await pool.query(`SELECT user_id FROM "user" WHERE user_id = $1`, [userId]);
-          if (userCheck.rows.length === 0) {
-            throw new AppError(`Đối tác (user_id = ${userId}) không tồn tại`, 400);
-          }
-        }
-
-        await pool.query(
-          `INSERT INTO job_department (job_id, department_id, candidate_required, user_id) VALUES ($1, $2, $3, $4)`,
-          [id, departmentId, candidateRequired, userId]
-        );
+        departmentLinkRows.push({ job_id: id, department_id: departmentId, candidate_required: candidateRequired });
       }
+
+      await replaceLinkRows(pool, "job_department", "job_id", id, departmentLinkRows);
     }
 
     // segments
@@ -236,17 +189,17 @@ async function update(
       }
       const merged = [...segsList, ...newSegIds];
 
-      await pool.query(`DELETE FROM job_segment WHERE job_id = $1`, [id]);
+      const segmentLinkRows: LinkRow[] = [];
       for (const segmentId of merged) {
-        const segCheck = await pool.query(`SELECT segment_id FROM segment WHERE segment_id = $1`, [segmentId]);
-        if (segCheck.rows.length === 0) {
+        try {
+          await Segment.getById(segmentId, pool);
+        } catch (error) {
           throw new AppError(`Phân khúc (segment_id = ${segmentId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO job_segment (job_id, segment_id) VALUES ($1, $2)`,
-          [id, segmentId]
-        );
+        segmentLinkRows.push({ job_id: id, segment_id: segmentId });
       }
+
+      await replaceLinkRows(pool, "job_segment", "job_id", id, segmentLinkRows);
     }
 
     // sites
@@ -261,17 +214,17 @@ async function update(
       }
       const merged = [...sitesList, ...newSiteIds];
 
-      await pool.query(`DELETE FROM job_site WHERE job_id = $1`, [id]);
+      const siteLinkRows: LinkRow[] = [];
       for (const siteId of merged) {
-        const siteCheck = await pool.query(`SELECT site_id FROM site WHERE site_id = $1`, [siteId]);
-        if (siteCheck.rows.length === 0) {
+        try {
+          await Site.getById(siteId, pool);
+        } catch (error) {
           throw new AppError(`Địa điểm (site_id = ${siteId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO job_site (job_id, site_id) VALUES ($1, $2)`,
-          [id, siteId]
-        );
+        siteLinkRows.push({ job_id: id, site_id: siteId });
       }
+
+      await replaceLinkRows(pool, "job_site", "job_id", id, siteLinkRows);
     }
 
     // titles
@@ -286,17 +239,17 @@ async function update(
       }
       const merged = [...titlesList, ...newTitleIds];
 
-      await pool.query(`DELETE FROM job_title WHERE job_id = $1`, [id]);
+      const titleLinkRows: LinkRow[] = [];
       for (const levelId of merged) {
-        const lvlCheck = await pool.query(`SELECT level_id FROM level WHERE level_id = $1`, [levelId]);
-        if (lvlCheck.rows.length === 0) {
+        try {
+          await Level.getById(levelId, pool);
+        } catch (error) {
           throw new AppError(`Chức danh (level_id = ${levelId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO job_title (job_id, level_id) VALUES ($1, $2)`,
-          [id, levelId]
-        );
+        titleLinkRows.push({ job_id: id, level_id: levelId });
       }
+
+      await replaceLinkRows(pool, "job_title", "job_id", id, titleLinkRows);
     }
 
     // managers
@@ -311,17 +264,17 @@ async function update(
       }
       const merged = [...managersList, ...newManagerIds];
 
-      await pool.query(`DELETE FROM hiring_manager WHERE job_id = $1`, [id]);
+      const managerLinkRows: LinkRow[] = [];
       for (const userId of merged) {
-        const userCheck = await pool.query(`SELECT user_id FROM "user" WHERE user_id = $1`, [userId]);
-        if (userCheck.rows.length === 0) {
+        try {
+          await User.findById(userId, pool);
+        } catch (error) {
           throw new AppError(`Quản lý tuyển dụng (user_id = ${userId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO hiring_manager (job_id, user_id) VALUES ($1, $2)`,
-          [id, userId]
-        );
+        managerLinkRows.push({ job_id: id, user_id: userId });
       }
+
+      await replaceLinkRows(pool, "hiring_manager", "job_id", id, managerLinkRows);
     }
 
     // employee_levels
@@ -336,22 +289,22 @@ async function update(
       }
       const merged = [...elList, ...newElIds];
 
-      await pool.query(`DELETE FROM employee_level WHERE job_id = $1`, [id]);
+      const employeeLevelLinkRows: LinkRow[] = [];
       for (const levelId of merged) {
-        const lvlCheck = await pool.query(`SELECT level_id FROM level WHERE level_id = $1`, [levelId]);
-        if (lvlCheck.rows.length === 0) {
+        try {
+          await Level.getById(levelId, pool);
+        } catch (error) {
           throw new AppError(`Cấp bậc nhân viên (level_id = ${levelId}) không tồn tại`, 400);
         }
-        await pool.query(
-          `INSERT INTO employee_level (job_id, level_id) VALUES ($1, $2)`,
-          [id, levelId]
-        );
+        employeeLevelLinkRows.push({ job_id: id, level_id: levelId });
       }
+
+      await replaceLinkRows(pool, "employee_level", "job_id", id, employeeLevelLinkRows);
     }
 
     // 4. Retrieve complete job output info
     const query = `
-      SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id,
+      SELECT j.job_id, j.job_code, j.project, j.note, j.request_date, j.create_at, j.update_at, j.file_id, j.recruiter_id,
              f.file_path
       FROM job j
       LEFT JOIN file f ON j.file_id = f.file_id
@@ -371,11 +324,13 @@ async function update(
       request_date: row.request_date,
       create_at: row.create_at,
       update_at: row.update_at,
+      recruiter_id: row.recruiter_id,
       file: row.file_id ? {
         file_id: row.file_id,
         file_path: row.file_path,
         file_url: `${host}/file/${row.file_path}`
       } : null,
+      recruiter: row.recruiter_id ? await User.findById(row.recruiter_id, pool) : null,
       ...relations
     } satisfies jobOutputModel;
 

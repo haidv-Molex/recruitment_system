@@ -1,26 +1,25 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
+import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
+import Company from "@services/company/_Company";
 import { populateCandidateRelations } from "./populate";
+import { replaceLinkRows } from "@utilities/db/linking";
+import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
+import { candidateDetailWriteFields } from "@services/candidate_detail/types";
 
-export interface UpdateCandidateInput {
+export interface UpdateCandidateInput extends CandidateDetailWriteData {
   candidate_code?: string | null;
   candidate_name?: string;
   candidate_email?: string | null;
   candidate_phone?: string | null;
   agency?: string | null;
-  offer_date?: string | Date | null;
-  onboard_date?: string | Date | null;
-  expected_onboard_date?: string | Date | null;
-  feedback_date?: string | Date | null;
-  current_salary?: string | null;
-  expected_salary?: string | null;
   status?: string;
   note?: string | null;
   platform_id?: number | null;
-  recruiter?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
+  targeted_company_name?: string | null;
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
   candidate_levels?: number[];
@@ -32,10 +31,11 @@ export async function update(
   pool: PoolClient
 ) {
   // Check if candidate exists
-  const checkCand = await pool.query("SELECT candidate_id FROM candidate WHERE candidate_id = $1", [id]);
+  const checkCand = await pool.query("SELECT candidate_id, candidate_detail_id FROM candidate WHERE candidate_id = $1", [id]);
   if (checkCand.rows.length === 0) {
     throw new AppError("Không tìm thấy thông tin ứng viên để cập nhật", 404);
   }
+  let candidateDetailId: number | null = checkCand.rows[0].candidate_detail_id ?? null;
 
   let fileId: number | undefined = undefined;
   let fileUploadResult: any = null;
@@ -51,21 +51,19 @@ export async function update(
 
   try {
     if (data.candidate_levels !== undefined) {
-      await pool.query("DELETE FROM candidate_level WHERE candidate_id = $1", [id]);
-      if (data.candidate_levels.length > 0) {
-        const levelInsertQuery = `
-          INSERT INTO candidate_level (candidate_id, level_id)
-          VALUES ($1, $2)
-        `;
-        for (const levelId of data.candidate_levels) {
-          await pool.query(levelInsertQuery, [id, levelId]);
-        }
-      }
+      await replaceLinkRows(
+        pool,
+        "candidate_level",
+        "candidate_id",
+        id,
+        data.candidate_levels.map((levelId) => ({ candidate_id: id, level_id: levelId }))
+      );
     }
 
     const sets: string[] = [];
     const values: any[] = [];
     let placeholderIndex = 1;
+    const detailData: CandidateDetailWriteData = {};
 
     // Helper to add parameter
     const addParam = (val: any, col: string) => {
@@ -79,20 +77,34 @@ export async function update(
     if (data.candidate_email !== undefined) addParam(data.candidate_email, "candidate_email");
     if (data.candidate_phone !== undefined) addParam(data.candidate_phone, "candidate_phone");
     if (data.agency !== undefined) addParam(data.agency, "agency");
-    if (data.offer_date !== undefined) addParam(data.offer_date, "offer_date");
-    if (data.onboard_date !== undefined) addParam(data.onboard_date, "onboard_date");
-    if (data.expected_onboard_date !== undefined) addParam(data.expected_onboard_date, "expected_onboard_date");
-    if (data.feedback_date !== undefined) addParam(data.feedback_date, "feedback_date");
-    if (data.current_salary !== undefined) addParam(data.current_salary, "current_salary");
-    if (data.expected_salary !== undefined) addParam(data.expected_salary, "expected_salary");
     if (data.status !== undefined) addParam(data.status, "status");
     if (data.note !== undefined) addParam(data.note, "note");
     if (data.platform_id !== undefined) addParam(data.platform_id, "platform_id");
-    if (data.recruiter !== undefined) addParam(data.recruiter, "recruiter");
     if (data.job_id !== undefined) addParam(data.job_id, "job_id");
-    if (data.targeted_company !== undefined) addParam(data.targeted_company, "targeted_company");
+    if ((data.targeted_company === undefined || data.targeted_company === null) && data.targeted_company_name?.trim()) {
+      const company = await Company.create({ company_name: data.targeted_company_name.trim() }, pool);
+      addParam(company.company_id, "targeted_company");
+    } else if (data.targeted_company !== undefined) {
+      addParam(data.targeted_company, "targeted_company");
+    }
     if (data.reference !== undefined) addParam(data.reference, "reference");
     if (fileId !== undefined) addParam(fileId, "file_id");
+
+    candidateDetailWriteFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(data, field)) {
+        (detailData as any)[field] = (data as any)[field];
+      }
+    });
+
+    if (Object.keys(detailData).length > 0) {
+      if (candidateDetailId) {
+        await CandidateDetailService.update(candidateDetailId, detailData, pool);
+      } else {
+        const candidateDetail = await CandidateDetailService.create(detailData, pool);
+        candidateDetailId = candidateDetail.candidate_detail_id;
+        addParam(candidateDetailId, "candidate_detail_id");
+      }
+    }
 
     if (sets.length === 0) {
       // No updates to candidate columns, just fetch candidate and populate candidate levels

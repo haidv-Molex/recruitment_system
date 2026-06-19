@@ -30,6 +30,8 @@ describe("JobController API", () => {
   let getByIdStub: sinon.SinonStub;
   let updateStub: sinon.SinonStub;
   let deleteStub: sinon.SinonStub;
+  let createWithAllStub: sinon.SinonStub;
+  let batchImportStub: sinon.SinonStub;
 
   before(async () => {
     const { expect: localExpect } = await new Function('specifier', 'return import(specifier)')('chai');
@@ -69,6 +71,8 @@ describe("JobController API", () => {
     getByIdStub = sinon.stub(Job, "getById");
     updateStub = sinon.stub(Job, "update");
     deleteStub = sinon.stub(Job, "delete");
+    createWithAllStub = sinon.stub(Job, "createWithAll");
+    batchImportStub = sinon.stub(Job, "batchImport");
   });
 
   afterEach(() => {
@@ -80,6 +84,8 @@ describe("JobController API", () => {
     getByIdStub.restore();
     updateStub.restore();
     deleteStub.restore();
+    createWithAllStub.restore();
+    batchImportStub.restore();
   });
 
   after((done) => {
@@ -121,7 +127,6 @@ describe("JobController API", () => {
         project: "Project X",
         note: "Urgent",
         request_date: "2026-06-11",
-        partners: "[1, 2]",
         departments: '[{"department_id":3,"candidate_required":5},{"department_id":4,"candidate_required":2}]'
       })
       .withMultiPartFormData("file", Buffer.from("dummy pdf content"), {
@@ -145,10 +150,98 @@ describe("JobController API", () => {
     expectLocal(args.job_code).to.equal("JOB001");
     expectLocal(args.project).to.equal("Project X");
     expectLocal(args.request_date.toISOString().slice(0, 10)).to.equal("2026-06-11");
-    expectLocal(args.partners).to.deep.equal([1, 2]);
     expectLocal(args.departments).to.deep.equal([{ department_id: 3, candidate_required: 5 }, { department_id: 4, candidate_required: 2 }]);
     expectLocal(args.file).to.not.be.null;
     expectLocal(args.file.originalname).to.equal("jd.pdf");
+  });
+
+  it("POST /job - should allow missing job_code for auto generation", async () => {
+    const mockJob = {
+      job_id: 7,
+      job_code: "J007",
+      project: "Project Auto Code",
+      create_at: new Date(),
+      update_at: new Date(),
+      file: null
+    };
+    createStub.resolves(mockJob);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/job")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        project: "Project Auto Code",
+      })
+      .expectStatus(201)
+      .expectJsonLike({
+        result: true,
+        message: "Tạo công việc thành công",
+        data: {
+          job_code: "J007",
+          project: "Project Auto Code",
+        }
+      });
+
+    expectLocal(createStub.calledOnce).to.be.true;
+    const args = createStub.firstCall.args[0];
+    expectLocal(args.job_code).to.be.null;
+    expectLocal(args.project).to.equal("Project Auto Code");
+  });
+
+  it("POST /job - should reject unsupported partners field", async () => {
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/job")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        job_code: "JOB001",
+        project: "Project X",
+        partners: "[1,2]",
+      })
+      .expectStatus(400)
+      .expectJson({
+        result: false,
+        message: "Dữ liệu không hợp lệ",
+        details: ["partners không được phép"]
+      });
+
+    expectLocal(createStub.notCalled).to.be.true;
+  });
+
+  it("POST /job/extended - should accept partners and partners_name", async () => {
+    const mockJob = {
+      job_id: 1,
+      job_code: "JOB001",
+      project: "Project X",
+      create_at: new Date(),
+      update_at: new Date(),
+      file: null
+    };
+    createWithAllStub.resolves(mockJob);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/job/extended")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        job_code: "JOB001",
+        project: "Project X",
+        partners: "[1]",
+        partners_name: '["HRBP A"]',
+      })
+      .expectStatus(201)
+      .expectJsonLike({
+        result: true,
+        message: "Tạo công việc thành công",
+      });
+
+    expectLocal(createWithAllStub.calledOnce).to.be.true;
+    expectLocal(createWithAllStub.firstCall.args[0].partners).to.deep.equal([1]);
+    expectLocal(createWithAllStub.firstCall.args[0].partners_name).to.deep.equal(["HRBP A"]);
   });
 
   it("GET /job/search - should get all jobs successfully", async () => {
@@ -251,7 +344,7 @@ describe("JobController API", () => {
       .put("/job")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withQueryParams({ id: 1 })
-      .withMultiPartFormData({ job_code: "JOB001_NEW", request_date: "2026-06-12" })
+      .withMultiPartFormData({ job_code: "JOB001_NEW", request_date: "2026-06-12", recruiter_name: "New Recruiter" })
       .expectStatus(200)
       .expectJson({
         result: true,
@@ -267,7 +360,28 @@ describe("JobController API", () => {
     expectLocal(updateStub.calledOnce).to.be.true;
     const updateArgs = updateStub.firstCall.args[1];
     expectLocal(updateArgs.job_code).to.equal("JOB001_NEW");
+    expectLocal(updateArgs.recruiter_name).to.equal("New Recruiter");
     expectLocal(new Date(updateArgs.request_date).toISOString().slice(0, 10)).to.equal("2026-06-12");
+  });
+
+  it("PUT /job - should reject unsupported partners_name field", async () => {
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .put("/job")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withQueryParams({ id: 1 })
+      .withMultiPartFormData({
+        partners_name: '["HRBP A"]',
+      })
+      .expectStatus(400)
+      .expectJson({
+        result: false,
+        message: "Dữ liệu không hợp lệ",
+        details: ["partners_name không được phép"]
+      });
+
+    expectLocal(updateStub.notCalled).to.be.true;
   });
 
   it("DELETE /job - should delete job successfully", async () => {
@@ -287,5 +401,42 @@ describe("JobController API", () => {
 
     expectLocal(deleteStub.calledOnce).to.be.true;
     expectLocal(deleteStub.firstCall.args[0]).to.deep.equal([1]);
+  });
+
+  it("POST /job/batch - should keep ordered HRBP and department payload", async () => {
+    const mockResult = { success: true, importedCount: 1, errors: [] };
+    batchImportStub.resolves(mockResult);
+
+    const token = generateTestToken(1, "Test User");
+    const jobs = [
+      {
+        job_code: "JOB001",
+        project: "Project X",
+        partners_name: ["HRBP A", "HRBP B"],
+        departments_name: [
+          { name: "Dept A", candidate_required: 1, partner_name: "HRBP A" },
+          { name: "Dept B", candidate_required: 2, partner_name: "HRBP B" }
+        ]
+      }
+    ];
+
+    await pactum.spec()
+      .post("/job/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({ jobs })
+      .expectStatus(200)
+      .expectJson({
+        result: true,
+        message: "Thực hiện import loạt thành công",
+        data: mockResult,
+      });
+
+    expectLocal(batchImportStub.calledOnce).to.be.true;
+    const args = batchImportStub.firstCall.args[0];
+    expectLocal(args).to.be.an("array").with.lengthOf(1);
+    expectLocal(args[0].job_code).to.equal("JOB001");
+    expectLocal(args[0].project).to.equal("Project X");
+    expectLocal(args[0].partners_name).to.deep.equal(["HRBP A", "HRBP B"]);
+    expectLocal(args[0].departments_name).to.deep.equal(jobs[0].departments_name);
   });
 });

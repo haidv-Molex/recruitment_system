@@ -1,6 +1,7 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { levelModel } from "@model/level/levelModel";
+import Level from "@services/level/_Level";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 type CreateLevelData = {
   level_code?: string | null;
@@ -17,22 +18,12 @@ async function create(
   const query = `
     INSERT INTO level (level_code, level_name, level_description)
     VALUES ($1, $2, $3)
-    RETURNING level_id, level_code, level_name, level_description, create_at, update_at
+    RETURNING level_id
   `;
   const result = await pool.query(query, [level_code, level_name, level_description]);
+  const row = assertFirstRow(result.rows, "Lỗi khi tạo cấp bậc mới", 500);
 
-  if (result.rows.length === 0) {
-    throw new AppError("Lỗi khi tạo cấp bậc mới", 500);
-  }
-
-  return {
-    level_id: result.rows[0].level_id,
-    level_code: result.rows[0].level_code,
-    level_name: result.rows[0].level_name,
-    level_description: result.rows[0].level_description,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
-  } satisfies levelModel;
+  return await Level.getById(row.level_id, pool);
 }
 
 export default create;

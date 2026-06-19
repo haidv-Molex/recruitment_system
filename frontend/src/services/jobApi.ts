@@ -4,7 +4,9 @@ import type { PaginationMetadata } from '@/types/pagination';
 
 export async function createJobApi(formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
-  fd.append('job_code', formData.job_code);
+  if (formData.job_code?.trim()) {
+    fd.append('job_code', formData.job_code.trim());
+  }
   fd.append('project', formData.project);
 
   if (formData.note) {
@@ -13,10 +15,12 @@ export async function createJobApi(formData: any): Promise<jobOutputModel> {
   if (formData.request_date) {
     fd.append('request_date', formData.request_date);
   }
+  if (formData.recruiter_id) {
+    fd.append('recruiter_id', String(formData.recruiter_id));
+  }
   if (formData.file) {
     fd.append('file', formData.file);
   }
-  if (formData.partners?.length) fd.append('partners', JSON.stringify(formData.partners));
   if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
   if (formData.segments?.length) fd.append('segments', JSON.stringify(formData.segments));
   if (formData.sites?.length) fd.append('sites', JSON.stringify(formData.sites));
@@ -41,6 +45,7 @@ export interface JobSearchParams {
   ee_level?: string;
   manager?: string;
   partner?: string;
+  recruiter?: string;
   note?: string;
   request_date_from?: string;
   request_date_to?: string;
@@ -81,14 +86,17 @@ export async function deleteJobApi(idOrIds: number | number[]): Promise<void> {
 
 export async function updateJobApi(id: number, formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
-  fd.append('job_code', formData.job_code);
-  fd.append('project', formData.project);
+  if (formData.job_code?.trim()) fd.append('job_code', formData.job_code.trim());
+  if (formData.project) fd.append('project', formData.project);
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
+  if (Object.prototype.hasOwnProperty.call(formData, 'recruiter_id')) {
+    fd.append('recruiter_id', formData.recruiter_id == null ? 'null' : String(formData.recruiter_id));
+  }
+  if (formData.recruiter_name) fd.append('recruiter_name', formData.recruiter_name);
   if (formData.file) fd.append('file', formData.file);
 
-  if (formData.partners?.length) fd.append('partners', JSON.stringify(formData.partners));
   if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
   if (formData.segments?.length) fd.append('segments', JSON.stringify(formData.segments));
   if (formData.sites?.length) fd.append('sites', JSON.stringify(formData.sites));
@@ -96,7 +104,6 @@ export async function updateJobApi(id: number, formData: any): Promise<jobOutput
   if (formData.managers?.length) fd.append('managers', JSON.stringify(formData.managers));
   if (formData.employee_levels?.length) fd.append('employee_levels', JSON.stringify(formData.employee_levels));
 
-  if (formData.partners_name?.length) fd.append('partners_name', JSON.stringify(formData.partners_name));
   if (formData.departments_name?.length) fd.append('departments_name', JSON.stringify(formData.departments_name));
   if (formData.segments_name?.length) fd.append('segments_name', JSON.stringify(formData.segments_name));
   if (formData.sites_name?.length) fd.append('sites_name', JSON.stringify(formData.sites_name));
@@ -118,11 +125,15 @@ export async function parseJobSheetApi(file: File): Promise<any[]> {
 
 export async function createJobExtendedApi(formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
-  fd.append('job_code', formData.job_code);
+  if (formData.job_code?.trim()) {
+    fd.append('job_code', formData.job_code.trim());
+  }
   fd.append('project', formData.project);
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
+  if (formData.recruiter_id) fd.append('recruiter_id', String(formData.recruiter_id));
+  if (formData.recruiter_name) fd.append('recruiter_name', formData.recruiter_name);
   if (formData.file) fd.append('file', formData.file);
 
   if (formData.partners?.length) fd.append('partners', JSON.stringify(formData.partners));

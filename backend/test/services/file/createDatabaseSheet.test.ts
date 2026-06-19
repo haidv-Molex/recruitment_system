@@ -39,6 +39,15 @@ describe("createDatabaseSheet Service", () => {
     return res.rows[0].job_id;
   }
 
+  // ─── Helper: seed a minimal department ─────────────────────────────────────
+  async function seedDept(code: string, name: string): Promise<number> {
+    const res = await client.query<{ department_id: number }>(
+      `INSERT INTO department (department_code, department_name) VALUES ($1, $2) RETURNING department_id`,
+      [code, name]
+    );
+    return res.rows[0].department_id;
+  }
+
   // ─── Helper: seed a platform ─────────────────────────────────────────────
   async function seedPlatform(name: string): Promise<number> {
     const res = await client.query<{ platform_id: number }>(
@@ -221,6 +230,36 @@ describe("createDatabaseSheet Service", () => {
     expect(String(deptVal ?? "")).to.include(deptCode);
     expect(String(titleVal ?? "")).to.include(levelName);
     expect(String(eeLevelVal ?? "")).to.include(candLevelName); // candidate level, not job level
+  });
+
+  it("should auto-fill all department codes joined by commas when job has multiple departments", async () => {
+    const ts = Date.now();
+    const deptCode1 = "D1_" + ts;
+    const deptCode2 = "D2_" + ts;
+    const deptId1 = await seedDept(deptCode1, "D1 Name");
+    const deptId2 = await seedDept(deptCode2, "D2 Name");
+
+    const jobCode = "JOB-JD-MULTI-" + ts;
+    const jobId = await seedJob(jobCode, "Multi Dept Project");
+    await client.query(`INSERT INTO job_department (job_id, department_id, candidate_required) VALUES ($1, $2, 1), ($1, $3, 2)`, [jobId, deptId1, deptId2]);
+
+    await seedCandidate({ name: "Cand_Multi_" + ts, status: "CV Sent", jobId });
+
+    const workbook = await createDatabaseSheet(client);
+    const sheet = workbook.getWorksheet("Database")!;
+
+    let targetRow = -1;
+    for (let r = 2; r <= sheet.rowCount; r++) {
+      const val = getCellByHeader(sheet, "Job code", r);
+      if (String(val ?? "").includes(jobCode)) {
+        targetRow = r;
+        break;
+      }
+    }
+    expect(targetRow).to.be.greaterThan(1);
+
+    const deptVal = getCellByHeader(sheet, "Department", targetRow);
+    expect(String(deptVal ?? "")).to.equal(`${deptCode1}, ${deptCode2}`);
   });
 
   it("should populate Recruiter column from candidate's recruiter user", async () => {

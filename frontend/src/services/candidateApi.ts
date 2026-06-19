@@ -2,6 +2,64 @@ import axiosInstance from '@/config/axiosInstance';
 import type { candidateModel } from '@/types/candidateModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
+const hasValue = (value: any) => {
+  if (value === undefined || value === null) return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'object') return Object.values(value).some(hasValue);
+  return String(value).trim() !== '';
+};
+
+const appendScalar = (fd: FormData, field: string, value: any, includeEmpty = false) => {
+  if (!includeEmpty && !hasValue(value)) return;
+  fd.append(field, value === undefined || value === null || value === '' ? 'null' : String(value));
+};
+
+const appendJson = (fd: FormData, field: string, value: any, emptyValue: any, includeEmpty = false) => {
+  const normalizedValue = value === undefined || value === null ? emptyValue : value;
+  if (!includeEmpty && !hasValue(normalizedValue)) return;
+  fd.append(field, JSON.stringify(normalizedValue));
+};
+
+const appendStringArray = (fd: FormData, field: string, value: any, includeEmpty = false) => {
+  const normalizedValue = Array.isArray(value)
+    ? value.map((item) => String(item ?? '').trim()).filter(Boolean)
+    : [];
+  if (!includeEmpty && normalizedValue.length === 0) return;
+  fd.append(field, JSON.stringify(normalizedValue));
+};
+
+const appendCandidateDetailFields = (fd: FormData, formData: any, includeEmpty = false) => {
+  appendScalar(fd, 'summary', formData.summary, includeEmpty);
+  appendScalar(fd, 'date_of_birth', formData.dateOfBirth, includeEmpty);
+  appendScalar(fd, 'gender', formData.gender, includeEmpty);
+  appendScalar(fd, 'marital_status', formData.maritalStatus, includeEmpty);
+  appendScalar(fd, 'nationality', formData.nationality, includeEmpty);
+  appendScalar(fd, 'location', formData.location, includeEmpty);
+  appendStringArray(fd, 'links', formData.links, includeEmpty);
+  appendStringArray(fd, 'skills', formData.skills, includeEmpty);
+  appendStringArray(fd, 'languages', formData.languages, includeEmpty);
+  appendJson(fd, 'language_details', formData.languageDetails, [], includeEmpty);
+  appendScalar(fd, 'education', formData.education, includeEmpty);
+  appendJson(fd, 'education_details', formData.educationDetails, [], includeEmpty);
+  appendScalar(fd, 'experience_years', formData.experienceYears, includeEmpty);
+  appendScalar(fd, 'current_position', formData.currentPosition, includeEmpty);
+  appendScalar(fd, 'current_level', formData.currentLevel, includeEmpty);
+  appendScalar(fd, 'current_salary', formData.currentSalary, includeEmpty);
+  appendScalar(fd, 'last_company', formData.lastCompany, includeEmpty);
+  appendScalar(fd, 'work_experience', formData.workExperience, includeEmpty);
+  appendJson(fd, 'work_experience_details', formData.workExperienceDetails, [], includeEmpty);
+  appendStringArray(fd, 'certifications', formData.certifications, includeEmpty);
+  appendScalar(fd, 'expected_position', formData.expectedPosition, includeEmpty);
+  appendScalar(fd, 'expected_level', formData.expectedLevel, includeEmpty);
+  appendScalar(fd, 'expected_salary', formData.expectedSalary, includeEmpty);
+  appendScalar(fd, 'expected_work_location', formData.expectedWorkLocation, includeEmpty);
+  appendScalar(fd, 'offer_date', formData.offerDate, includeEmpty);
+  appendScalar(fd, 'expected_onboard_date', formData.expectedOnboardDate, includeEmpty);
+  appendScalar(fd, 'onboard_date', formData.onboardDate, includeEmpty);
+  appendScalar(fd, 'feedback_date', formData.feedbackDate, includeEmpty);
+  appendScalar(fd, 'salary_currency', formData.salaryCurrency, includeEmpty || hasValue(formData.salaryCurrency));
+};
+
 export async function createCandidateApi(formData: any): Promise<candidateModel> {
   const fd = new FormData();
 
@@ -13,21 +71,17 @@ export async function createCandidateApi(formData: any): Promise<candidateModel>
   if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
   if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
   if (formData.agency) fd.append('agency', formData.agency);
-  if (formData.offerDate) fd.append('offer_date', formData.offerDate);
-  if (formData.onboardDate) fd.append('onboard_date', formData.onboardDate);
-  if (formData.expectedOnboardDate) fd.append('expected_onboard_date', formData.expectedOnboardDate);
-  if (formData.feedbackDate) fd.append('feedback_date', formData.feedbackDate);
-  if (formData.currentSalary) fd.append('current_salary', formData.currentSalary);
-  if (formData.expectedSalary) fd.append('expected_salary', formData.expectedSalary);
   if (formData.status) fd.append('status', formData.status);
   if (formData.note) fd.append('note', formData.note);
+  appendCandidateDetailFields(fd, formData);
 
   // FK fields
   if (formData.platformId) fd.append('platform_id', String(formData.platformId));
-  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
   if (formData.jobId) fd.append('job_id', String(formData.jobId));
   if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
+  if (!formData.targetedCompanyId && formData.targetedCompanyName) fd.append('targeted_company_name', formData.targetedCompanyName);
   if (formData.referenceId) fd.append('reference', String(formData.referenceId));
+  if (formData.candidateLevels?.length) fd.append('candidate_levels', JSON.stringify(formData.candidateLevels));
   if (formData.jobCode) fd.append('job_code', formData.jobCode);
   if (formData.project) fd.append('project', formData.project);
 
@@ -58,8 +112,25 @@ export async function searchCandidatesApi({
   candidatePhone = '',
   agency = '',
   note = '',
-  recruiter = '',
+  summary = '',
+  nationality = '',
+  location = '',
+  skills = '',
+  languages = '',
+  education = '',
+  experienceYears = '',
+  currentPosition = '',
+  currentLevel = '',
   jobCode = '',
+  currentSalary = '',
+  lastCompany = '',
+  workExperience = '',
+  certifications = '',
+  expectedPosition = '',
+  expectedLevel = '',
+  expectedSalary = '',
+  expectedWorkLocation = '',
+  salaryCurrency = '',
   project = '',
   platform = '',
   reference = '',
@@ -84,7 +155,24 @@ export async function searchCandidatesApi({
   candidatePhone?: string;
   agency?: string;
   note?: string;
-  recruiter?: string;
+  summary?: string;
+  nationality?: string;
+  location?: string;
+  skills?: string;
+  languages?: string;
+  education?: string;
+  experienceYears?: string;
+  currentPosition?: string;
+  currentLevel?: string;
+  currentSalary?: string;
+  lastCompany?: string;
+  workExperience?: string;
+  certifications?: string;
+  expectedPosition?: string;
+  expectedLevel?: string;
+  expectedSalary?: string;
+  expectedWorkLocation?: string;
+  salaryCurrency?: string;
   jobCode?: string;
   project?: string;
   platform?: string;
@@ -112,7 +200,24 @@ export async function searchCandidatesApi({
   if (candidatePhone) params.candidate_phone = candidatePhone;
   if (agency) params.agency = agency;
   if (note) params.note = note;
-  if (recruiter) params.recruiter = recruiter;
+  if (summary) params.summary = summary;
+  if (nationality) params.nationality = nationality;
+  if (location) params.location = location;
+  if (skills) params.skills = skills;
+  if (languages) params.languages = languages;
+  if (education) params.education = education;
+  if (experienceYears) params.experience_years = experienceYears;
+  if (currentPosition) params.current_position = currentPosition;
+  if (currentLevel) params.current_level = currentLevel;
+  if (currentSalary) params.current_salary = currentSalary;
+  if (lastCompany) params.last_company = lastCompany;
+  if (workExperience) params.work_experience = workExperience;
+  if (certifications) params.certifications = certifications;
+  if (expectedPosition) params.expected_position = expectedPosition;
+  if (expectedLevel) params.expected_level = expectedLevel;
+  if (expectedSalary) params.expected_salary = expectedSalary;
+  if (expectedWorkLocation) params.expected_work_location = expectedWorkLocation;
+  if (salaryCurrency) params.salary_currency = salaryCurrency;
   if (jobCode) params.job_code = jobCode;
   if (project) params.project = project;
   if (platform) params.platform = platform;
@@ -161,16 +266,16 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
 
   // FK by ID
   if (formData.platformId) fd.append('platform_id', String(formData.platformId));
-  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
   if (formData.jobId) fd.append('job_id', String(formData.jobId));
   if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
   if (formData.referenceId) fd.append('reference', String(formData.referenceId));
+  if (formData.candidateLevels?.length) fd.append('candidate_levels', JSON.stringify(formData.candidateLevels));
 
   // FK by Name
   if (formData.platformName) fd.append('platform_name', formData.platformName);
-  if (formData.recruiterName) fd.append('recruiter_name', formData.recruiterName);
   if (formData.targetedCompanyName) fd.append('targeted_company_name', formData.targetedCompanyName);
   if (formData.referenceName) fd.append('reference_name', formData.referenceName);
+  if (formData.candidateLevelsName?.length) fd.append('candidate_levels_name', JSON.stringify(formData.candidateLevelsName));
   if (formData.jobCode) fd.append('job_code', formData.jobCode);
   if (formData.project) fd.append('project', formData.project);
 
@@ -183,27 +288,30 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
 
 export async function updateCandidateApi(id: number, formData: any): Promise<candidateModel> {
   const fd = new FormData();
+  const appendIfPresent = (field: string, value: any) => {
+    if (Object.prototype.hasOwnProperty.call(formData, value)) {
+      fd.append(field, formData[value] === null || formData[value] === undefined ? 'null' : String(formData[value]));
+    }
+  };
 
   // Text fields
   fd.append('candidate_name', formData.candidateName);
   fd.append('candidate_code', formData.candidateCode);
-  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
-  if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
-  if (formData.agency) fd.append('agency', formData.agency);
-  if (formData.offerDate) fd.append('offer_date', formData.offerDate);
-  if (formData.onboardDate) fd.append('onboard_date', formData.onboardDate);
-  if (formData.expectedOnboardDate) fd.append('expected_onboard_date', formData.expectedOnboardDate);
-  if (formData.feedbackDate) fd.append('feedback_date', formData.feedbackDate);
-  if (formData.currentSalary) fd.append('current_salary', formData.currentSalary);
-  if (formData.expectedSalary) fd.append('expected_salary', formData.expectedSalary);
-  if (formData.status) fd.append('status', formData.status);
-  if (formData.note) fd.append('note', formData.note);
+  appendIfPresent('candidate_email', 'candidateEmail');
+  appendIfPresent('candidate_phone', 'candidatePhone');
+  appendIfPresent('agency', 'agency');
+  appendIfPresent('status', 'status');
+  appendIfPresent('note', 'note');
+  appendCandidateDetailFields(fd, formData, true);
 
   // FK fields
-  if (formData.platformId) fd.append('platform_id', String(formData.platformId));
-  if (formData.recruiterId) fd.append('recruiter', String(formData.recruiterId));
-  if (formData.jobId) fd.append('job_id', String(formData.jobId));
-  if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
+  appendIfPresent('platform_id', 'platformId');
+  appendIfPresent('job_id', 'jobId');
+  appendIfPresent('targeted_company', 'targetedCompanyId');
+  if (!formData.targetedCompanyId && formData.targetedCompanyName) {
+    fd.append('targeted_company_name', formData.targetedCompanyName);
+  }
+  fd.append('candidate_levels', JSON.stringify(formData.candidateLevels || []));
 
   if (formData.referenceId) {
     fd.append('reference', String(formData.referenceId));

@@ -14,6 +14,32 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+const CANDIDATE_SHEET_NAME = "Database";
+const CANDIDATE_HEADER_KEYS = ["Name", "Email", "Phone number", "Status", "Source"];
+
+function hasCandidateHeaders(rows: any[]): boolean {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return false;
+  }
+
+  const headers = new Set(Object.keys(rows[0]));
+  return CANDIDATE_HEADER_KEYS.every((key) => headers.has(key));
+}
+
+function selectCandidateRowsFromWorkbook(parsedData: Record<string, any[]>): any[] {
+  const databaseRows = parsedData[CANDIDATE_SHEET_NAME];
+  if (Array.isArray(databaseRows) && databaseRows.length > 0) {
+    return databaseRows;
+  }
+
+  const candidateSheetRows = Object.values(parsedData).find(hasCandidateHeaders);
+  if (candidateSheetRows) {
+    return candidateSheetRows;
+  }
+
+  return Object.values(parsedData).find((rows) => Array.isArray(rows) && rows.length > 0) ?? [];
+}
+
 parseCandidateSheetController.post("",
   passport.authenticate("jwt", { session: false }),
   upload.single("file"),
@@ -44,16 +70,7 @@ parseCandidateSheetController.post("",
         if (Array.isArray(parsedData)) {
           rawData = parsedData;
         } else {
-          // Look for "IDL tracking" sheet first (candidate tracking sheet)
-          if (parsedData["IDL tracking"]) {
-            rawData = parsedData["IDL tracking"];
-          } else {
-            // Fall back to first non-empty sheet
-            const sheetNames = Object.keys(parsedData);
-            if (sheetNames.length > 0) {
-              rawData = parsedData[sheetNames[0]];
-            }
-          }
+          rawData = selectCandidateRowsFromWorkbook(parsedData);
         }
       } finally {
         if (fs.existsSync(tempFilePath)) {

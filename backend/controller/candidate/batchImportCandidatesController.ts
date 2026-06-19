@@ -18,7 +18,10 @@ const candidateItemSchema = Joi.object({
     "string.empty": "Trạng thái ứng viên không được để trống",
   }),
   candidate_code: Joi.string().max(255).allow("", null).optional(),
-  candidate_email: Joi.string().email().max(255).allow("", null).optional(),
+  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).default(null).optional().messages({
+    "string.email": "Email ứng viên không đúng định dạng chuẩn name@example.com",
+    "string.max": "Email không được vượt quá 255 ký tự",
+  }),
   candidate_phone: Joi.string().max(50).allow("", null).optional(),
   agency: Joi.string().max(255).allow("", null).optional(),
   offer_date: Joi.date().iso().empty(["", "null"]).allow(null).optional(),
@@ -31,14 +34,12 @@ const candidateItemSchema = Joi.object({
 
   // ID gốc
   job_id: Joi.number().integer().allow(null).optional(),
-  recruiter: Joi.number().integer().allow(null).optional(),
   platform_id: Joi.number().integer().allow(null).optional(),
   targeted_company: Joi.number().integer().allow(null).optional(),
   reference: Joi.number().integer().allow(null).optional(),
   candidate_levels: numberArray().optional(),
 
   // _name tự động tạo mới
-  recruiter_name: Joi.string().max(255).allow("", null).optional(),
   reference_name: Joi.string().max(255).allow("", null).optional(),
   platform_name: Joi.string().max(255).allow("", null).optional(),
   targeted_company_name: Joi.string().max(255).allow("", null).optional(),

@@ -13,7 +13,6 @@ import {
   updateJobApi,
   deleteJobApi,
   downloadIdlTrackingSheetApi,
-  downloadFullWorkbookApi,
   getJobApi,
   batchImportJobsApi,
 } from '@/services/jobApi';
@@ -37,6 +36,7 @@ const COLUMN_KEY_TO_API: Record<string, string> = {
   projectSegment: 'segment',
   hiringManager: 'manager',
   hrbp: 'partner',
+  recruiter: 'recruiter',
   note: 'note',
 };
 
@@ -49,14 +49,12 @@ const mapApiJobToRow = (j: any) => ({
   jobTitle: (j.titles || []).map((t: any) => t.level_name).join(', '),
   eeLevel: (j.employee_levels || []).map((el: any) => el.level_name).join(', '),
   sites: (j.sites || []).map((s: any) => s.site_code || s.site_name || '').filter(Boolean).join(', '),
-  projectSegment: (j.segments || []).map((sg: any) => sg.segment_name).join(', '),
+  projectSegment: (j.segments || []).map((sg: any) => sg.segment_code || sg.segment_name || '').filter(Boolean).join(', '),
   hiringManager: (j.managers || []).map((m: any) => m.user_name).join(', '),
   hrbp: (j.departments || [])
-    .map((d: any) => d.user_name)
-    .filter(Boolean)
-    .filter((value: string, index: number, self: string[]) => self.indexOf(value) === index)
+    .map((d: any) => d.user?.user_name || '—')
     .join(', '),
-  recruiter: '',
+  recruiter: j.recruiter?.user_name || '',
   myhrRequestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
   status: 'Searching',
   offerDate: '',
@@ -68,6 +66,8 @@ const mapApiJobToRow = (j: any) => ({
   employee_levels: j.employee_levels || [],
   partners: j.partners || [],
   managers: j.managers || [],
+  recruiter_id: j.recruiter_id || j.recruiter?.user_id || '',
+  recruiterUser: j.recruiter || null,
   file: j.file || null,
 });
 
@@ -123,15 +123,23 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
   const handleSaveJob = async (formData: any) => {
     setSaving(true);
 
+    const recruiterId = formData.recruiterId && !isNaN(Number(formData.recruiterId))
+      ? Number(formData.recruiterId)
+      : null;
+    const recruiterName = !recruiterId && formData.recruiterName?.trim()
+      ? formData.recruiterName.trim()
+      : null;
+
     const apiPayload = {
-      job_code: formData.jobCode,
+      job_code: formData.jobCode?.trim() || null,
       project: formData.project,
       candidate_required: formData.candidateRequired,
       note: formData.note,
       request_date: formData.requestDate,
+      recruiter_id: recruiterId,
+      recruiter_name: recruiterName,
       file: formData.file,
       // Existing IDs
-      partners: (formData.partners || []).filter((p: any) => typeof p === 'number' || !isNaN(Number(p))).map(Number),
       departments: (formData.departments || [])
         .filter((d: any) => d && (typeof d === 'object' ? d.department_id !== null && d.department_id !== undefined : !isNaN(Number(d))))
         .map((d: any) => {
@@ -139,15 +147,11 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             return {
               department_id: Number(d.department_id),
               candidate_required: Number(d.candidate_required || 1),
-              user_id: d.user_id ? Number(d.user_id) : null,
-              partner_name: d.partner_name || null,
             };
           }
           return {
             department_id: Number(d),
             candidate_required: 1,
-            user_id: null,
-            partner_name: null,
           };
         }),
       segments: (formData.segments || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
@@ -157,7 +161,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       employee_levels: (formData.employeeLevels || []).filter((el: any) => typeof el === 'number' || !isNaN(Number(el))).map(Number),
 
       // New Names to auto-create on backend
-      partners_name: (formData.partners || []).filter((p: any) => typeof p === 'string' && isNaN(Number(p))),
       departments_name: (formData.departments || [])
         .filter((d: any) => d && (typeof d === 'object' ? d.department_id === null || d.department_id === undefined : isNaN(Number(d))))
         .map((d: any) => {
@@ -165,15 +168,11 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             return {
               name: String(d.name || d.department_name),
               candidate_required: Number(d.candidate_required || 1),
-              user_id: d.user_id ? Number(d.user_id) : null,
-              partner_name: d.partner_name || null,
             };
           }
           return {
             name: String(d),
             candidate_required: 1,
-            user_id: null,
-            partner_name: null,
           };
         }),
       segments_name: (formData.segments || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
@@ -297,6 +296,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     const jobsPayload = parsedJobs.map((parsedJob) => {
       const partners = splitByIdExists(parsedJob.partners);
       const managers = splitByIdExists(parsedJob.managers);
+      const recruiter = parsedJob.recruiter || null;
       const segments = splitByIdExists(parsedJob.segments);
       const sites = splitByIdExists(parsedJob.sites);
       const titles = splitByIdExists(parsedJob.titles);
@@ -305,21 +305,27 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         .filter((d: any) => d.department_id !== null && d.department_id !== undefined)
         .map((d: any) => ({
           department_id: Number(d.department_id),
-          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1)
+          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1),
+          user_id: d.user_id !== undefined ? d.user_id : null,
+          partner_name: d.partner_name || null
         }));
 
       const depts_name = (parsedJob.departments || [])
         .filter((d: any) => d.department_id === null || d.department_id === undefined)
         .map((d: any) => ({
           name: String(d.department_name || d.name),
-          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1)
+          candidate_required: Number(d.candidate_required || parsedJob.candidateRequired || 1),
+          user_id: d.user_id !== undefined ? d.user_id : null,
+          partner_name: d.partner_name || null
         }));
 
       return {
-        job_code: parsedJob.jobCode,
+        job_code: parsedJob.jobCode?.trim() || null,
         project: parsedJob.project,
         note: parsedJob.note || '',
         request_date: parsedJob.requestDate || '',
+        recruiter_id: recruiter?.user_id || null,
+        recruiter_name: recruiter && recruiter.user_id === null ? recruiter.user_name : null,
         partners: partners.ids,
         departments: depts,
         segments: segments.ids,
@@ -365,15 +371,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
     }
   }, [toast]);
 
-  const handleExportWorkbook = useCallback(async () => {
-    try {
-      await downloadFullWorkbookApi();
-      toast.success('Downloaded Full Workbook.');
-    } catch (err: any) {
-      toast.error('Download Full Workbook failed: ' + err.message);
-    }
-  }, [toast]);
-
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
     loadJobsFromApi(page, pageSize, { ...activeSearchParams, ...sortParams });
@@ -395,6 +392,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       { key: 'sites', label: 'Site', width: 80 },
       { key: 'projectSegment', label: 'Segment', width: 120 },
       { key: 'hiringManager', label: 'Manager', width: 130 },
+      { key: 'recruiter', label: 'Recruiter', width: 130 },
       { key: 'hrbp', label: 'HRBP / Partner', width: 135 },
       { key: 'myhrRequestDate', label: 'Req Date', width: 100, disableFilter: true },
       {
@@ -481,14 +479,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       </button>
       <button
         type="button"
-        onClick={handleExportWorkbook}
-        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg shadow-sm bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 active:bg-slate-100 transition-all cursor-pointer"
-      >
-        <Download size={14} />
-        <span>Export Workbook</span>
-      </button>
-      <button
-        type="button"
         onClick={() => {
           setEditingJob(null);
           setShowJobForm(true);
@@ -499,7 +489,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         <span>Add Job</span>
       </button>
     </div>
-  ), [handleExportIDL, handleExportWorkbook]);
+  ), [handleExportIDL]);
 
   useHeader({
     title: '📊 Job Tracking Sheet',

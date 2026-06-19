@@ -161,4 +161,71 @@ describe("Candidate batchImport service", () => {
     expect(jobRes.rows[0].job_code).to.equal("BATCH-JOB-999");
     expect(jobRes.rows[0].project).to.equal("Batch Job Project Name");
   });
+
+  it("should persist candidate_email and resolve platform_name and candidate_levels_name", async () => {
+    const importItems = [
+      {
+        candidate_name: "Candidate Email Platform Level",
+        status: "CV Sent",
+        candidate_email: "candidate.email@example.com",
+        platform_name: "Phase3 Source Platform",
+        candidate_levels_name: ["Phase3 Engineer", "Phase3 Professional"],
+      }
+    ];
+
+    const result = await batchImport(importItems, client);
+
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+    expect(result.errors).to.have.lengthOf(0);
+
+    const candidateRes = await client.query(
+      `SELECT candidate_id, candidate_email, platform_id FROM candidate WHERE candidate_name = $1`,
+      ["Candidate Email Platform Level"]
+    );
+    expect(candidateRes.rows).to.have.lengthOf(1);
+    expect(candidateRes.rows[0].candidate_email).to.equal("candidate.email@example.com");
+
+    const platformRes = await client.query(
+      `SELECT platform_name FROM platform WHERE platform_id = $1`,
+      [candidateRes.rows[0].platform_id]
+    );
+    expect(platformRes.rows[0].platform_name).to.equal("Phase3 Source Platform");
+
+    const levelsRes = await client.query(
+      `SELECT l.level_name
+       FROM candidate_level cl
+       JOIN level l ON cl.level_id = l.level_id
+       WHERE cl.candidate_id = $1
+       ORDER BY l.level_name ASC`,
+      [candidateRes.rows[0].candidate_id]
+    );
+    expect(levelsRes.rows.map((row) => row.level_name)).to.deep.equal([
+      "Phase3 Engineer",
+      "Phase3 Professional",
+    ]);
+  });
+
+  it("should store blank candidate_email as null", async () => {
+    const importItems = [
+      {
+        candidate_name: "Candidate Blank Email",
+        status: "CV Sent",
+        candidate_email: "",
+      }
+    ];
+
+    const result = await batchImport(importItems, client);
+
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+    expect(result.errors).to.have.lengthOf(0);
+
+    const candidateRes = await client.query(
+      `SELECT candidate_email FROM candidate WHERE candidate_name = $1`,
+      ["Candidate Blank Email"]
+    );
+    expect(candidateRes.rows).to.have.lengthOf(1);
+    expect(candidateRes.rows[0].candidate_email).to.be.null;
+  });
 });

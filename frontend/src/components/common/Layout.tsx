@@ -29,6 +29,7 @@ export interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, isAdmin } = useAuth() as any;
+  const canManageAccounts = isAdmin || user?.user_role === 'hr';
   const headerCtx = useContext(HeaderContext);
   const headerState = headerCtx?.headerState || { title: '' };
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -162,8 +163,8 @@ export default function Layout({ children }: LayoutProps) {
             )}
           </div>
 
-          {/* Admin tab (if admin) */}
-          {isAdmin && (
+          {/* Account management tab */}
+          {canManageAccounts && (
             <Link
               to="/admin"
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -173,7 +174,7 @@ export default function Layout({ children }: LayoutProps) {
               }`}
             >
               <Shield size={18} className={isActive('/admin') ? 'text-white' : 'text-slate-400'} />
-              <span>Admin Panel</span>
+              <span>Accounts</span>
             </Link>
           )}
         </nav>

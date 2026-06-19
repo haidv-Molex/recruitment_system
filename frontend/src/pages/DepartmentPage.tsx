@@ -3,7 +3,9 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
 import { searchDepartmentsApi, createDepartmentApi, deleteDepartmentApi, updateDepartmentApi } from '@/services/departmentApi';
+import { fetchUsersApi } from '@/services/userApi';
 import MasterDataForm from '@/components/ui/MasterDataForm';
+import SingleSearchSelect from '@/components/ui/SingleSearchSelect';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/ui/Pagination';
 import Modal from '@/components/ui/Modal';
@@ -17,6 +19,11 @@ export const DepartmentPage = () => {
   const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // HRBP selection state
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,12 +70,18 @@ export const DepartmentPage = () => {
 
   const openCreateForm = () => {
     setEditingDept(null);
+    setSelectedUserId(null);
+    setSelectedUserName(null);
+    setSelectedUser(null);
     setFormError('');
     setShowForm(true);
   };
 
   const openEditForm = (dept: any) => {
     setEditingDept(dept);
+    setSelectedUserId(dept.user?.user_id || null);
+    setSelectedUserName(null);
+    setSelectedUser(dept.user || null);
     setFormError('');
     setShowForm(true);
   };
@@ -99,7 +112,9 @@ export const DepartmentPage = () => {
           editingDept.department_id,
           data.code.trim(),
           data.name.trim(),
-          data.description.trim()
+          data.description.trim(),
+          selectedUserId,
+          selectedUserName
         );
         toast.success('Department updated successfully.');
         closeForm();
@@ -112,7 +127,9 @@ export const DepartmentPage = () => {
         await createDepartmentApi(
           data.code.trim(),
           data.name.trim(),
-          data.description.trim()
+          data.description.trim(),
+          selectedUserId,
+          selectedUserName
         );
         toast.success('Department created successfully.');
         closeForm();
@@ -173,13 +190,28 @@ export const DepartmentPage = () => {
       {
         key: 'department_name',
         label: 'Department Name',
-        width: 250,
+        width: 200,
         disableFilter: true,
+      },
+      {
+        key: 'hrbp',
+        label: 'HRBP',
+        width: 180,
+        disableFilter: true,
+        render: (_: any, val: any) => (
+          val ? (
+            <span className="inline-flex items-center px-2 py-0.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full">
+              {val}
+            </span>
+          ) : (
+            '—'
+          )
+        ),
       },
       {
         key: 'department_description',
         label: 'Description',
-        width: 450,
+        width: 320,
         disableFilter: true,
         render: (_: any, val: any) => val || '—',
       },
@@ -218,6 +250,8 @@ export const DepartmentPage = () => {
       department_code: d.department_code,
       department_name: d.department_name,
       department_description: d.department_description,
+      user_id: d.user?.user_id || null,
+      hrbp: d.user ? d.user.user_name : null,
     }));
   }, [departments]);
 
@@ -277,7 +311,29 @@ export const DepartmentPage = () => {
             }
             isLoading={saving}
             error={formError}
-          />
+          >
+            <SingleSearchSelect
+              label="HRBP (Manager)"
+              placeholder="Search or enter HRBP..."
+              initialItem={selectedUser}
+              searchApi={(search) => fetchUsersApi({ search })}
+              displayFn={(u: any) => u.user_name || ''}
+              keyProp="user_id"
+              onChange={(_id, item) => {
+                const userId = item ? (item as any).user_id : null;
+                const isExistingUser = typeof userId === 'number';
+
+                setSelectedUserId(isExistingUser ? userId : null);
+                setSelectedUserName(
+                  !isExistingUser && item ? ((item as any).user_name || '').trim() || null : null
+                );
+                setSelectedUser(item);
+              }}
+              allowCreation={true}
+              commitOnBlur={true}
+              disabled={saving}
+            />
+          </MasterDataForm>
         </Modal>
       )}
     </div>

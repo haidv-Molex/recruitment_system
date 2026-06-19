@@ -20,6 +20,7 @@ export interface MasterDataFormProps {
   initialData?: MasterDataFormData;
   isLoading?: boolean;
   error?: string;
+  children?: React.ReactNode;
 }
 
 /**
@@ -35,6 +36,7 @@ export default function MasterDataForm({
   initialData,
   isLoading,
   error,
+  children,
 }: MasterDataFormProps) {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
@@ -102,6 +104,8 @@ export default function MasterDataForm({
           className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-slate-50 disabled:text-slate-400 transition-colors"
         />
       </div>
+
+      {children}
 
       <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 mt-6">
         <Button variant="secondary" onClick={onCancel} type="button" disabled={isLoading}>

@@ -1,6 +1,6 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { siteModel } from "@model/site/siteModel";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 async function getById(
   id: number,
@@ -12,18 +12,15 @@ async function getById(
     WHERE site_id = $1
   `;
   const result = await pool.query(query, [id]);
-
-  if (result.rows.length === 0) {
-    throw new AppError("Không tìm thấy địa điểm", 404);
-  }
+  const row = assertFirstRow(result.rows, "Không tìm thấy địa điểm", 404);
 
   return {
-    site_id: result.rows[0].site_id,
-    site_code: result.rows[0].site_code,
-    site_name: result.rows[0].site_name,
-    site_description: result.rows[0].site_description,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
+    site_id: row.site_id,
+    site_code: row.site_code,
+    site_name: row.site_name,
+    site_description: row.site_description,
+    create_at: row.create_at,
+    update_at: row.update_at
   } satisfies siteModel;
 }
 

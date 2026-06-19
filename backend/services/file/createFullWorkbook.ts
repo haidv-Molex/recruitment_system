@@ -231,7 +231,6 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         note: string | null;
         create_at: Date;
         job_id: number | null;
-        recruiter: number | null;
         job_code: string | null;
         platform_name: string | null;
         recruiter_name: string | null;
@@ -246,21 +245,25 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
       c.candidate_code, c.agency, c.offer_date, c.onboard_date,
       c.expected_onboard_date, c.feedback_date, c.current_salary,
       c.expected_salary, c.status, c.note, c.create_at,
-      c.job_id, c.recruiter,
+    c.job_id,
       j.job_code,
       p.platform_name,
       u.user_name  AS recruiter_name,
       ref.user_name AS reference_name,
-      ref_dept.department_name AS reference_department,
+      ref_dept.department_names AS reference_department,
       (c.targeted_company IS NOT NULL) AS targeted_company_is_set,
       comp.company_name AS targeted_company_name,
       cl_level.level_name AS candidate_level_name
     FROM candidate c
     LEFT JOIN job j ON c.job_id = j.job_id
     LEFT JOIN platform p ON c.platform_id = p.platform_id
-    LEFT JOIN "user" u ON c.recruiter = u.user_id
+    LEFT JOIN "user" u ON j.recruiter_id = u.user_id
     LEFT JOIN "user" ref ON c.reference = ref.user_id
-    LEFT JOIN department ref_dept ON ref.department_id = ref_dept.department_id
+    LEFT JOIN (
+      SELECT user_id, STRING_AGG(department_name, ', ') AS department_names
+      FROM department
+      GROUP BY user_id
+    ) ref_dept ON ref.user_id = ref_dept.user_id
     LEFT JOIN company comp ON c.targeted_company = comp.company_id
     LEFT JOIN (
       SELECT cl.candidate_id, STRING_AGG(l.level_name, ', ') AS level_name
@@ -282,7 +285,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         ),
         pool.query<{ user_name: string }>(
             `SELECT DISTINCT u.user_name FROM "user" u
-       JOIN candidate c ON u.user_id = c.recruiter
+       JOIN job j ON u.user_id = j.recruiter_id
        WHERE u.user_name IS NOT NULL AND u.user_name <> '' ORDER BY u.user_name`
         ),
         pool.query<{ platform_name: string }>(
@@ -311,31 +314,18 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
     // 2. BUILD SHEET INPUTS
     // ─────────────────────────────────────────────
 
-    const recruiterSetByJobId = new Map<number, Set<string>>();
-    for (const row of rows) {
-        if (row.job_id && row.recruiter_name) {
-            if (!recruiterSetByJobId.has(row.job_id))
-                recruiterSetByJobId.set(row.job_id, new Set());
-            recruiterSetByJobId.get(row.job_id)!.add(row.recruiter_name);
-        }
-    }
-    const recruitersByJobId = new Map<number, string>();
-    for (const [jobId, names] of recruiterSetByJobId) {
-        recruitersByJobId.set(jobId, Array.from(names).join(", "));
-    }
-
     const jdList: JdRow[] = jobs.map((job) => ({
         job_code: job.job_code,
         project: job.project,
-        dept: job.departments?.[0]?.department_code || job.departments?.[0]?.department_name || "",
+        dept: job.departments?.map((d) => d.department_code || d.department_name || "").filter(Boolean).join(", ") || "",
         hc_requested: job.departments?.reduce((sum, d) => sum + (d.candidate_required || 0), 0) || 0,
-        job_title: job.titles?.[0]?.level_name ?? "",
-        ee_level: job.employee_levels?.[0]?.level_name ?? "",
+        job_title: job.titles?.map((t) => t.level_name).filter(Boolean).join(", ") ?? "",
+        ee_level: job.employee_levels?.map((el) => el.level_name).filter(Boolean).join(", ") ?? "",
         sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
         project_segment: job.segments?.[0]?.segment_name ?? null,
         hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
-        hrbp: job.partners?.map((p) => p.user_name).join(", ") ?? "",
-        recruiter: recruitersByJobId.get(job.job_id) ?? "",
+        hrbp: job.departments?.map((d) => d.user?.user_name || "").filter(Boolean).join(", ") ?? "",
+        recruiter: job.recruiter?.user_name ?? "",
         myhr_request_date: (job as any).request_date ?? job.create_at,
         note: job.note ?? null,
     }));
@@ -352,12 +342,12 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
 
     const jdLookupList: JdLookupRow[] = jobs.map((job) => ({
         job_code: job.job_code,
-        dept: job.departments?.[0]?.department_code || job.departments?.[0]?.department_name || "",
-        job_title: job.titles?.[0]?.level_name ?? "",
-        ee_level: job.employee_levels?.[0]?.level_name ?? "",
+        dept: job.departments?.map((d) => d.department_code || d.department_name || "").filter(Boolean).join(", ") || "",
+        job_title: job.titles?.map((t) => t.level_name).filter(Boolean).join(", ") ?? "",
+        ee_level: job.employee_levels?.map((el) => el.level_name).filter(Boolean).join(", ") ?? "",
         project: job.project,
         hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
-        recruiter: "",
+        recruiter: job.recruiter?.user_name ?? "",
         sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
     }));
 

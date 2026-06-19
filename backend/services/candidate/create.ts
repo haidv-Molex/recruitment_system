@@ -1,30 +1,41 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
+import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
+import Company from "@services/company/_Company";
 import { populateCandidateRelations } from "./populate";
+import { insertLinkRows } from "@utilities/db/linking";
+import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
+import { candidateDetailWriteFields } from "@services/candidate_detail/types";
 
-export interface CreateCandidateInput {
+export interface CreateCandidateInput extends CandidateDetailWriteData {
   candidate_code?: string | null;
   candidate_name: string;
   candidate_email?: string | null;
   candidate_phone?: string | null;
   agency?: string | null;
-  offer_date?: string | Date | null;
-  onboard_date?: string | Date | null;
-  expected_onboard_date?: string | Date | null;
-  feedback_date?: string | Date | null;
-  current_salary?: string | null;
-  expected_salary?: string | null;
   status: string;
   note?: string | null;
   platform_id?: number | null;
-  recruiter?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
+  targeted_company_name?: string | null;
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
   candidate_levels?: number[];
 }
+
+const pickCandidateDetailData = (data: CreateCandidateInput): CandidateDetailWriteData => {
+  const detailData: CandidateDetailWriteData = {};
+
+  candidateDetailWriteFields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(data, field)) {
+      (detailData as any)[field] = (data as any)[field];
+    }
+  });
+
+  return detailData;
+};
 
 export async function create(
   data: CreateCandidateInput,
@@ -43,6 +54,14 @@ export async function create(
   }
 
   try {
+    let targetedCompanyId = data.targeted_company || null;
+    if (!targetedCompanyId && data.targeted_company_name?.trim()) {
+      const company = await Company.create({ company_name: data.targeted_company_name.trim() }, pool);
+      targetedCompanyId = company.company_id;
+    }
+
+    const candidateDetail = await CandidateDetailService.create(pickCandidateDetailData(data), pool);
+
     const query = `
       INSERT INTO candidate (
         candidate_code,
@@ -50,22 +69,16 @@ export async function create(
         candidate_email,
         candidate_phone,
         agency,
-        offer_date,
-        onboard_date,
-        expected_onboard_date,
-        feedback_date,
-        current_salary,
-        expected_salary,
         status,
         note,
+        candidate_detail_id,
         platform_id,
-        recruiter,
         job_id,
         targeted_company,
         reference,
         file_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -75,18 +88,12 @@ export async function create(
       data.candidate_email || null,
       data.candidate_phone || null,
       data.agency || null,
-      data.offer_date || null,
-      data.onboard_date || null,
-      data.expected_onboard_date || null,
-      data.feedback_date || null,
-      data.current_salary || null,
-      data.expected_salary || null,
       data.status,
       data.note || null,
+      candidateDetail.candidate_detail_id,
       data.platform_id || null,
-      data.recruiter || null,
       data.job_id || null,
-      data.targeted_company || null,
+      targetedCompanyId,
       data.reference || null,
       fileId
     ];
@@ -100,13 +107,11 @@ export async function create(
     const candidateId = candidateRow.candidate_id;
 
     if (data.candidate_levels && data.candidate_levels.length > 0) {
-      const levelInsertQuery = `
-        INSERT INTO candidate_level (candidate_id, level_id)
-        VALUES ($1, $2)
-      `;
-      for (const levelId of data.candidate_levels) {
-        await pool.query(levelInsertQuery, [candidateId, levelId]);
-      }
+      await insertLinkRows(
+        pool,
+        "candidate_level",
+        data.candidate_levels.map((levelId) => ({ candidate_id: candidateId, level_id: levelId }))
+      );
     }
 
     return await populateCandidateRelations(candidateRow, pool);

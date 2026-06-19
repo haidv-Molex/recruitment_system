@@ -64,6 +64,7 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
           sites: j.sites || [],
           titles: j.titles || [],
           managers: j.managers || [],
+          recruiter: j.recruiter || null,
           employeeLevels: j.employee_levels || []
         }));
         setParsedJobs(mappedJobs);
@@ -144,6 +145,8 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
           job.managers = parts.map(p => ({ user_id: null, user_name: p }));
         } else if (field === 'partners') {
           job.partners = parts.map(p => ({ user_id: null, user_name: p }));
+        } else if (field === 'recruiter') {
+          job.recruiter = parts[0] ? { user_id: null, user_name: parts[0] } : null;
         }
       }
 
@@ -180,6 +183,7 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
           }
         });
       });
+      if (job.recruiter?.user_id === null) count++;
     });
     return count;
   };
@@ -378,6 +382,7 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
                 { label: 'Site', widthClass: 'w-36' },
                 { label: 'Segment', widthClass: 'w-40' },
                 { label: 'Manager', widthClass: 'w-44' },
+                { label: 'Recruiter', widthClass: 'w-44' },
                 { label: 'HRBP / Partner', widthClass: 'w-44' },
                 { label: 'Req Date', widthClass: 'w-36' },
                 { label: 'Note', widthClass: 'w-56' },
@@ -408,6 +413,9 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
                   </td>
                   <td className="p-2.5">
                     {renderTags(job.managers, 'bg-red-50 border border-red-200 text-red-600')}
+                  </td>
+                  <td className="p-2.5">
+                    {renderTags(job.recruiter ? [job.recruiter] : [], 'bg-violet-50 border border-violet-200 text-violet-700')}
                   </td>
                   <td className="p-2.5">
                     {renderTags(job.partners, 'bg-red-50 border border-red-200 text-red-600')}

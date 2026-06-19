@@ -55,7 +55,10 @@ describe("getRolesController API", () => {
     findByIdStub = sinon.stub(User, "findById").resolves({
       user_id: 1,
       user_name: "Test User",
-      user_role: "user"
+      user_role: "user",
+      user_description: null,
+      create_at: new Date(),
+      update_at: new Date()
     });
 
     getRolesStub = sinon.stub(User, "getRoles").resolves(["admin", "hr", "user", "banned"]);

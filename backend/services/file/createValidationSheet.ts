@@ -47,7 +47,7 @@ async function createValidationSheet(pool: PoolClient): Promise<ExcelJS.Workbook
 
   const picRes = await pool.query<{ user_name: string }>(
     `SELECT DISTINCT u.user_name
-     FROM "user" u JOIN candidate c ON u.user_id = c.recruiter
+      FROM "user" u JOIN job j ON u.user_id = j.recruiter_id
      WHERE u.user_name IS NOT NULL AND u.user_name <> ''
      ORDER BY u.user_name`
   );

@@ -1,29 +1,29 @@
 import { PoolClient } from "pg";
-import { AppError } from "@middlewares/AppError";
 import type { departmentModel } from "@model/department/departmentModel";
+import User from "@services/user/_User";
+import assertFirstRow from "@utilities/db/assertFirstRow";
 
 async function getById(
   id: number,
   pool: PoolClient
 ): Promise<departmentModel> {
   const query = `
-    SELECT department_id, department_code, department_name, department_description, create_at, update_at
-    FROM department
+    SELECT *
+    FROM department 
     WHERE department_id = $1
   `;
   const result = await pool.query(query, [id]);
-
-  if (result.rows.length === 0) {
-    throw new AppError("Không tìm thấy phòng ban", 404);
-  }
+  const row = assertFirstRow(result.rows, "Không tìm thấy phòng ban", 404);
+  const user = row.user_id ? await User.findById(row.user_id, pool) : null;
 
   return {
-    department_id: result.rows[0].department_id,
-    department_code: result.rows[0].department_code,
-    department_name: result.rows[0].department_name,
-    department_description: result.rows[0].department_description,
-    create_at: result.rows[0].create_at,
-    update_at: result.rows[0].update_at
+    department_id: row.department_id,
+    department_code: row.department_code,
+    department_name: row.department_name,
+    department_description: row.department_description,
+    create_at: row.create_at,
+    update_at: row.update_at,
+    user
   } satisfies departmentModel;
 }
 

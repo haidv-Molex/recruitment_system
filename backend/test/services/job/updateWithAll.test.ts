@@ -54,7 +54,6 @@ describe("update job service with auto-creation names", () => {
     const result = await updateJob(
       sampleJobId,
       {
-        partners_name: ["Update Partner A", "Update Partner B"],
         departments_name: [
           { name: "Update Dept X", candidate_required: 3 },
           { name: "Update Dept W", candidate_required: 2 }
@@ -67,11 +66,6 @@ describe("update job service with auto-creation names", () => {
       },
       client
     );
-
-    expect(result.partners).to.be.an("array").with.lengthOf(2);
-    const partnerNames = result.partners!.map((p: any) => p.user_name);
-    expect(partnerNames).to.include("Update Partner A");
-    expect(partnerNames).to.include("Update Partner B");
 
     expect(result.departments).to.be.an("array").with.lengthOf(2);
     const deptNames = result.departments!.map((d: any) => d.department_name);

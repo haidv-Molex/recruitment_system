@@ -1,6 +1,9 @@
 import { PoolClient } from "pg";
 import type { levelModel } from "@model/level/levelModel";
 import type { PaginationQueryMetadata } from "@type/pagination";
+import Level from "@services/level/_Level";
+import buildPagination from "@utilities/query/buildPagination";
+import buildWhereClause from "@utilities/query/buildWhereClause";
 
 type GetAllLevelsParams = PaginationQueryMetadata & {
   search?: string;
@@ -15,24 +18,20 @@ async function getAll(
   params: GetAllLevelsParams,
   pool: PoolClient
 ): Promise<GetAllLevelsResult> {
-  const unlimited = params.unlimited === true;
-  const page = params.page && params.page > 0 ? params.page : 1;
-  const limit = params.limit && params.limit > 0 ? params.limit : 10;
-  const offset = (page - 1) * limit;
+  const { unlimited, limit, offset } = buildPagination(params);
   const search = params.search ? params.search.trim() : "";
 
-  let countQuery = `SELECT COUNT(*) AS total FROM level`;
-  let query = `SELECT level_id, level_code, level_name, level_description, create_at, update_at FROM level`;
   const values: any[] = [];
-  let index = 1;
+  const conditions: string[] = [];
 
   if (search) {
-    const filter = ` WHERE level_name ILIKE $${index} OR level_code ILIKE $${index}`;
-    countQuery += filter;
-    query += filter;
     values.push(`%${search}%`);
-    index++;
+    conditions.push(`level_name ILIKE $${values.length} OR level_code ILIKE $${values.length}`);
   }
+
+  const whereClause = buildWhereClause(conditions);
+  const countQuery = `SELECT COUNT(*) AS total FROM level ${whereClause}`;
+  let query = `SELECT level_id FROM level ${whereClause}`;
 
   // Get total count
   const countResult = await pool.query(countQuery, values);
@@ -43,20 +42,15 @@ async function getAll(
 
   // Append pagination if not unlimited
   if (!unlimited) {
-    query += ` LIMIT $${index++} OFFSET $${index++}`;
     values.push(limit, offset);
+    query += ` LIMIT $${values.length - 1} OFFSET $${values.length}`;
   }
 
   const result = await pool.query(query, values);
 
-  const items = result.rows.map((row) => ({
-    level_id: row.level_id,
-    level_code: row.level_code,
-    level_name: row.level_name,
-    level_description: row.level_description,
-    create_at: row.create_at,
-    update_at: row.update_at
-  })) satisfies levelModel[];
+  const items = await Promise.all(
+    result.rows.map((row) => Level.getById(row.level_id, pool))
+  ) satisfies levelModel[];
 
   return {
     items,

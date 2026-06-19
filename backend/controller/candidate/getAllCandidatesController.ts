@@ -27,13 +27,21 @@ const querySchema = Joi.object({
   search_at: Joi.alternatives().try(
     Joi.array().items(
       Joi.string().valid(
-        "name", "code", "email", "phone", "agency", "note", "current_salary", "expected_salary",
-        "job_name", "job_code", "platform", "recruiter", "reference", "company"
+        "name", "code", "email", "phone", "agency", "note",
+        "summary", "nationality", "location", "skills", "languages", "education", "experience_years",
+        "current_position", "current_level", "current_salary", "last_company", "work_experience", "certifications",
+        "expected_position", "expected_level", "expected_salary", "expected_work_location", "salary_currency",
+        "offer_date", "onboard_date", "expected_onboard_date", "feedback_date",
+        "job_name", "job_code", "platform", "platform_code", "reference", "company"
       )
     ),
     Joi.string().valid(
-      "name", "code", "email", "phone", "agency", "note", "current_salary", "expected_salary",
-      "job_name", "job_code", "platform", "recruiter", "reference", "company"
+      "name", "code", "email", "phone", "agency", "note",
+      "summary", "nationality", "location", "skills", "languages", "education", "experience_years",
+      "current_position", "current_level", "current_salary", "last_company", "work_experience", "certifications",
+      "expected_position", "expected_level", "expected_salary", "expected_work_location", "salary_currency",
+      "offer_date", "onboard_date", "expected_onboard_date", "feedback_date",
+      "job_name", "job_code", "platform", "platform_code", "reference", "company"
     )
   ).optional().messages({
     "any.only": "Trường tìm kiếm không hợp lệ"
@@ -54,7 +62,24 @@ const querySchema = Joi.object({
   candidate_phone: Joi.string().optional().allow(""),
   agency: Joi.string().optional().allow(""),
   note: Joi.string().optional().allow(""),
-  recruiter: Joi.string().optional().allow(""),
+  summary: Joi.string().optional().allow(""),
+  nationality: Joi.string().optional().allow(""),
+  location: Joi.string().optional().allow(""),
+  skills: Joi.string().optional().allow(""),
+  languages: Joi.string().optional().allow(""),
+  education: Joi.string().optional().allow(""),
+  experience_years: Joi.string().optional().allow(""),
+  current_position: Joi.string().optional().allow(""),
+  current_level: Joi.string().optional().allow(""),
+  current_salary: Joi.string().optional().allow(""),
+  last_company: Joi.string().optional().allow(""),
+  work_experience: Joi.string().optional().allow(""),
+  certifications: Joi.string().optional().allow(""),
+  expected_position: Joi.string().optional().allow(""),
+  expected_level: Joi.string().optional().allow(""),
+  expected_salary: Joi.string().optional().allow(""),
+  expected_work_location: Joi.string().optional().allow(""),
+  salary_currency: Joi.string().optional().allow(""),
   job_code: Joi.string().optional().allow(""),
   project: Joi.string().optional().allow(""),
   platform: Joi.string().optional().allow(""),
@@ -92,7 +117,24 @@ getAllCandidatesController.get("/",
     const candidate_phone = req.query.candidate_phone as string || "";
     const agency = req.query.agency as string || "";
     const note = req.query.note as string || "";
-    const recruiter = req.query.recruiter as string || "";
+    const summary = req.query.summary as string || "";
+    const nationality = req.query.nationality as string || "";
+    const location = req.query.location as string || "";
+    const skills = req.query.skills as string || "";
+    const languages = req.query.languages as string || "";
+    const education = req.query.education as string || "";
+    const experience_years = req.query.experience_years as string || "";
+    const current_position = req.query.current_position as string || "";
+    const current_level = req.query.current_level as string || "";
+    const current_salary = req.query.current_salary as string || "";
+    const last_company = req.query.last_company as string || "";
+    const work_experience = req.query.work_experience as string || "";
+    const certifications = req.query.certifications as string || "";
+    const expected_position = req.query.expected_position as string || "";
+    const expected_level = req.query.expected_level as string || "";
+    const expected_salary = req.query.expected_salary as string || "";
+    const expected_work_location = req.query.expected_work_location as string || "";
+    const salary_currency = req.query.salary_currency as string || "";
     const job_code = req.query.job_code as string || "";
     const project = req.query.project as string || "";
     const platform = req.query.platform as string || "";
@@ -107,7 +149,11 @@ getAllCandidatesController.get("/",
         expected_onboard_date_from, expected_onboard_date_to,
         feedback_date_from, feedback_date_to,
         candidate_code, candidate_name, candidate_email, candidate_phone,
-        agency, note, recruiter, job_code, project, platform, reference, company
+        agency, note,
+        summary, nationality, location, skills, languages, education, experience_years,
+        current_position, current_level, current_salary, last_company, work_experience, certifications,
+        expected_position, expected_level, expected_salary, expected_work_location, salary_currency,
+        job_code, project, platform, reference, company
       }, pool);
     });
 

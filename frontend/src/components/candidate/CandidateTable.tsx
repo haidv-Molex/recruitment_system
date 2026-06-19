@@ -26,6 +26,14 @@ export function CandidateTable({
   onSelectRow,
   loading = false,
 }: CandidateTableProps) {
+  const formatDate = (value: any) => {
+    if (!value) return '-';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('vi-VN');
+  };
+
+  const joinList = (value: any) => Array.isArray(value) ? value.filter(Boolean).join(', ') : (value || '-');
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -47,56 +55,89 @@ export function CandidateTable({
       <table className="w-full text-left text-sm text-slate-600">
         <thead className="bg-slate-50 border-b border-slate-200">
           <tr>
-            <th className="px-6 py-3 font-semibold text-slate-800">Name</th>
-            <th className="px-6 py-3 font-semibold text-slate-800">Position</th>
-            <th className="px-6 py-3 font-semibold text-slate-800">Department</th>
-            <th className="px-6 py-3 font-semibold text-slate-800">Status</th>
-            <th className="px-6 py-3 font-semibold text-slate-800">Applied Date</th>
-            <th className="px-6 py-3 font-semibold text-slate-800">Score</th>
-            <th className="px-6 py-3 font-semibold text-slate-800">Actions</th>
+            {[
+              'Code',
+              'Name',
+              'Email',
+              'Phone',
+              'Status',
+              'Job',
+              'Source',
+              'Agency',
+              'Targeted Company',
+              'Reference',
+              'Current Position',
+              'Current Salary',
+              'Expected Salary',
+              'Offer Date',
+              'Onboard Date',
+              'Skills',
+              'Languages',
+              'Note',
+              'Actions'
+            ].map((header) => (
+              <th key={header} className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{header}</th>
+            ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {candidates.map((candidate) => (
-            <tr
-              key={candidate.id}
-              className="hover:bg-slate-50/50 cursor-pointer transition-colors"
-              onClick={() => onSelectRow?.(candidate)}
-            >
-              <td className="px-6 py-4 font-semibold text-slate-900">{candidate.fullName}</td>
-              <td className="px-6 py-4 text-slate-600">{candidate.position}</td>
-              <td className="px-6 py-4 text-slate-600">{candidate.department}</td>
-              <td className="px-6 py-4">
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusColors[candidate.status] || 'bg-slate-100 text-slate-800'}`}>
-                  {candidate.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-slate-600">
-                {candidate.appliedDate ? new Date(candidate.appliedDate).toLocaleDateString('vi-VN') : '-'}
-              </td>
-              <td className="px-6 py-4 text-slate-600">
-                {candidate.evaluationScore ? `${candidate.evaluationScore}/10` : '-'}
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => onEdit?.(candidate)}
-                    className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-600 transition-colors"
-                    title="Edit"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => onDelete?.(candidate.id)}
-                    className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
+          {candidates.map((candidate) => {
+            const detail = candidate.candidate_detail || {};
+            const rowId = candidate.candidate_id || candidate.id;
+
+            return (
+              <tr
+                key={rowId}
+                className="hover:bg-slate-50/50 cursor-pointer transition-colors"
+                onClick={() => onSelectRow?.(candidate)}
+              >
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={candidate.candidate_code || ''}>{candidate.candidate_code || '-'}</td>
+                <td className="px-4 py-3 font-semibold text-slate-900 whitespace-nowrap" title={candidate.candidate_name || ''}>{candidate.candidate_name || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={candidate.candidate_email || ''}>{candidate.candidate_email || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={candidate.candidate_phone || ''}>{candidate.candidate_phone || '-'}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusColors[String(candidate.status || '').toLowerCase()] || 'bg-slate-100 text-slate-800'}`}>
+                    {candidate.status || '-'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={`${candidate.job?.job_code || ''} ${candidate.job?.project || ''}`}>
+                  {candidate.job?.job_code || candidate.job?.project || '-'}
+                </td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={candidate.platform?.platform_name || candidate.platform?.platform_code || ''}>
+                  {candidate.platform?.platform_code || candidate.platform?.platform_name || '-'}
+                </td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={candidate.agency || ''}>{candidate.agency || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={candidate.targeted_company?.company_name || ''}>{candidate.targeted_company?.company_name || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={candidate.reference?.user_name || ''}>{candidate.reference?.user_name || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={detail.current_position || ''}>{detail.current_position || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={String(detail.current_salary || '')}>{detail.current_salary || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap" title={String(detail.expected_salary || '')}>{detail.expected_salary || '-'}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(detail.offer_date)}</td>
+                <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(detail.onboard_date)}</td>
+                <td className="px-4 py-3 text-slate-600 max-w-[240px] truncate" title={joinList(detail.skills)}>{joinList(detail.skills)}</td>
+                <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate" title={joinList(detail.languages)}>{joinList(detail.languages)}</td>
+                <td className="px-4 py-3 text-slate-600 max-w-[260px] truncate" title={candidate.note || ''}>{candidate.note || '-'}</td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => onEdit?.(candidate)}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-emerald-600 transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => onDelete?.(rowId)}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

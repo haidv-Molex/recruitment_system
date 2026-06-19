@@ -30,6 +30,7 @@ describe("CandidateController API", () => {
   let getByIdStub: sinon.SinonStub;
   let updateStub: sinon.SinonStub;
   let deleteStub: sinon.SinonStub;
+  let batchImportStub: sinon.SinonStub;
 
   before(async () => {
     const { expect: localExpect } = await new Function('specifier', 'return import(specifier)')('chai');
@@ -69,6 +70,7 @@ describe("CandidateController API", () => {
     getByIdStub = sinon.stub(Candidate, "getById");
     updateStub = sinon.stub(Candidate, "update");
     deleteStub = sinon.stub(Candidate, "delete");
+    batchImportStub = sinon.stub(Candidate, "batchImport");
   });
 
   afterEach(() => {
@@ -80,6 +82,7 @@ describe("CandidateController API", () => {
     getByIdStub.restore();
     updateStub.restore();
     deleteStub.restore();
+    batchImportStub.restore();
   });
 
   after((done) => {
@@ -120,8 +123,7 @@ describe("CandidateController API", () => {
         candidate_name: "John Doe",
         candidate_email: "john@example.com",
         status: "Applied",
-        platform_id: "1",
-        recruiter: "2"
+        platform_id: "1"
       })
       .withMultiPartFormData("file", Buffer.from("dummy cv content"), {
         filename: "cv.pdf",
@@ -144,9 +146,35 @@ describe("CandidateController API", () => {
     expectLocal(args.candidate_email).to.equal("john@example.com");
     expectLocal(args.status).to.equal("Applied");
     expectLocal(args.platform_id).to.equal(1);
-    expectLocal(args.recruiter).to.equal(2);
     expectLocal(args.file).to.not.be.null;
     expectLocal(args.file.originalname).to.equal("cv.pdf");
+  });
+
+  it("POST /candidate - should allow phone number with leading plus and dot separators", async () => {
+    const mockCandidate = {
+      candidate_id: 1,
+      candidate_name: "John Doe",
+      candidate_phone: "+084.123.412",
+      status: "Applied",
+      create_at: new Date(),
+      update_at: new Date()
+    };
+    createStub.resolves(mockCandidate);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        candidate_name: "John Doe",
+        candidate_phone: "+084.123.412",
+        status: "Applied"
+      })
+      .expectStatus(201);
+
+    expectLocal(createStub.calledOnce).to.be.true;
+    expectLocal(createStub.firstCall.args[0].candidate_phone).to.equal("+084.123.412");
   });
 
   it("POST /candidate - should return 400 validation error for invalid dates", async () => {
@@ -225,7 +253,6 @@ describe("CandidateController API", () => {
       candidate_phone: "",
       agency: "",
       note: "",
-      recruiter: "",
       job_code: "",
       project: "",
       platform: "",
@@ -278,7 +305,6 @@ describe("CandidateController API", () => {
       candidate_phone: "",
       agency: "",
       note: "",
-      recruiter: "",
       job_code: "",
       project: "",
       platform: "",
@@ -402,5 +428,97 @@ describe("CandidateController API", () => {
       });
 
     expectLocal(deleteStub.calledOnceWith([1])).to.be.true;
+  });
+
+  it("POST /candidate/batch - should import candidates with email, source platform, and candidate level names", async () => {
+    const mockResult = { success: true, importedCount: 1, errors: [] };
+    batchImportStub.resolves(mockResult);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "Nguyen Van A",
+            status: "CV Sent",
+            candidate_email: "nguyen.van.a@example.com",
+            platform_name: "Vietnamworks Job Post",
+            candidate_levels_name: ["Engineer"],
+          }
+        ]
+      })
+      .expectStatus(200)
+      .expectJson({
+        result: true,
+        message: "Thực hiện import loạt ứng viên thành công",
+        data: mockResult,
+      });
+
+    expectLocal(batchImportStub.calledOnce).to.be.true;
+    expectLocal(batchImportStub.firstCall.args[0]).to.deep.equal([
+      {
+        candidate_name: "Nguyen Van A",
+        status: "CV Sent",
+        candidate_email: "nguyen.van.a@example.com",
+        platform_name: "Vietnamworks Job Post",
+        candidate_levels_name: ["Engineer"],
+      }
+    ]);
+  });
+
+  it("POST /candidate/batch - should allow blank email", async () => {
+    const mockResult = { success: true, importedCount: 1, errors: [] };
+    batchImportStub.resolves(mockResult);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "No Email Candidate",
+            status: "CV Sent",
+            candidate_email: "",
+          }
+        ]
+      })
+      .expectStatus(200);
+
+    expectLocal(batchImportStub.calledOnce).to.be.true;
+    expectLocal(batchImportStub.firstCall.args[0][0]).to.include({
+      candidate_name: "No Email Candidate",
+      status: "CV Sent",
+      candidate_email: null,
+    });
+  });
+
+  it("POST /candidate/batch - should reject invalid email with format guidance", async () => {
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "Bad Email Candidate",
+            status: "CV Sent",
+            candidate_email: "n Van A@gmail.com",
+          }
+        ]
+      })
+      .expectStatus(400)
+      .expectJsonLike({
+        result: false,
+        message: "Dữ liệu không hợp lệ",
+        details: ["Email ứng viên không đúng định dạng chuẩn name@example.com"],
+      });
+
+    expectLocal(batchImportStub.notCalled).to.be.true;
   });
 });

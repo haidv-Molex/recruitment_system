@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { X, Upload, FileSpreadsheet, Check, AlertTriangle, Loader2 } from 'lucide-react';
-import { parseCandidateSheetApi, createCandidateExtendedApi } from '../../services/candidateApi';
-import Modal from '../ui/Modal';
-import Button from '../common/Button';
-import ExcelImportTable from '../ui/ExcelImportTable';
+import { parseCandidateSheetApi, createCandidateExtendedApi } from '@/services/candidateApi';
+import { mapParsedCandidateToExtendedFormPayload } from '@/services/candidateImportMapper';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/common/Button';
+import ExcelImportTable from '@/components/ui/ExcelImportTable';
 
 
 const STEPS = {
@@ -111,51 +112,17 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
         const idx = indicesToImport[pos];
         const c = parsedCandidates[idx];
         setImportProgress((prev) => ({ ...prev, current: pos + 1 }));
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const validEmail = c.candidate_email && emailRegex.test(c.candidate_email) ? c.candidate_email : '';
-
-        const formatApiDate = (val: any) => {
-          if (!val) return '';
-          try {
-            const d = new Date(val);
-            if (isNaN(d.getTime())) return '';
-            return d.toISOString().slice(0, 10);
-          } catch {
-            return '';
-          }
-        };
-
-        const formData = {
-          candidateCode: c.employee_code || '',
-          candidateName: c.candidate_name || '',
-          candidateEmail: validEmail,
-          candidatePhone: c.candidate_phone || '',
-          agency: c.agency || '',
-          offerDate: formatApiDate(c.offer_date),
-          onboardDate: formatApiDate(c.onboard_date),
-          expectedOnboardDate: '',
-          feedbackDate: formatApiDate(c.feedback_date),
-          currentSalary: c.current_salary || '',
-          expectedSalary: c.expected_salary || '',
-          status: c.status || '',
-          note: c.note || '',
-          file: null,
-          platformId: '',
-          recruiterId: c.recruiter?.user_id || '',
-          jobId: '',
-          targetedCompanyId: '',
-          referenceId: '',
-          platformName: c.source || '',
-          recruiterName: c.recruiter?.user_id === null ? (c.recruiter?.user_name || '') : '',
-          targetedCompanyName: c.targeted_company === 'Yes' ? (c.targeted_company_name || '') : '',
-          referenceName: c.reference_name || '',
-          jobCode: c.job_code || '',
-          project: c.project || '',
-        };
+        const mapped = mapParsedCandidateToExtendedFormPayload(c, idx);
+        if (mapped.error || !mapped.payload) {
+          errors.push({
+            name: mapped.error?.candidate_name || c.candidate_name || `Row ${idx + 1}`,
+            message: mapped.error?.message || 'Invalid candidate data',
+          });
+          continue;
+        }
 
         try {
-          await createCandidateExtendedApi(formData);
+          await createCandidateExtendedApi(mapped.payload);
         } catch (err: any) {
           errors.push({
             name: c.candidate_name || `Row ${idx + 1}`,
@@ -178,7 +145,6 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
   const countNewUsers = () => {
     let count = 0;
     parsedCandidates.forEach((c) => {
-      if (c.recruiter?.user_id === null) count++;
       if (c.hiring_manager?.user_id === null) count++;
     });
     return count;
@@ -358,7 +324,6 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
                 { label: 'Job Code', widthClass: 'w-28' },
                 { label: 'Project', widthClass: 'w-40' },
                 { label: 'Status', widthClass: 'w-36' },
-                { label: 'Recruiter', widthClass: 'w-40' },
                 { label: 'Source', widthClass: 'w-36' },
                 { label: 'Input Date', widthClass: 'w-32' },
                 { label: 'Offer Date', widthClass: 'w-32' },
@@ -392,7 +357,6 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
                       : <span className="text-slate-300">—</span>
                     }
                   </td>
-                  <td className="p-2.5">{renderUserTag(c.recruiter, 'bg-violet-50 border border-violet-200 text-violet-700')}</td>
                   <td className="p-2.5 text-slate-600">{c.source || '—'}</td>
                   <td className="p-2.5 text-slate-500">{formatDate(c.input_date)}</td>
                   <td className="p-2.5 text-slate-500">{formatDate(c.offer_date)}</td>
@@ -411,7 +375,7 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
               <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200 flex-shrink-0">
                 <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                  <strong>{countNewUsers()} new users (Recruiter / Hiring Manager)</strong> will be auto-created in the system during import.
+                  <strong>{countNewUsers()} new users (Hiring Manager)</strong> will be auto-created in the system during import.
                 </p>
               </div>
             )}

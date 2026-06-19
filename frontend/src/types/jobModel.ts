@@ -14,6 +14,7 @@ export type jobModel = {
   create_at: Date;
   update_at: Date;
   file_id: number | null;
+  recruiter_id: number | null;
 }
 
 export type jobOutputModel = Omit<jobModel, 'file_id'> & {
@@ -22,6 +23,7 @@ export type jobOutputModel = Omit<jobModel, 'file_id'> & {
     file_path: string;
     file_url: string;
   } | null;
+  recruiter?: userOutputModel | null;
   partners?: userOutputModel[];
   departments?: departmentModel[];
   segments?: segmentModel[];
