@@ -2,8 +2,9 @@ import axiosInstance from '@/config/axiosInstance';
 import type { platformModel } from '@/types/platformModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
-export async function createPlatformApi(name: string, description: string): Promise<platformModel> {
+export async function createPlatformApi(code: string, name: string, description: string): Promise<platformModel> {
   const response = await axiosInstance.post('/platform', {
+    platform_code: code,
     platform_name: name,
     platform_description: description,
   });
@@ -36,10 +37,11 @@ export async function getPlatformApi(id: number): Promise<platformModel> {
   return response.data.data!;
 }
 
-export async function updatePlatformApi(id: number, name: string, description: string): Promise<platformModel> {
+export async function updatePlatformApi(id: number, code: string, name: string, description: string): Promise<platformModel> {
   const response = await axiosInstance.put(
     '/platform',
     {
+      platform_code: code,
       platform_name: name,
       platform_description: description,
     },

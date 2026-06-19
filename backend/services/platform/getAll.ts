@@ -26,7 +26,7 @@ async function getAll(
 
   if (search) {
     values.push(`%${search}%`);
-    conditions.push(`platform_name ILIKE $${values.length}`);
+    conditions.push(`(platform_code ILIKE $${values.length} OR platform_name ILIKE $${values.length})`);
   }
 
   const whereClause = buildWhereClause(conditions);

@@ -37,6 +37,8 @@ const emptyCandidate = {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?\d+(?:\.\d+)*$/;
 
+const getPlatformLabel = (platform: any) => platform?.platform_code || platform?.platform_name || '';
+
 export interface CandidateFormProps {
   candidate?: any;
   onSubmit: (data: typeof emptyCandidate) => void;
@@ -214,7 +216,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
 
   const platformOptions = [
     { value: '', label: 'Select Platform' },
-    ...options.platforms.map((p) => ({ value: p.platform_id, label: p.platform_name })),
+    ...options.platforms.map((p) => ({ value: p.platform_id, label: getPlatformLabel(p) })),
   ];
 
   const recruiterOptions = [
@@ -420,7 +422,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
               placeholder="Search platform..."
               initialItem={selectedPlatform}
               searchApi={(search) => searchPlatformsApi({ search })}
-              displayFn={(p: any) => p.platform_name || ''}
+              displayFn={getPlatformLabel}
               keyProp="platform_id"
               onChange={(id, item) => {
                 setFormData((prev) => ({ ...prev, platformId: id || '' }));

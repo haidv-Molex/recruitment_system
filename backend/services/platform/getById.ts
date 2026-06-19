@@ -7,7 +7,7 @@ async function getById(
   pool: PoolClient
 ): Promise<platformModel> {
   const query = `
-    SELECT platform_id, platform_name, platform_description
+    SELECT platform_id, platform_code, platform_name, platform_description
     FROM platform
     WHERE platform_id = $1
   `;
@@ -16,6 +16,7 @@ async function getById(
 
   return {
     platform_id: row.platform_id,
+    platform_code: row.platform_code,
     platform_name: row.platform_name,
     platform_description: row.platform_description
   } satisfies platformModel;

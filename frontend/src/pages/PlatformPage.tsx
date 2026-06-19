@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ToastContainer from '@/components/common/Toast';
 import { useToast } from '@/hooks/useToast';
 import { searchPlatformsApi, createPlatformApi, deletePlatformApi, updatePlatformApi } from '@/services/platformApi';
-import SimpleEntityForm from '@/components/ui/SimpleEntityForm';
+import MasterDataForm from '@/components/ui/MasterDataForm';
 import Button from '@/components/common/Button';
 import Pagination from '@/components/ui/Pagination';
 import Modal from '@/components/ui/Modal';
@@ -80,9 +80,13 @@ export const PlatformPage = () => {
     setFormError('');
   };
 
-  const handleSubmit = async (data: { name: string; description: string }) => {
+  const handleSubmit = async (data: { code: string; name: string; description: string }) => {
     setFormError('');
 
+    if (!data.code.trim()) {
+      setFormError('Platform code is required.');
+      return;
+    }
     if (!data.name.trim()) {
       setFormError('Platform name is required.');
       return;
@@ -94,6 +98,7 @@ export const PlatformPage = () => {
       try {
         await updatePlatformApi(
           editingPlatform.platform_id,
+          data.code.trim(),
           data.name.trim(),
           data.description.trim()
         );
@@ -106,6 +111,7 @@ export const PlatformPage = () => {
     } else {
       try {
         await createPlatformApi(
+          data.code.trim(),
           data.name.trim(),
           data.description.trim()
         );
@@ -155,9 +161,20 @@ export const PlatformPage = () => {
   const columns = useMemo<ExcelColumn<any>[]>(
     () => [
       {
+        key: 'platform_code',
+        label: 'Code',
+        width: 120,
+        disableFilter: true,
+        render: (_: any, val: any) => (
+          <span className="font-mono text-xs font-bold uppercase tracking-wide text-emerald-700">
+            {val || '—'}
+          </span>
+        ),
+      },
+      {
         key: 'platform_name',
         label: 'Platform Name',
-        width: 250,
+        width: 220,
         disableFilter: true,
       },
       {
@@ -199,6 +216,7 @@ export const PlatformPage = () => {
     return platforms.map((p) => ({
       id: p.platform_id,
       platform_id: p.platform_id,
+      platform_code: p.platform_code,
       platform_name: p.platform_name,
       platform_description: p.platform_description,
     }));
@@ -243,14 +261,16 @@ export const PlatformPage = () => {
           onClose={closeForm}
           title={editingPlatform ? '✏️ Edit Platform' : '🌎 Create Platform'}
         >
-          <SimpleEntityForm
+          <MasterDataForm
             entityLabel="Platform"
-            namePlaceholder="Enter recruitment channel (e.g. LinkedIn, JobStreet...)"
+            codeLabel="Platform Code"
+            codePlaceholder="e.g. LINKEDIN, JOBSTREET..."
             onSubmit={handleSubmit}
             onCancel={closeForm}
             initialData={
               editingPlatform
                 ? {
+                    code: editingPlatform.platform_code || '',
                     name: editingPlatform.platform_name,
                     description: editingPlatform.platform_description || '',
                   }

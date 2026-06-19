@@ -50,12 +50,12 @@ async function candidatesByPlatform(
 
   const query = `
     SELECT
-      p.platform_name AS label,
+      COALESCE(NULLIF(p.platform_code, ''), p.platform_name) AS label,
       COUNT(c.candidate_id)::int AS value
     FROM candidate c
     INNER JOIN platform p ON p.platform_id = c.platform_id
     ${whereClause}
-    GROUP BY p.platform_id, p.platform_name
+    GROUP BY p.platform_id, p.platform_code, p.platform_name
     ORDER BY value DESC
   `;
 

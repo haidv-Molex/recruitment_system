@@ -23,7 +23,7 @@ export async function populateCandidateRelations(candidateRow: any, pool: PoolCl
     fileRes,
     candidateLevelsRes
   ] = await Promise.all([
-    platform_id ? pool.query("SELECT platform_id, platform_name, platform_description FROM platform WHERE platform_id = $1", [platform_id]) : Promise.resolve(null),
+    platform_id ? pool.query("SELECT platform_id, platform_code, platform_name, platform_description FROM platform WHERE platform_id = $1", [platform_id]) : Promise.resolve(null),
     recruiter ? User.findById(recruiter, pool) : Promise.resolve(null),
     job_id ? pool.query("SELECT job_id, job_code, project, note, file_id, create_at, update_at FROM job WHERE job_id = $1", [job_id]) : Promise.resolve(null),
     targeted_company ? pool.query("SELECT company_id, company_name, company_description FROM company WHERE company_id = $1", [targeted_company]) : Promise.resolve(null),

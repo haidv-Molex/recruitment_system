@@ -6,6 +6,7 @@ import assertFirstRow from "@utilities/db/assertFirstRow";
 import buildUpdateSet from "@utilities/db/buildUpdateSet";
 
 type UpdatePlatformData = {
+  platform_code?: string | null;
   platform_name?: string;
   platform_description?: string | null;
 };
@@ -20,6 +21,7 @@ async function update(
   assertFirstRow(checkResult.rows, "Không tìm thấy nền tảng để cập nhật", 404);
 
   const { setClauses, values, nextIndex } = buildUpdateSet([
+    { column: "platform_code", value: data.platform_code },
     { column: "platform_name", value: data.platform_name },
     { column: "platform_description", value: data.platform_description }
   ]);

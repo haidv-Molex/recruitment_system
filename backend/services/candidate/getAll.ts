@@ -54,7 +54,8 @@ export async function getAll(
       expected_salary: "c.expected_salary",
       job_name: "j.project",
       job_code: "j.job_code",
-      platform: "p.platform_name",
+      platform: "p.platform_code",
+      platform_name: "p.platform_name",
       recruiter: "u.user_name",
       reference: "ref.user_name",
       company: "comp.company_name"
@@ -95,7 +96,10 @@ export async function getAll(
   addFilterCondition("u.user_name", options.recruiter);
   addFilterCondition("j.job_code", options.job_code);
   addFilterCondition("j.project", options.project);
-  addFilterCondition("p.platform_name", options.platform);
+  if (options.platform && options.platform.trim()) {
+    values.push(`%${options.platform.trim()}%`);
+    conditions.push(`(p.platform_code ILIKE $${values.length} OR p.platform_name ILIKE $${values.length})`);
+  }
   addFilterCondition("ref.user_name", options.reference);
   addFilterCondition("comp.company_name", options.company);
 

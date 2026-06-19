@@ -47,7 +47,7 @@ const mapCandidateToRow = (c: any) => ({
   status: c.status,
   onboardingDate: c.onboard_date ? String(c.onboard_date).slice(0, 10) : '',
   offerSentDate: c.offer_date ? String(c.offer_date).slice(0, 10) : '',
-  source: c.platform?.platform_name || '',
+  source: c.platform?.platform_code || c.platform?.platform_name || '',
   employeeId: '',
   referrerName: c.reference?.user_name || '',
   referrerDepartment: '',

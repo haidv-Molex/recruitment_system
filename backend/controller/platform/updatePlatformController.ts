@@ -17,6 +17,9 @@ const paramsSchema = Joi.object({
 });
 
 const bodySchema = Joi.object({
+  platform_code: Joi.string().max(255).optional().allow("", null).messages({
+    "string.max": "Mã nền tảng tối đa 255 ký tự"
+  }),
   platform_name: Joi.string().max(255).optional().messages({
     "string.empty": "Tên nền tảng không được để trống",
     "string.max": "Tên nền tảng tối đa 255 ký tự"
@@ -24,8 +27,8 @@ const bodySchema = Joi.object({
   platform_description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả nền tảng tối đa 255 ký tự"
   })
-}).or("platform_name", "platform_description").messages({
-  "object.missing": "Phải cung cấp ít nhất tên nền tảng hoặc mô tả để cập nhật"
+}).or("platform_code", "platform_name", "platform_description").messages({
+  "object.missing": "Phải cung cấp ít nhất mã nền tảng, tên nền tảng hoặc mô tả để cập nhật"
 });
 
 updatePlatformController.put("",
