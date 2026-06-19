@@ -5,6 +5,7 @@ import OutlookSearchSelect from '@/components/ui/OutlookSearchSelect';
 import { searchLevelsApi } from '@/services/levelApi';
 import type { CandidateFormChangeEvent, CandidateFormData, CandidateFormSetData } from './types';
 import { getLevelLabel } from './utils';
+import SectionHeader from './SectionHeader';
 
 interface BasicInfoSectionProps {
   formData: CandidateFormData;
@@ -31,7 +32,7 @@ export default function BasicInfoSection({
 }: BasicInfoSectionProps) {
   return (
     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Required & Key Information</h3>
+      <SectionHeader title="Required & Key Information" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <InputField
           label="Candidate Name *"

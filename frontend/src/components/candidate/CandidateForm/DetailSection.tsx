@@ -5,6 +5,7 @@ import SingleSearchSelect from '@/components/ui/SingleSearchSelect';
 import { searchCompaniesApi } from '@/services/companyApi';
 import { Plus, Trash2 } from 'lucide-react';
 import MultiValueCreatableField from './MultiValueCreatableField';
+import SectionHeader from './SectionHeader';
 import TextareaField from './TextareaField';
 import type {
   CandidateFormChangeEvent,
@@ -144,15 +145,6 @@ export default function DetailSection({
     }));
   };
 
-  const updateWorkExperienceCurrent = (index: number, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      workExperienceDetails: prev.workExperienceDetails.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, is_current: checked } : item
-      ),
-    }));
-  };
-
   const updateWorkExperienceResponsibilities = (index: number, values: string[]) => {
     setFormData((prev) => ({
       ...prev,
@@ -174,17 +166,19 @@ export default function DetailSection({
       <button
         type="button"
         onClick={() => setShowDetailSection((prev) => !prev)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-100/60 transition-colors"
+        className="w-full p-4 text-left hover:bg-slate-100/60 transition-colors"
         disabled={saving}
       >
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Candidate Detail / CV Data</span>
-        <span className="text-xs font-semibold text-emerald-700">{showDetailSection ? 'Hide' : 'Show'}</span>
+        <SectionHeader
+          title="Candidate Detail / CV Data"
+          trailing={<span className="text-xs font-semibold text-emerald-700">{showDetailSection ? 'Hide' : 'Show'}</span>}
+        />
       </button>
 
       {showDetailSection && (
         <div className="p-4 border-t border-slate-100 space-y-5">
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Profile</h4>
+            <SectionHeader title="Profile" compact />
             <TextareaField label="Summary" name="summary" value={formData.summary} onChange={handleChange} rows={3} disabled={saving} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputField label="Date of Birth" type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} disabled={saving} />
@@ -197,7 +191,7 @@ export default function DetailSection({
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Links & Skills</h4>
+            <SectionHeader title="Links & Skills" compact />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputField label="GitHub" value={formData.links.github} onChange={(e) => handleLinkChange('github', e.target.value)} disabled={saving} />
               <InputField label="LinkedIn" value={formData.links.linkedin} onChange={(e) => handleLinkChange('linkedin', e.target.value)} disabled={saving} />
@@ -222,7 +216,7 @@ export default function DetailSection({
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Education</h4>
+            <SectionHeader title="Education" compact />
             <TextareaField label="Education" name="education" value={formData.education} onChange={handleChange} rows={3} disabled={saving} />
             <DetailRepeaterHeader title="Education Details" onAdd={addEducationDetail} saving={saving} />
             {formData.educationDetails.map((item, index) => (
@@ -239,7 +233,7 @@ export default function DetailSection({
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Experience</h4>
+            <SectionHeader title="Experience" compact />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputField label="Experience Years" name="experienceYears" value={formData.experienceYears} onChange={handleChange} disabled={saving} />
               <InputField label="Current Position" name="currentPosition" value={formData.currentPosition} onChange={handleChange} disabled={saving} />
@@ -258,17 +252,13 @@ export default function DetailSection({
                   <InputField label="Start Date" type="date" value={item.start_date} onChange={(e) => updateWorkExperienceDetail(index, 'start_date', e.target.value)} disabled={saving} />
                   <InputField label="End Date" type="date" value={item.end_date} onChange={(e) => updateWorkExperienceDetail(index, 'end_date', e.target.value)} disabled={saving} />
                 </div>
-                <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700">
-                  <input type="checkbox" checked={item.is_current} onChange={(e) => updateWorkExperienceCurrent(index, e.target.checked)} disabled={saving} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                  Current role
-                </label>
                 <MultiValueCreatableField label="Responsibilities" placeholder="Type a responsibility and press Enter..." values={item.responsibilities} onChange={(values) => updateWorkExperienceResponsibilities(index, values)} disabled={saving} />
               </DetailCard>
             ))}
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Expectations</h4>
+            <SectionHeader title="Expectations" compact />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <InputField label="Expected Position" name="expectedPosition" value={formData.expectedPosition} onChange={handleChange} disabled={saving} />
               <InputField label="Expected Level" name="expectedLevel" value={formData.expectedLevel} onChange={handleChange} disabled={saving} />

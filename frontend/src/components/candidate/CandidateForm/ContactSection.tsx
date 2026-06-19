@@ -1,5 +1,6 @@
 import InputField from '@/components/common/InputField';
 import type { CandidateFormChangeEvent, CandidateFormData } from './types';
+import SectionHeader from './SectionHeader';
 
 interface ContactSectionProps {
   formData: CandidateFormData;
@@ -11,7 +12,7 @@ interface ContactSectionProps {
 export default function ContactSection({ formData, handleChange, handlePhoneInput, saving }: ContactSectionProps) {
   return (
     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contact Information</h3>
+      <SectionHeader title="Contact Information" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <InputField
           label="Email"

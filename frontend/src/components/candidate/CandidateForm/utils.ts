@@ -57,7 +57,7 @@ export const hasAnyValue = (values: Array<string | boolean | string[]>) =>
 export const getPlatformLabel = (platform: any) => platform?.platform_code || platform?.platform_name || '';
 
 export const getLevelLabel = (level: any) =>
-  [level?.level_code, level?.level_name].filter(Boolean).join(' - ') || '';
+  level?.level_code || '';
 
 export const hasInvalidOptionalNumber = (value: string) => {
   if (!String(value || '').trim()) return false;

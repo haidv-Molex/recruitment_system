@@ -4,6 +4,7 @@ import { searchPlatformsApi } from '@/services/platformApi';
 import { fetchUsersApi } from '@/services/userApi';
 import type { CandidateFormData, CandidateFormOptions, CandidateFormSetData } from './types';
 import { getPlatformLabel } from './utils';
+import SectionHeader from './SectionHeader';
 
 interface SourcingSectionProps {
   formData: CandidateFormData;
@@ -35,14 +36,14 @@ export default function SourcingSection({
 }: SourcingSectionProps) {
   return (
     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
-      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sourcing & Assignment</h3>
+      <SectionHeader title="Sourcing & Assignment" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SingleSearchSelect
           label="Job (Requisition)"
           placeholder="Type job code or project to search..."
           initialItem={selectedJob}
           searchApi={(search) => searchJobsApi({ search })}
-          displayFn={(j: any) => `${j.job_code} - ${j.project}`}
+          displayFn={(job: any) => String(job.job_id || '')}
           keyProp="job_id"
           onChange={(id, item) => {
             setFormData((prev) => ({ ...prev, jobId: id || '' }));
