@@ -1,5 +1,5 @@
-
 import type { levelModel } from "./levelModel";
+import type { noteOutputModel } from "./noteModel";
 
 export type HeadhuntAgency =
   | 'AsiaHr'
@@ -44,7 +44,7 @@ export type candidateModel = {
   current_salary: string | null;
   expected_salary: string | null;
   status: candidateStatus | string;
-  note: string | null;
+  note: noteOutputModel[];
   create_at: Date;
   update_at: Date;
   platform_id: number | null;

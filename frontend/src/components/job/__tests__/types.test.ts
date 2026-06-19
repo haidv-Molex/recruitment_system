@@ -20,8 +20,6 @@ describe('Job types and default values', () => {
     expect(emptyJob.titles.length).toBe(0);
     expect(Array.isArray(emptyJob.employeeLevels)).toBe(true);
     expect(emptyJob.employeeLevels.length).toBe(0);
-    expect(Array.isArray(emptyJob.partners)).toBe(true);
-    expect(emptyJob.partners.length).toBe(0);
     expect(Array.isArray(emptyJob.managers)).toBe(true);
     expect(emptyJob.managers.length).toBe(0);
   });

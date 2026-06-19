@@ -5,9 +5,11 @@ import JobRelationFields from './JobRelationFields';
 import Modal from '../ui/Modal';
 import Button from '../common/Button';
 import { FilePreviewModal } from '../common/FilePreview';
+import NotesManager from '@/components/common/NotesManager';
 
 export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps) {
   const [formData, setFormData] = useState(emptyJob);
+  const [notesPayload, setNotesPayload] = useState<{ note_id: number | null; text: string }[]>([]);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [error, setError] = useState('');
 
@@ -117,7 +119,10 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
       ...formData,
       departments: updatedDepartments,
       candidateRequired: totalHC,
-    });
+      ...(job
+        ? { notes: notesPayload, note: undefined }
+        : { note: notesPayload.map((n) => n.text).filter(Boolean).join('\n') }),
+    } as any);
   };
 
   const fileToDisplay = formData.file || job?.file;
@@ -203,17 +208,11 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
           setSelectedRecruiter={setSelectedRecruiter}
         />
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-700">Note</label>
-          <textarea
-            name="note"
-            value={formData.note}
-            onChange={handleChange}
-            rows={2}
-            disabled={saving}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-          />
-        </div>
+        <NotesManager
+          existingNotes={Array.isArray(job?.note) ? job.note : []}
+          onChange={setNotesPayload}
+          disabled={saving}
+        />
       </form>
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
     </Modal>

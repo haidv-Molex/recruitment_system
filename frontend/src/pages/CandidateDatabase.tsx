@@ -29,6 +29,18 @@ import Modal from '@/components/ui/Modal';
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
 
+export function formatNotesToString(notes: any[]): string {
+  if (!Array.isArray(notes)) return '';
+  return notes
+    .map((note) => {
+      const timeStr = note.create_at ? new Date(note.create_at).toLocaleString('vi-VN') : '';
+      const userName = note.user?.user_name || 'System';
+      const text = note.text || '';
+      return `${timeStr} | ${userName} | ${text}`;
+    })
+    .join('\n');
+}
+
 const mapCandidateToRow = (c: any) => ({
   id: c.candidate_id,
   candidateCode: c.candidate_code || '',
@@ -50,7 +62,7 @@ const mapCandidateToRow = (c: any) => ({
   employeeId: '',
   referrerName: c.reference?.user_name || '',
   referrerDepartment: '',
-  note: c.note || '',
+  note: formatNotesToString(c.note),
   currentSalary: c.current_salary || '',
   expectedSalary: c.expected_salary || '',
   candidateResultFeedbackDate: c.feedback_date ? String(c.feedback_date).slice(0, 10) : '',

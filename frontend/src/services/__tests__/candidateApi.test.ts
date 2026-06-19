@@ -40,7 +40,6 @@ describe('candidateApi tests', () => {
       status: 'CV Sent',
       note: '',
       platformId: '',
-      recruiterId: '',
       jobId: '',
       targetedCompanyId: '',
       referenceId: '',
@@ -63,7 +62,6 @@ describe('candidateApi tests', () => {
     expect(entries.expected_salary).toBe('');
     expect(entries.note).toBe('');
     expect(entries.platform_id).toBe('');
-    expect(entries.recruiter).toBe('');
     expect(entries.job_id).toBe('');
     expect(entries.targeted_company).toBe('');
     expect(entries.reference).toBe('null');

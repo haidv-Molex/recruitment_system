@@ -6,6 +6,7 @@ import JobForm from '@/components/job/JobForm';
 import ToastContainer from '@/components/common/Toast';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/hooks/useToast';
+import { formatNotesToString } from './CandidateDatabase';
 import {
   createJobApi,
   createJobExtendedApi,
@@ -58,7 +59,7 @@ const mapApiJobToRow = (j: any) => ({
   myhrRequestDate: j.request_date ? String(j.request_date).slice(0, 10) : '',
   status: 'Searching',
   offerDate: '',
-  note: j.note,
+  note: formatNotesToString(j.note),
   departments: j.departments || [],
   segments: j.segments || [],
   sitesData: j.sites || [],

@@ -556,7 +556,7 @@ export default function ExcelTable<T extends Record<string, any>>({
 
       {hoveredCell && (
         <div
-          className="fixed z-[9999] pointer-events-none bg-slate-900/95 backdrop-blur-sm text-white text-xs rounded-lg px-3 py-2 shadow-xl max-w-sm break-words font-medium border border-slate-700/50 transition-opacity duration-150"
+          className="fixed z-[9999] pointer-events-none bg-slate-900/95 backdrop-blur-sm text-white text-xs rounded-lg px-3 py-2 shadow-xl max-w-sm break-words font-medium border border-slate-700/50 transition-opacity duration-150 whitespace-pre-line"
           style={{ left: hoveredCell.x + 12, top: hoveredCell.y + 12 }}
         >
           {hoveredCell.text}

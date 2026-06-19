@@ -3,13 +3,14 @@ import type { departmentModel } from "./departmentModel";
 import type { segmentModel } from "./segmentModel";
 import type { siteModel } from "./siteModel";
 import type { levelModel } from "./levelModel";
+import type { noteOutputModel } from "./noteModel";
 
 export type jobModel = {
   job_id: number;
   job_code: string;
   project: string;
   candidate_required?: number;
-  note: string | null;
+  note: noteOutputModel[];
   request_date: Date | null;
   create_at: Date;
   update_at: Date;

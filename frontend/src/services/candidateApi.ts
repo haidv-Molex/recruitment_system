@@ -213,6 +213,10 @@ export async function updateCandidateApi(id: number, formData: any): Promise<can
   // File upload
   if (formData.file) fd.append('file', formData.file);
 
+  if (formData.notes) {
+    fd.append('notes', JSON.stringify(formData.notes));
+  }
+
   const response = await axiosInstance.put('/candidate', fd, { params: { id } });
   return response.data.data!;
 }

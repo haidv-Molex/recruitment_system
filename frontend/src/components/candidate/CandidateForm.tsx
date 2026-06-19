@@ -11,6 +11,7 @@ import SelectField from '@/components/common/SelectField';
 import Button from '@/components/common/Button';
 import SingleSearchSelect from '@/components/ui/SingleSearchSelect';
 import FileUploadField from '@/components/common/FileUploadField';
+import NotesManager from '@/components/common/NotesManager';
 
 const emptyCandidate = {
   candidateCode: '',
@@ -47,6 +48,7 @@ export interface CandidateFormProps {
 
 export default function CandidateForm({ candidate, onSubmit, onClose, saving }: CandidateFormProps) {
   const [formData, setFormData] = useState(emptyCandidate);
+  const [notesPayload, setNotesPayload] = useState<{ note_id: number | null; text: string }[]>([]);
   const [error, setError] = useState('');
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
@@ -194,7 +196,21 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
       return;
     }
 
-    onSubmit(formData);
+    if (candidate) {
+      // Edit candidate payload
+      const { note, ...rest } = formData;
+      onSubmit({
+        ...rest,
+        notes: notesPayload,
+      } as any);
+    } else {
+      // Create candidate payload
+      const noteTexts = notesPayload.map((n) => n.text).filter(Boolean);
+      onSubmit({
+        ...formData,
+        note: noteTexts.join('\n'),
+      });
+    }
   };
 
   const statusOptions = [
@@ -500,17 +516,11 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
         {/* Section 6: Attachments & Notes */}
         <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/80 space-y-4">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attachments & Notes</h3>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700">Note</label>
-            <textarea
-              name="note"
-              value={formData.note}
-              onChange={handleChange}
-              rows={3}
-              disabled={saving}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-            />
-          </div>
+          <NotesManager
+            existingNotes={Array.isArray(candidate?.note) ? candidate.note : []}
+            onChange={setNotesPayload}
+            disabled={saving}
+          />
         </div>
       </form>
       {previewFile && <FilePreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
