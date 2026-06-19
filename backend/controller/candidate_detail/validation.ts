@@ -60,7 +60,7 @@ const objectArray = (itemSchema: Joi.ObjectSchema, withDefault: boolean) => {
   return withDefault ? schema.default([]) : schema.optional();
 };
 
-function bodyFields(withDefaults: boolean) {
+export function candidateDetailBodyFields(withDefaults: boolean) {
   return {
     summary: nullableString().optional(),
     date_of_birth: nullableDate().optional(),
@@ -96,9 +96,9 @@ function bodyFields(withDefaults: boolean) {
   };
 }
 
-export const createBodySchema = Joi.object(bodyFields(true));
+export const createBodySchema = Joi.object(candidateDetailBodyFields(true));
 
-export const updateBodySchema = Joi.object(bodyFields(false))
+export const updateBodySchema = Joi.object(candidateDetailBodyFields(false))
   .or(...candidateDetailWriteFields)
   .messages({
     "object.missing": "Phải cung cấp ít nhất một trường để cập nhật chi tiết ứng viên"

@@ -4,19 +4,15 @@ import FileService from "@services/file/_File";
 import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
 import { populateCandidateRelations } from "./populate";
 import { insertLinkRows } from "@utilities/db/linking";
+import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
+import { candidateDetailWriteFields } from "@services/candidate_detail/types";
 
-export interface CreateCandidateInput {
+export interface CreateCandidateInput extends CandidateDetailWriteData {
   candidate_code?: string | null;
   candidate_name: string;
   candidate_email?: string | null;
   candidate_phone?: string | null;
   agency?: string | null;
-  offer_date?: string | Date | null;
-  onboard_date?: string | Date | null;
-  expected_onboard_date?: string | Date | null;
-  feedback_date?: string | Date | null;
-  current_salary?: string | null;
-  expected_salary?: string | null;
   status: string;
   note?: string | null;
   platform_id?: number | null;
@@ -26,6 +22,18 @@ export interface CreateCandidateInput {
   file?: { originalname: string; buffer: Buffer } | null;
   candidate_levels?: number[];
 }
+
+const pickCandidateDetailData = (data: CreateCandidateInput): CandidateDetailWriteData => {
+  const detailData: CandidateDetailWriteData = {};
+
+  candidateDetailWriteFields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(data, field)) {
+      (detailData as any)[field] = (data as any)[field];
+    }
+  });
+
+  return detailData;
+};
 
 export async function create(
   data: CreateCandidateInput,
@@ -44,14 +52,7 @@ export async function create(
   }
 
   try {
-    const candidateDetail = await CandidateDetailService.create({
-      offer_date: data.offer_date ?? null,
-      onboard_date: data.onboard_date ?? null,
-      expected_onboard_date: data.expected_onboard_date ?? null,
-      feedback_date: data.feedback_date ?? null,
-      current_salary: data.current_salary ?? null,
-      expected_salary: data.expected_salary ?? null
-    }, pool);
+    const candidateDetail = await CandidateDetailService.create(pickCandidateDetailData(data), pool);
 
     const query = `
       INSERT INTO candidate (

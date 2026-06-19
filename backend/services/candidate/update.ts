@@ -5,19 +5,14 @@ import CandidateDetailService from "@services/candidate_detail/_CandidateDetail"
 import { populateCandidateRelations } from "./populate";
 import { replaceLinkRows } from "@utilities/db/linking";
 import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
+import { candidateDetailWriteFields } from "@services/candidate_detail/types";
 
-export interface UpdateCandidateInput {
+export interface UpdateCandidateInput extends CandidateDetailWriteData {
   candidate_code?: string | null;
   candidate_name?: string;
   candidate_email?: string | null;
   candidate_phone?: string | null;
   agency?: string | null;
-  offer_date?: string | Date | null;
-  onboard_date?: string | Date | null;
-  expected_onboard_date?: string | Date | null;
-  feedback_date?: string | Date | null;
-  current_salary?: string | null;
-  expected_salary?: string | null;
   status?: string;
   note?: string | null;
   platform_id?: number | null;
@@ -80,12 +75,6 @@ export async function update(
     if (data.candidate_email !== undefined) addParam(data.candidate_email, "candidate_email");
     if (data.candidate_phone !== undefined) addParam(data.candidate_phone, "candidate_phone");
     if (data.agency !== undefined) addParam(data.agency, "agency");
-    if (data.offer_date !== undefined) detailData.offer_date = data.offer_date;
-    if (data.onboard_date !== undefined) detailData.onboard_date = data.onboard_date;
-    if (data.expected_onboard_date !== undefined) detailData.expected_onboard_date = data.expected_onboard_date;
-    if (data.feedback_date !== undefined) detailData.feedback_date = data.feedback_date;
-    if (data.current_salary !== undefined) detailData.current_salary = data.current_salary;
-    if (data.expected_salary !== undefined) detailData.expected_salary = data.expected_salary;
     if (data.status !== undefined) addParam(data.status, "status");
     if (data.note !== undefined) addParam(data.note, "note");
     if (data.platform_id !== undefined) addParam(data.platform_id, "platform_id");
@@ -93,6 +82,12 @@ export async function update(
     if (data.targeted_company !== undefined) addParam(data.targeted_company, "targeted_company");
     if (data.reference !== undefined) addParam(data.reference, "reference");
     if (fileId !== undefined) addParam(fileId, "file_id");
+
+    candidateDetailWriteFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(data, field)) {
+        (detailData as any)[field] = (data as any)[field];
+      }
+    });
 
     if (Object.keys(detailData).length > 0) {
       if (candidateDetailId) {
