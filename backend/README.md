@@ -105,6 +105,18 @@ TEST_EMAIL_TO=hai.do@molex.com
 TEST_EMAIL_ENABLED=true
 ```
 
+For an internal SMTP relay such as `smtp.molex.com`, configure relay mode instead:
+
+```ini
+OUTLOOK_SMTP_HOST=smtp.molex.com
+OUTLOOK_SMTP_PORT=25
+OUTLOOK_SMTP_AUTH_ENABLED=false
+OUTLOOK_SMTP_IGNORE_TLS=true
+OUTLOOK_SMTP_FROM=thinh.vu@molex.com
+TEST_EMAIL_TO=hai.do@molex.com
+TEST_EMAIL_ENABLED=true
+```
+
 Then run:
 
 ```bash
