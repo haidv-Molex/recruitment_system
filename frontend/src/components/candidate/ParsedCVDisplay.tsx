@@ -1,5 +1,6 @@
 export interface ParsedCVDisplayProps {
   parsedData: any;
+  showExtractionMetadata?: boolean;
 }
 
 function InfoCard({ label, value }: { label: string; value?: string | null }) {
@@ -13,7 +14,7 @@ function InfoCard({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default function ParsedCVDisplay({ parsedData }: ParsedCVDisplayProps) {
+export default function ParsedCVDisplay({ parsedData, showExtractionMetadata = true }: ParsedCVDisplayProps) {
   const links = parsedData.links || {};
   const otherLinks: string[] = links.other || [];
   const workExperienceDetails: any[] = parsedData.work_experience_details || [];
@@ -49,7 +50,7 @@ export default function ParsedCVDisplay({ parsedData }: ParsedCVDisplayProps) {
         <InfoCard label="Date of Birth" value={parsedData.date_of_birth} />
         <InfoCard label="Location" value={parsedData.location} />
         <InfoCard label="Nationality" value={parsedData.nationality} />
-        <InfoCard label="National ID" value={parsedData.national_id} />
+        {showExtractionMetadata && <InfoCard label="National ID" value={parsedData.national_id} />}
         <InfoCard label="Years of Experience" value={parsedData.experience_years} />
       </div>
 
@@ -216,45 +217,49 @@ export default function ParsedCVDisplay({ parsedData }: ParsedCVDisplayProps) {
         )}
       </div>
 
-      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
-        <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Extraction Warnings</label>
-        {extractionWarnings.length > 0 ? (
-          <ul className="space-y-0.5">
-            {extractionWarnings.map((warning: string, idx: number) => (
-              <li key={idx} className="text-xs text-amber-700 flex gap-1.5">
-                <span>⚠</span>
-                {warning}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <span className="text-xs text-amber-600 italic">None</span>
-        )}
-      </div>
-
-      <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Extraction Confidence</label>
-        {Object.keys(fieldConfidences).length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2">
-            {Object.entries(fieldConfidences).map(([field, confidence]) => (
-              <div key={field} className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-slate-500 capitalize truncate">{field.replace(/_/g, ' ')}</div>
-                  <div className="mt-0.5 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${confidence >= 0.8 ? 'bg-emerald-400' : confidence >= 0.5 ? 'bg-yellow-400' : 'bg-red-400'}`}
-                      style={{ width: `${Math.round(confidence * 100)}%` }}
-                    />
-                  </div>
-                </div>
-                <span className="text-xs font-semibold text-slate-600 tabular-nums">{Math.round(confidence * 100)}%</span>
-              </div>
-            ))}
+      {showExtractionMetadata && (
+        <>
+          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+            <label className="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Extraction Warnings</label>
+            {extractionWarnings.length > 0 ? (
+              <ul className="space-y-0.5">
+                {extractionWarnings.map((warning: string, idx: number) => (
+                  <li key={idx} className="text-xs text-amber-700 flex gap-1.5">
+                    <span>⚠</span>
+                    {warning}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-xs text-amber-600 italic">None</span>
+            )}
           </div>
-        ) : (
-          <span className="text-sm text-slate-400 italic">No confidence data</span>
-        )}
-      </div>
+
+          <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Extraction Confidence</label>
+            {Object.keys(fieldConfidences).length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2">
+                {Object.entries(fieldConfidences).map(([field, confidence]) => (
+                  <div key={field} className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-slate-500 capitalize truncate">{field.replace(/_/g, ' ')}</div>
+                      <div className="mt-0.5 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${confidence >= 0.8 ? 'bg-emerald-400' : confidence >= 0.5 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                          style={{ width: `${Math.round(confidence * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-600 tabular-nums">{Math.round(confidence * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className="text-sm text-slate-400 italic">No confidence data</span>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

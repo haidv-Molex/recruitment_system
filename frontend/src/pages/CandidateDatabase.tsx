@@ -287,7 +287,7 @@ function CandidateDetailModal({
 
           <div className="p-5">
             {activeTab === 'candidate-info' && (
-              <ParsedCVDisplay parsedData={candidateParsedCV} />
+              <ParsedCVDisplay parsedData={candidateParsedCV} showExtractionMetadata={false} />
             )}
 
             {activeTab === 'recruitment-history' && (
