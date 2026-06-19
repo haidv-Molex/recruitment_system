@@ -84,7 +84,7 @@ export async function createWithAll(
   if (!jobId && data.job_code) {
     const jobCodeTrimmed = data.job_code.trim();
     const jobCheck = await pool.query(
-      `SELECT job_id FROM job WHERE LOWER(job_code) = LOWER($1) LIMIT 1`,
+      `SELECT job_id FROM job WHERE LOWER(TRIM(job_code)) = LOWER(TRIM($1)) LIMIT 1`,
       [jobCodeTrimmed]
     );
     if (jobCheck.rows.length > 0) {

@@ -67,6 +67,9 @@ const bodySchema = Joi.object({
     "number.base": "Recruiter ID phải là số nguyên",
     "number.integer": "Recruiter ID phải là số nguyên"
   }),
+  recruiter_name: Joi.string().max(255).empty(["", "null"]).allow(null).optional().messages({
+    "string.max": "Tên recruiter không được vượt quá 255 ký tự",
+  }),
   departments: departmentArray().optional(),
   segments: numberArray().optional(),
   sites: numberArray().optional(),
@@ -100,6 +103,7 @@ updateJobController.put(
       "note",
       "request_date",
       "recruiter_id",
+      "recruiter_name",
       "departments",
       "segments",
       "sites",

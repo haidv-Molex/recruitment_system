@@ -49,6 +49,28 @@ describe('jobApi contract tests', () => {
     expect(result).toEqual(mockJob);
   });
 
+  it('createJobExtendedApi should omit blank job_code and send recruiter_name', async () => {
+    const mockJob = { job_id: 7, job_code: 'J007', project: 'Project Auto' };
+    vi.mocked(axiosInstance.post).mockResolvedValueOnce({
+      data: { result: true, data: mockJob },
+    });
+
+    await createJobExtendedApi({
+      job_code: '',
+      project: 'Project Auto',
+      recruiter_id: null,
+      recruiter_name: 'New Recruiter',
+    });
+
+    expect(axiosInstance.post).toHaveBeenCalledWith('/job/extended', expect.any(FormData));
+    const formData = vi.mocked(axiosInstance.post).mock.calls[0][1] as FormData;
+    const entries = formDataEntries(formData);
+
+    expect(entries.job_code).toBeUndefined();
+    expect(entries.project).toBe('Project Auto');
+    expect(entries.recruiter_name).toBe('New Recruiter');
+  });
+
   it('updateJobApi should not send unsupported partners or partners_name to PUT /job', async () => {
     const mockJob = { job_id: 1, job_code: 'J001', project: 'Project A' };
     vi.mocked(axiosInstance.put).mockResolvedValueOnce({
@@ -70,9 +92,30 @@ describe('jobApi contract tests', () => {
 
     expect(entries.partners).toBeUndefined();
     expect(entries.partners_name).toBeUndefined();
+    expect(entries.recruiter_name).toBeUndefined();
     expect(entries.departments).toBe(JSON.stringify([{ department_id: 3, candidate_required: 2 }]));
     expect(entries.departments_name).toBe(JSON.stringify([{ name: 'Dept A', candidate_required: 1 }]));
     expect(result).toEqual(mockJob);
+  });
+
+  it('updateJobApi should send recruiter_name for newly typed recruiter', async () => {
+    const mockJob = { job_id: 1, job_code: 'J001', project: 'Project A' };
+    vi.mocked(axiosInstance.put).mockResolvedValueOnce({
+      data: { result: true, data: mockJob },
+    });
+
+    await updateJobApi(1, {
+      project: 'Project A',
+      recruiter_id: null,
+      recruiter_name: 'New Recruiter',
+    });
+
+    const formData = vi.mocked(axiosInstance.put).mock.calls[0][1] as FormData;
+    const entries = formDataEntries(formData);
+
+    expect(entries.job_code).toBeUndefined();
+    expect(entries.recruiter_id).toBe('null');
+    expect(entries.recruiter_name).toBe('New Recruiter');
   });
 
   it('createJobExtendedApi should keep partner fields for POST /job/extended', async () => {

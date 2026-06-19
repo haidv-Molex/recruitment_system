@@ -121,7 +121,7 @@ export async function batchImport(
   if (jobCodes.size > 0) {
     const uniqueJobCodes = Array.from(jobCodes).map((jc) => normalizeLookupKey(jc)).filter(Boolean);
     const jobRes = await pool.query(
-      `SELECT job_id, LOWER(job_code) AS lower_code FROM job WHERE LOWER(job_code) = ANY($1)`,
+      `SELECT job_id, LOWER(TRIM(job_code)) AS lower_code FROM job WHERE LOWER(TRIM(job_code)) = ANY($1)`,
       [uniqueJobCodes]
     );
     for (const row of jobRes.rows) {

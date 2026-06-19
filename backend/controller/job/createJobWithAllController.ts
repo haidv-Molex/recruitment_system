@@ -32,10 +32,8 @@ const upload = multer({
 
 
 const bodySchema = Joi.object({
-  // --- Trường Job bắt buộc ---
-  job_code: Joi.string().min(1).max(255).required().messages({
-    "any.required": "Mã công việc là bắt buộc",
-    "string.empty": "Mã công việc không được để trống",
+  // --- Trường Job ---
+  job_code: Joi.string().min(1).max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Mã công việc không được vượt quá 255 ký tự",
   }),
   project: Joi.string().min(1).max(255).required().messages({

@@ -1,6 +1,5 @@
 import { PoolClient } from "pg";
 import { pool } from "@middlewares/database";
-import { AppError } from "@middlewares/AppError";
 import createWithAll from "@services/job/createWithAll";
 
 describe("createWithAll job service", () => {
@@ -203,19 +202,16 @@ describe("createWithAll job service", () => {
     expect(result.partners).to.be.an("array").that.is.empty;
   });
 
-  // --- Thiếu job_code → service gốc throw DB error ---
-  it("should throw when job_code is empty string (DB NOT NULL constraint)", async () => {
-    try {
-      await createWithAll(
-        {
-          job_code: "",
-          project: "Project Kappa",
-        },
-        client
-      );
-      expect.fail("Should have thrown");
-    } catch (err) {
-      expect(err).to.be.instanceOf(Error);
-    }
+  it("should auto-generate job_code from job_id when job_code is blank", async () => {
+    const result = await createWithAll(
+      {
+        job_code: "",
+        project: "Project Kappa",
+      },
+      client
+    );
+
+    const expectedCode = `J${String(result.job_id).padStart(3, "0")}`;
+    expect(result.job_code).to.equal(expectedCode);
   });
 });

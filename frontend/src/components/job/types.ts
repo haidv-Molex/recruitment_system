@@ -5,6 +5,7 @@ export const emptyJob = {
   note: '',
   requestDate: '',
   recruiterId: '',
+  recruiterName: '',
   file: null as File | null,
   departments: [] as any[],
   segments: [] as any[],

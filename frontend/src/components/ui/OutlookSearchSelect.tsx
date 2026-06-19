@@ -13,6 +13,8 @@ interface OutlookSearchSelectProps<T> {
   disabled?: boolean;
   hideChips?: boolean;
   singleSelect?: boolean;
+  allowCreation?: boolean;
+  commitOnBlur?: boolean;
 }
 
 export default function OutlookSearchSelect<T>({
@@ -27,6 +29,8 @@ export default function OutlookSearchSelect<T>({
   disabled = false,
   hideChips = false,
   singleSelect = false,
+  allowCreation = true,
+  commitOnBlur = false,
 }: OutlookSearchSelectProps<T>) {
   const [selectedItems, setSelectedItems] = useState<T[]>(initialItems);
   const [inputValue, setInputValue] = useState('');
@@ -92,17 +96,30 @@ export default function OutlookSearchSelect<T>({
     return () => clearTimeout(handler);
   }, [inputValue]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const createItemFromInput = (value: string) => {
+    const trimmed = value.trim();
+    const newItem = {
+      [keyProp]: trimmed,
+    } as unknown as T;
+    if (keyProp === 'department_id') {
+      (newItem as any).department_code = trimmed;
+      (newItem as any).department_name = trimmed;
+    } else if (keyProp === 'segment_id') {
+      (newItem as any).segment_code = trimmed;
+      (newItem as any).segment_name = trimmed;
+    } else if (keyProp === 'site_id') {
+      (newItem as any).site_code = trimmed;
+      (newItem as any).site_name = trimmed;
+    } else if (keyProp === 'level_id') {
+      (newItem as any).level_code = trimmed;
+      (newItem as any).level_name = trimmed;
+    } else if (keyProp === 'user_id') {
+      (newItem as any).user_name = trimmed;
+    }
+    return newItem;
+  };
 
-  const handleSelect = (item: T) => {
+  const handleSelect = (item: T, refocusInput = true) => {
     const itemId = item[keyProp] as any;
     if (singleSelect) {
       const updated = [item];
@@ -125,8 +142,30 @@ export default function OutlookSearchSelect<T>({
     setSuggestions([]);
     setShowSuggestions(false);
     setActiveIndex(-1);
-    inputRef.current?.focus();
+    if (refocusInput) inputRef.current?.focus();
   };
+
+  const commitInputValue = (refocusInput = true) => {
+    const trimmed = inputValue.trim();
+    if (!trimmed || !allowCreation) return false;
+
+    const exactSuggestion = suggestions.find(
+      (item) => displayFn(item).toLowerCase() === trimmed.toLowerCase()
+    );
+    handleSelect(exactSuggestion || createItemFromInput(trimmed), refocusInput);
+    return true;
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        if (commitOnBlur && commitInputValue(false)) return;
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [inputValue, suggestions, allowCreation, commitOnBlur]);
 
   const handleRemove = (item: T) => {
     const itemId = item[keyProp] as any;
@@ -149,27 +188,8 @@ export default function OutlookSearchSelect<T>({
       e.preventDefault();
       if (activeIndex >= 0 && activeIndex < suggestions.length) {
         handleSelect(suggestions[activeIndex]);
-      } else if (inputValue.trim()) {
-        const trimmed = inputValue.trim();
-        const newItem = {
-          [keyProp]: trimmed,
-        } as unknown as T;
-        if (keyProp === 'department_id') {
-          (newItem as any).department_code = trimmed;
-          (newItem as any).department_name = trimmed;
-        } else if (keyProp === 'segment_id') {
-          (newItem as any).segment_code = trimmed;
-          (newItem as any).segment_name = trimmed;
-        } else if (keyProp === 'site_id') {
-          (newItem as any).site_code = trimmed;
-          (newItem as any).site_name = trimmed;
-        } else if (keyProp === 'level_id') {
-          (newItem as any).level_code = trimmed;
-          (newItem as any).level_name = trimmed;
-        } else if (keyProp === 'user_id') {
-          (newItem as any).user_name = trimmed;
-        }
-        handleSelect(newItem);
+      } else {
+        commitInputValue();
       }
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
@@ -235,26 +255,41 @@ export default function OutlookSearchSelect<T>({
               <Loader2 size={12} className="animate-spin" />
               <span>Searching...</span>
             </div>
-          ) : suggestions.length === 0 ? (
+          ) : suggestions.length === 0 && !allowCreation ? (
             <div className="p-3 text-xs text-slate-400 text-center">
               No matches found
             </div>
           ) : (
-            suggestions.map((item, idx) => (
-              <div
-                key={item[keyProp] as any}
-                onClick={() => handleSelect(item)}
-                onMouseEnter={() => setActiveIndex(idx)}
-                className={`px-3 py-2 text-xs cursor-pointer transition-colors flex items-center justify-between ${
-                  idx === activeIndex ? 'bg-emerald-50 text-emerald-800 font-medium' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <span>{displayFn(item)}</span>
-                {selectedItems.some((s) => (s[keyProp] as any) === (item[keyProp] as any)) && (
-                  <span className="text-[10px] text-slate-400 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">Selected</span>
+            <>
+              {suggestions.map((item, idx) => (
+                <div
+                  key={item[keyProp] as any}
+                  onMouseDown={(e) => { e.preventDefault(); handleSelect(item); }}
+                  onMouseEnter={() => setActiveIndex(idx)}
+                  className={`px-3 py-2 text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                    idx === activeIndex ? 'bg-emerald-50 text-emerald-800 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{displayFn(item)}</span>
+                  {selectedItems.some((s) => (s[keyProp] as any) === (item[keyProp] as any)) && (
+                    <span className="text-[10px] text-slate-400 font-semibold bg-slate-100 px-1.5 py-0.5 rounded">Selected</span>
+                  )}
+                </div>
+              ))}
+              {allowCreation &&
+                inputValue.trim() &&
+                !suggestions.some((item) => displayFn(item).toLowerCase() === inputValue.trim().toLowerCase()) && (
+                  <div
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(createItemFromInput(inputValue));
+                    }}
+                    className="px-3 py-2 text-xs text-emerald-600 hover:bg-emerald-50 cursor-pointer font-semibold transition-colors"
+                  >
+                    + Create "{inputValue.trim()}"
+                  </div>
                 )}
-              </div>
-            ))
+            </>
           )}
         </div>
       )}

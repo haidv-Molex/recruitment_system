@@ -134,4 +134,94 @@ describe("Job batchImport service", () => {
       candidate_required: 2,
     });
   });
+
+  it("should update an existing job when batch import receives the same job_code", async () => {
+    const firstImport = await batchImport([
+      {
+        job_code: "JOB-BATCH-UPSERT-001",
+        project: "Original Project",
+        note: "old note",
+        departments_name: [{ name: "Upsert Dept Old", candidate_required: 1 }],
+        segments_name: ["Upsert Segment Old"],
+      }
+    ], client);
+
+    expect(firstImport.success).to.be.true;
+
+    const initialJob = await client.query(
+      `SELECT job_id FROM job WHERE job_code = $1`,
+      ["JOB-BATCH-UPSERT-001"]
+    );
+    const jobId = initialJob.rows[0].job_id;
+
+    const secondImport = await batchImport([
+      {
+        job_code: " job-batch-upsert-001 ",
+        project: "Updated Project",
+        note: "new note",
+        departments_name: [{ name: "Upsert Dept New", candidate_required: 4 }],
+        segments_name: ["Upsert Segment New"],
+      }
+    ], client);
+
+    expect(secondImport.success).to.be.true;
+    expect(secondImport.importedCount).to.equal(1);
+    expect(secondImport.errors).to.have.lengthOf(0);
+
+    const jobs = await client.query(
+      `SELECT job_id, job_code, project, note FROM job WHERE LOWER(TRIM(job_code)) = $1`,
+      ["job-batch-upsert-001"]
+    );
+    expect(jobs.rows).to.have.lengthOf(1);
+    expect(jobs.rows[0]).to.include({
+      job_id: jobId,
+      job_code: "job-batch-upsert-001",
+      project: "Updated Project",
+      note: "new note",
+    });
+
+    const departments = await client.query(
+      `SELECT d.department_name, jd.candidate_required
+       FROM job_department jd
+       JOIN department d ON d.department_id = jd.department_id
+       WHERE jd.job_id = $1`,
+      [jobId]
+    );
+    expect(departments.rows).to.deep.equal([
+      { department_name: "Upsert Dept New", candidate_required: 4 }
+    ]);
+
+    const segments = await client.query(
+      `SELECT s.segment_name
+       FROM job_segment js
+       JOIN segment s ON s.segment_id = js.segment_id
+       WHERE js.job_id = $1`,
+      [jobId]
+    );
+    expect(segments.rows).to.deep.equal([
+      { segment_name: "Upsert Segment New" }
+    ]);
+  });
+
+  it("should auto-generate job_code for imported jobs without a job_code", async () => {
+    const result = await batchImport([
+      {
+        job_code: "",
+        project: "Batch Auto Code Project",
+      }
+    ], client);
+
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+    expect(result.errors).to.have.lengthOf(0);
+
+    const jobRes = await client.query(
+      `SELECT job_id, job_code FROM job WHERE project = $1`,
+      ["Batch Auto Code Project"]
+    );
+    expect(jobRes.rows).to.have.lengthOf(1);
+
+    const expectedCode = `J${String(jobRes.rows[0].job_id).padStart(3, "0")}`;
+    expect(jobRes.rows[0].job_code).to.equal(expectedCode);
+  });
 });

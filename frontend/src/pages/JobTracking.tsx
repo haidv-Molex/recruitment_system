@@ -123,13 +123,21 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
   const handleSaveJob = async (formData: any) => {
     setSaving(true);
 
+    const recruiterId = formData.recruiterId && !isNaN(Number(formData.recruiterId))
+      ? Number(formData.recruiterId)
+      : null;
+    const recruiterName = !recruiterId && formData.recruiterName?.trim()
+      ? formData.recruiterName.trim()
+      : null;
+
     const apiPayload = {
-      job_code: formData.jobCode,
+      job_code: formData.jobCode?.trim() || null,
       project: formData.project,
       candidate_required: formData.candidateRequired,
       note: formData.note,
       request_date: formData.requestDate,
-      recruiter_id: formData.recruiterId || null,
+      recruiter_id: recruiterId,
+      recruiter_name: recruiterName,
       file: formData.file,
       // Existing IDs
       departments: (formData.departments || [])
@@ -312,7 +320,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         }));
 
       return {
-        job_code: parsedJob.jobCode,
+        job_code: parsedJob.jobCode?.trim() || null,
         project: parsedJob.project,
         note: parsedJob.note || '',
         request_date: parsedJob.requestDate || '',

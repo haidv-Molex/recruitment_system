@@ -1,7 +1,7 @@
 import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
-import FileService from "@services/file/_File";
+import uploadFile from "@services/file/upload";
 import { populateJobRelations } from "./populate";
 import fs from "fs";
 import path from "path";
@@ -18,6 +18,7 @@ type UpdateJobData = {
   note?: string | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;
+  recruiter_name?: string | null;
   file?: {
     originalname: string;
     buffer: Buffer;
@@ -53,7 +54,7 @@ async function update(
   try {
     // 1. If file is provided, upload it first (create new file record)
     if (data.file) {
-      const fileRes = await FileService.upload({
+      const fileRes = await uploadFile({
         type: "jd",
         originalname: data.file.originalname,
         buffer: data.file.buffer
@@ -68,8 +69,12 @@ async function update(
     let index = 1;
 
     if (data.job_code !== undefined) {
+      const jobCode = data.job_code.trim();
+      if (!jobCode) {
+        throw new AppError("Mã công việc không được để trống", 400);
+      }
       fields.push(`job_code = $${index++}`);
-      values.push(data.job_code);
+      values.push(jobCode);
     }
     if (data.project !== undefined) {
       fields.push(`project = $${index++}`);
@@ -83,9 +88,15 @@ async function update(
       fields.push(`request_date = $${index++}`);
       values.push(data.request_date);
     }
-    if (data.recruiter_id !== undefined) {
+    let resolvedRecruiterId = data.recruiter_id;
+    if ((resolvedRecruiterId === null || resolvedRecruiterId === undefined) && data.recruiter_name?.trim()) {
+      const recruiter = await User.create({ username: data.recruiter_name.trim() }, pool);
+      resolvedRecruiterId = recruiter.user_id;
+    }
+
+    if (data.recruiter_id !== undefined || data.recruiter_name !== undefined) {
       fields.push(`recruiter_id = $${index++}`);
-      values.push(data.recruiter_id);
+      values.push(resolvedRecruiterId ?? null);
     }
     if (file_id !== undefined) {
       fields.push(`file_id = $${index++}`);

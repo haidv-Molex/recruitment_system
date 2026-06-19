@@ -6,12 +6,12 @@ import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import Level from "@services/level/_Level";
 import create from "@services/job/create";
-import { AppError } from "@middlewares/AppError";
+import update from "@services/job/update";
 import normalizeLookupKey from "@utilities/entity/normalizeLookupKey";
 import resolveAndCreateEntities from "@utilities/entity/resolveAndCreateEntities";
 
 export type JobImportItem = {
-  job_code: string;
+  job_code?: string | null;
   project: string;
   note?: string | null;
   request_date?: string | Date | null;
@@ -36,7 +36,7 @@ export type JobImportItem = {
 export type BatchImportResult = {
   success: boolean;
   importedCount: number;
-  errors: Array<{ job_code: string; message: string }>;
+  errors: Array<{ job_code: string | null; message: string }>;
 };
 
 async function batchImport(
@@ -173,10 +173,15 @@ async function batchImport(
 
   // 2. Process and insert each Job
   let importedCount = 0;
-  const errors: Array<{ job_code: string; message: string }> = [];
+  const errors: Array<{ job_code: string | null; message: string }> = [];
 
   for (const job of jobs) {
     try {
+      // Use a nested savepoint to allow partial success
+      await pool.query("SAVEPOINT import_job_savepoint");
+
+      const jobCode = job.job_code?.trim() || null;
+
       // Resolve IDs for this job
       const mergedPartners = [
         ...(job.partners || []),
@@ -236,34 +241,43 @@ async function batchImport(
       ];
       const resolvedRecruiterId = job.recruiter_id || (job.recruiter_name?.trim() ? recruiterMap.get(normalizeLookupKey(job.recruiter_name)) : null) || null;
 
-      // Use a nested savepoint to allow partial success
-      await pool.query("SAVEPOINT import_job_savepoint");
+      const jobData = {
+        project: job.project,
+        note: job.note || null,
+        request_date: job.request_date || null,
+        recruiter_id: resolvedRecruiterId,
+        file: null,
+        departments: mergedDepartments,
+        segments: Array.from(new Set(mergedSegments)),
+        sites: Array.from(new Set(mergedSites)),
+        titles: Array.from(new Set(mergedTitles)),
+        managers: Array.from(new Set(mergedManagers)),
+        employee_levels: Array.from(new Set(mergedEmployeeLevels)),
+      };
 
-      await create(
-        {
-          job_code: job.job_code,
-          project: job.project,
-          note: job.note || null,
-          request_date: job.request_date || null,
-          recruiter_id: resolvedRecruiterId,
-          file: null,
-          departments: mergedDepartments,
-          segments: Array.from(new Set(mergedSegments)),
-          sites: Array.from(new Set(mergedSites)),
-          titles: Array.from(new Set(mergedTitles)),
-          managers: Array.from(new Set(mergedManagers)),
-          employee_levels: Array.from(new Set(mergedEmployeeLevels)),
-        },
-        pool
-      );
+      if (jobCode) {
+        const existingJob = await pool.query(
+          `SELECT job_id FROM job WHERE LOWER(TRIM(job_code)) = $1 LIMIT 1`,
+          [normalizeLookupKey(jobCode)]
+        );
+
+        if (existingJob.rows.length > 0) {
+          await update(Number(existingJob.rows[0].job_id), { ...jobData, job_code: jobCode }, pool);
+        } else {
+          await create({ ...jobData, job_code: jobCode }, pool);
+        }
+      } else {
+        await create({ ...jobData, job_code: null }, pool);
+      }
 
       await pool.query("RELEASE SAVEPOINT import_job_savepoint");
       importedCount++;
     } catch (err: any) {
       await pool.query("ROLLBACK TO SAVEPOINT import_job_savepoint");
+      await pool.query("RELEASE SAVEPOINT import_job_savepoint");
       errors.push({
-        job_code: job.job_code,
-        message: err.message || "Lỗi không xác định khi tạo Job",
+        job_code: job.job_code || null,
+        message: err.message || "Lỗi không xác định khi import Job",
       });
     }
   }

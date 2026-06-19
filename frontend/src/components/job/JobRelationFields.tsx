@@ -161,7 +161,7 @@ export default function JobRelationFields({
 
       <OutlookSearchSelect
         label="📦 Segments"
-        placeholder="Search segments..."
+        placeholder="Search or type a new segment..."
         initialItems={selectedSegs}
         searchApi={(search) => searchSegmentsApi({ search })}
         displayFn={(s: any) => s.segment_name || ''}
@@ -172,11 +172,13 @@ export default function JobRelationFields({
           setSelectedSegs(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
 
       <OutlookSearchSelect
         label="📍 Sites"
-        placeholder="Search sites..."
+        placeholder="Search or type a new site..."
         initialItems={selectedSites}
         searchApi={(search) => searchSitesApi({ search })}
         displayFn={(s: any) => s.site_name || ''}
@@ -187,6 +189,8 @@ export default function JobRelationFields({
           setSelectedSites(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
 
       <OutlookSearchSelect
@@ -206,7 +210,7 @@ export default function JobRelationFields({
 
       <OutlookSearchSelect
         label="🏅 Employee Levels"
-        placeholder="Search employee levels..."
+        placeholder="Search or type a new employee level..."
         initialItems={selectedEmpLevels}
         searchApi={(search) => searchLevelsApi({ search })}
         displayFn={(l: any) => l.level_name || ''}
@@ -217,11 +221,13 @@ export default function JobRelationFields({
           setSelectedEmpLevels(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
 
       <OutlookSearchSelect
         label="👔 Hiring Managers"
-        placeholder="Search managers..."
+        placeholder="Search or type a new manager..."
         initialItems={selectedManagers}
         searchApi={(search) => fetchUsersApi({ search })}
         displayFn={(u: any) => u.user_name || ''}
@@ -232,20 +238,29 @@ export default function JobRelationFields({
           setSelectedManagers(items);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
 
       <SingleSearchSelect
         label="Recruiter"
-        placeholder="Search recruiter..."
+        placeholder="Search or type a new recruiter..."
         initialItem={selectedRecruiter}
         searchApi={(search) => fetchUsersApi({ search })}
         displayFn={(u: any) => u.user_name || ''}
         keyProp="user_id"
         onChange={(id, item) => {
-          setFormData((prev: any) => ({ ...prev, recruiterId: id || '' }));
+          const numericId = id !== null && id !== undefined && !isNaN(Number(id)) ? Number(id) : null;
+          setFormData((prev: any) => ({
+            ...prev,
+            recruiterId: numericId || '',
+            recruiterName: numericId ? '' : (item?.user_name || ''),
+          }));
           setSelectedRecruiter(item);
         }}
         disabled={saving}
+        allowCreation={true}
+        commitOnBlur={true}
       />
     </div>
   );

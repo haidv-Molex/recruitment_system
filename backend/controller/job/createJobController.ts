@@ -4,7 +4,7 @@
  * Content-Type: multipart/form-data
  *
  * Request Fields:
- * - job_code (string, required): Mã công việc
+ * - job_code (string, optional): Mã công việc; tự sinh nếu không nhập
  * - project (string, required): Dự án tuyển dụng
  * - candidate_required (number, required): Số lượng ứng viên yêu cầu
  * - note (string, optional): Ghi chú bổ sung
@@ -36,10 +36,7 @@ const upload = multer({
 
 
 const bodySchema = Joi.object({
-  job_code: Joi.string().min(1).max(255).required().messages({
-    "any.required": "Mã công việc là bắt buộc",
-    "string.empty": "Mã công việc không được để trống",
-    "string.min": "Mã công việc phải có ít nhất 1 ký tự",
+  job_code: Joi.string().min(1).max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Mã công việc không được vượt quá 255 ký tự",
   }),
   project: Joi.string().min(1).max(255).required().messages({

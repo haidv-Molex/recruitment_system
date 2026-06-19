@@ -155,6 +155,41 @@ describe("JobController API", () => {
     expectLocal(args.file.originalname).to.equal("jd.pdf");
   });
 
+  it("POST /job - should allow missing job_code for auto generation", async () => {
+    const mockJob = {
+      job_id: 7,
+      job_code: "J007",
+      project: "Project Auto Code",
+      create_at: new Date(),
+      update_at: new Date(),
+      file: null
+    };
+    createStub.resolves(mockJob);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/job")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        project: "Project Auto Code",
+      })
+      .expectStatus(201)
+      .expectJsonLike({
+        result: true,
+        message: "Tạo công việc thành công",
+        data: {
+          job_code: "J007",
+          project: "Project Auto Code",
+        }
+      });
+
+    expectLocal(createStub.calledOnce).to.be.true;
+    const args = createStub.firstCall.args[0];
+    expectLocal(args.job_code).to.be.null;
+    expectLocal(args.project).to.equal("Project Auto Code");
+  });
+
   it("POST /job - should reject unsupported partners field", async () => {
     const token = generateTestToken(1, "Test User");
 
@@ -309,7 +344,7 @@ describe("JobController API", () => {
       .put("/job")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withQueryParams({ id: 1 })
-      .withMultiPartFormData({ job_code: "JOB001_NEW", request_date: "2026-06-12" })
+      .withMultiPartFormData({ job_code: "JOB001_NEW", request_date: "2026-06-12", recruiter_name: "New Recruiter" })
       .expectStatus(200)
       .expectJson({
         result: true,
@@ -325,6 +360,7 @@ describe("JobController API", () => {
     expectLocal(updateStub.calledOnce).to.be.true;
     const updateArgs = updateStub.firstCall.args[1];
     expectLocal(updateArgs.job_code).to.equal("JOB001_NEW");
+    expectLocal(updateArgs.recruiter_name).to.equal("New Recruiter");
     expectLocal(new Date(updateArgs.request_date).toISOString().slice(0, 10)).to.equal("2026-06-12");
   });
 

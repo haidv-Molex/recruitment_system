@@ -4,7 +4,9 @@ import type { PaginationMetadata } from '@/types/pagination';
 
 export async function createJobApi(formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
-  fd.append('job_code', formData.job_code);
+  if (formData.job_code?.trim()) {
+    fd.append('job_code', formData.job_code.trim());
+  }
   fd.append('project', formData.project);
 
   if (formData.note) {
@@ -84,14 +86,15 @@ export async function deleteJobApi(idOrIds: number | number[]): Promise<void> {
 
 export async function updateJobApi(id: number, formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
-  fd.append('job_code', formData.job_code);
-  fd.append('project', formData.project);
+  if (formData.job_code?.trim()) fd.append('job_code', formData.job_code.trim());
+  if (formData.project) fd.append('project', formData.project);
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
   if (Object.prototype.hasOwnProperty.call(formData, 'recruiter_id')) {
     fd.append('recruiter_id', formData.recruiter_id == null ? 'null' : String(formData.recruiter_id));
   }
+  if (formData.recruiter_name) fd.append('recruiter_name', formData.recruiter_name);
   if (formData.file) fd.append('file', formData.file);
 
   if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
@@ -122,7 +125,9 @@ export async function parseJobSheetApi(file: File): Promise<any[]> {
 
 export async function createJobExtendedApi(formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
-  fd.append('job_code', formData.job_code);
+  if (formData.job_code?.trim()) {
+    fd.append('job_code', formData.job_code.trim());
+  }
   fd.append('project', formData.project);
 
   if (formData.note) fd.append('note', formData.note);

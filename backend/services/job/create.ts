@@ -2,7 +2,7 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import type { jobOutputModel } from "@model/job/jobModel";
 import type { userOutputModel } from "@model/user/userModel";
-import FileService from "@services/file/_File";
+import uploadFile from "@services/file/upload";
 import Department from "@services/department/_Department";
 import Level from "@services/level/_Level";
 import Segment from "@services/segment/_Segment";
@@ -13,7 +13,7 @@ import fs from "fs";
 import path from "path";
 
 type CreateJobData = {
-  job_code: string;
+  job_code?: string | null;
   project: string;
   note?: string | null;
   request_date?: string | Date | null;
@@ -49,13 +49,15 @@ async function create(
     employee_levels = []
   } = data;
 
+  const jobCode = job_code?.trim() || null;
+
   let file_id: number | null = null;
   let uploadedFilePath: string | null = null;
 
   try {
     // 1. If file is provided, upload it first
     if (file) {
-      const fileRes = await FileService.upload({
+      const fileRes = await uploadFile({
         type: "jd",
         originalname: file.originalname,
         buffer: file.buffer
@@ -70,7 +72,7 @@ async function create(
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING job_id, job_code, project, note, request_date, create_at, update_at, file_id, recruiter_id
     `;
-    const result = await pool.query(query, [job_code, project, note, file_id, request_date, recruiter_id]);
+    const result = await pool.query(query, [jobCode, project, note, file_id, request_date, recruiter_id]);
 
     if (result.rows.length === 0) {
       throw new AppError("Lỗi khi tạo công việc mới", 500);

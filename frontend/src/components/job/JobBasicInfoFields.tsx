@@ -24,11 +24,11 @@ export default function JobBasicInfoFields({
       {/* Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <InputField
-          label="Job Code *"
+          label="Job Code"
           name="jobCode"
           value={formData.jobCode}
           onChange={handleChange}
-          placeholder="e.g. JOB-001"
+          placeholder="Auto-generated if blank, e.g. J001"
           disabled={saving}
         />
         <InputField

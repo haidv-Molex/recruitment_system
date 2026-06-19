@@ -28,6 +28,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
         note: job.note || '',
         requestDate: job.request_date ? String(job.request_date).slice(0, 10) : '',
         recruiterId: job.recruiter?.user_id || job.recruiter_id || '',
+        recruiterName: '',
         file: null,
         departments: Array.isArray(job.departments)
           ? job.departments.map((d: any) => (typeof d === 'object' ? d.department_id : d))
@@ -91,11 +92,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!formData.jobCode.trim()) {
-      setError('Job Code is required.');
-      return;
-    }
 
     if (!formData.project.trim()) {
       setError('Project is required.');

@@ -9,9 +9,8 @@ import passport from "@middlewares/passport";
 const batchImportJobsController = express.Router();
 
 const jobItemSchema = Joi.object({
-  job_code: Joi.string().min(1).max(255).required().messages({
-    "any.required": "Mã công việc là bắt buộc",
-    "string.empty": "Mã công việc không được để trống",
+  job_code: Joi.string().min(1).max(255).empty(["", "null"]).allow(null).default(null).messages({
+    "string.max": "Mã công việc không được vượt quá 255 ký tự",
   }),
   project: Joi.string().min(1).max(255).required().messages({
     "any.required": "Dự án là bắt buộc",
