@@ -1,5 +1,5 @@
 CREATE TABLE candidate_detail (
-    candidate_detail_id        INT PRIMARY KEY,
+    candidate_detail_id        SERIAL PRIMARY KEY,
     summary                    TEXT,
 
     -- ===== Thông tin cá nhân =====
@@ -52,8 +52,8 @@ CREATE TABLE candidate_detail (
     targeted_company           INT,
 
     -- ===== Metadata =====
-    created_at                 TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at                 TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    create_at                  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_at                  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- ===== Foreign Keys =====
     FOREIGN KEY (file_id) REFERENCES file(file_id) ON DELETE SET NULL,

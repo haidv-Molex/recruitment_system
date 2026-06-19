@@ -59,6 +59,6 @@ export type CandidateDetail = {
   targeted_company: number | null;
 
   // ===== Metadata =====
-  created_at: Date;
-  updated_at: Date;
+  create_at: Date;
+  update_at: Date;
 };
