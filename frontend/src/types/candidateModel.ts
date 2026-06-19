@@ -9,7 +9,7 @@ export type candidateDetailModel = {
   marital_status: 'single' | 'married' | string | null;
   nationality: string | null;
   location: string | null;
-  links: Record<string, any>;
+  links: string[];
   skills: string[];
   languages: string[];
   language_details: any[];

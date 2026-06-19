@@ -10,7 +10,7 @@ CREATE TABLE candidate_detail (
     location                   VARCHAR(255),                -- Thành phố / tỉnh
 
     -- ===== Liên kết & kỹ năng =====
-    links                      JSONB        NOT NULL DEFAULT '{}'::jsonb,
+    links                      TEXT[]       NOT NULL DEFAULT '{}',
     skills                     TEXT[]       NOT NULL DEFAULT '{}',
 
     -- ===== Ngôn ngữ =====

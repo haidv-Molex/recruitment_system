@@ -1,5 +1,4 @@
 import type { CandidateDetail } from "@model/candidate_detail/candidate_detailModel";
-import type { ParsedCVLinks } from "@type/cv.d";
 
 function toNumberOrNull(value: unknown): number | null {
   if (value === null || value === undefined || value === "") return null;
@@ -12,15 +11,24 @@ function toArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value : [];
 }
 
-function toLinks(value: unknown): ParsedCVLinks {
-  const raw = value && typeof value === "object" ? value as Partial<ParsedCVLinks> : {};
+function toStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+  }
 
-  return {
-    github: typeof raw.github === "string" ? raw.github : "",
-    linkedin: typeof raw.linkedin === "string" ? raw.linkedin : "",
-    portfolio: typeof raw.portfolio === "string" ? raw.portfolio : "",
-    other: Array.isArray(raw.other) ? raw.other : []
-  };
+  if (value && typeof value === "object") {
+    const raw = value as Record<string, unknown>;
+    return [
+      raw.github,
+      raw.linkedin,
+      raw.portfolio,
+      ...(Array.isArray(raw.other) ? raw.other : [])
+    ]
+      .map((item) => String(item ?? "").trim())
+      .filter(Boolean);
+  }
+
+  return [];
 }
 
 export function mapCandidateDetailRow(row: any): CandidateDetail {
@@ -32,7 +40,7 @@ export function mapCandidateDetailRow(row: any): CandidateDetail {
     marital_status: row.marital_status,
     nationality: row.nationality,
     location: row.location,
-    links: toLinks(row.links),
+    links: toStringArray(row.links),
     skills: toArray<string>(row.skills),
     languages: toArray<string>(row.languages),
     language_details: toArray(row.language_details),

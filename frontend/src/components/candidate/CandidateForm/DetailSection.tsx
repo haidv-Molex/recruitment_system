@@ -13,7 +13,6 @@ import type {
   CandidateFormSetData,
   EducationDetailFormData,
   LanguageDetailFormData,
-  LinkFormData,
   WorkExperienceDetailFormData,
 } from './types';
 import {
@@ -55,24 +54,8 @@ export default function DetailSection({
   setShowDetailSection,
   saving,
 }: DetailSectionProps) {
-  const handleLinkChange = (name: 'github' | 'linkedin' | 'portfolio', value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      links: {
-        ...prev.links,
-        [name]: value,
-      },
-    }));
-  };
-
-  const handleOtherLinksChange = (values: string[]) => {
-    setFormData((prev) => ({
-      ...prev,
-      links: {
-        ...prev.links,
-        other: values,
-      },
-    }));
+  const handleLinksChange = (values: string[]) => {
+    setFormData((prev) => ({ ...prev, links: values }));
   };
 
   const handleListChange = (name: 'skills' | 'languages' | 'certifications', values: string[]) => {
@@ -192,13 +175,8 @@ export default function DetailSection({
 
           <div className="space-y-4">
             <SectionHeader title="Links & Skills" compact />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <InputField label="GitHub" value={formData.links.github} onChange={(e) => handleLinkChange('github', e.target.value)} disabled={saving} />
-              <InputField label="LinkedIn" value={formData.links.linkedin} onChange={(e) => handleLinkChange('linkedin', e.target.value)} disabled={saving} />
-              <InputField label="Portfolio" value={formData.links.portfolio} onChange={(e) => handleLinkChange('portfolio', e.target.value)} disabled={saving} />
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <MultiValueCreatableField label="Other Links" placeholder="Type a link and press Enter..." values={formData.links.other} onChange={handleOtherLinksChange} disabled={saving} />
+              <MultiValueCreatableField label="Links" placeholder="Type a link and press Enter..." values={formData.links} onChange={handleLinksChange} disabled={saving} />
               <MultiValueCreatableField label="Skills" placeholder="Type a skill and press Enter..." values={formData.skills} onChange={(values) => handleListChange('skills', values)} disabled={saving} />
               <MultiValueCreatableField label="Languages" placeholder="Type a language and press Enter..." values={formData.languages} onChange={(values) => handleListChange('languages', values)} disabled={saving} />
               <MultiValueCreatableField label="Certifications" placeholder="Type a certification and press Enter..." values={formData.certifications} onChange={(values) => handleListChange('certifications', values)} disabled={saving} />

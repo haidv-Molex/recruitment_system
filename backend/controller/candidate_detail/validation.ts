@@ -20,19 +20,6 @@ const stringArray = (withDefault: boolean) => {
   return withDefault ? schema.default([]) : schema.optional();
 };
 
-const linksSchema = (withDefault: boolean) => {
-  const schema = Joi.object({
-    github: Joi.string().max(1000).allow("").default(""),
-    linkedin: Joi.string().max(1000).allow("").default(""),
-    portfolio: Joi.string().max(1000).allow("").default(""),
-    other: Joi.array().items(Joi.string().max(1000)).default([])
-  });
-
-  return withDefault
-    ? schema.default({ github: "", linkedin: "", portfolio: "", other: [] })
-    : schema.optional();
-};
-
 const languageDetailSchema = Joi.object({
   language: Joi.string().max(255).allow("").default(""),
   proficiency: Joi.string().max(255).allow("").default("")
@@ -68,7 +55,7 @@ export function candidateDetailBodyFields(withDefaults: boolean) {
     marital_status: Joi.string().valid("single", "married").empty(emptyNullable).allow(null).optional(),
     nationality: nullableString(100).optional(),
     location: nullableString(255).optional(),
-    links: linksSchema(withDefaults),
+    links: stringArray(withDefaults),
     skills: stringArray(withDefaults),
     languages: stringArray(withDefaults),
     language_details: objectArray(languageDetailSchema, withDefaults),

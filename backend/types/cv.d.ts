@@ -1,10 +1,3 @@
-export type ParsedCVLinks = {
-  github: string;
-  linkedin: string;
-  portfolio: string;
-  other: string[];
-};
- 
 export type ParsedCVLanguage = {
   language: string;
   proficiency: string;
@@ -34,7 +27,7 @@ export type ParsedCV = {
   gender: string;
   summary: string;
   location: string;
-  links: ParsedCVLinks;
+  links: string[];
   skills: string[];
   languages: string[];
   language_details: ParsedCVLanguage[];

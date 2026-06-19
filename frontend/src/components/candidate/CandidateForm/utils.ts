@@ -1,5 +1,3 @@
-import type { LinkFormData } from './types';
-
 export const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const phoneRegex = /^\+?\d+(?:\.\d+)*$/;
 
@@ -37,14 +35,15 @@ export const toObjectList = <T extends Record<string, any>>(value: any): T[] => 
     : [];
 };
 
-export const normalizeLinks = (value: any): LinkFormData => {
-  const parsed = parseJsonValue(value) || {};
-  return {
-    github: parsed.github || '',
-    linkedin: parsed.linkedin || '',
-    portfolio: parsed.portfolio || '',
-    other: toStringList(parsed.other),
-  };
+export const normalizeLinks = (value: any): string[] => {
+  const parsed = parseJsonValue(value);
+  if (Array.isArray(parsed) || typeof parsed === 'string') return toStringList(parsed);
+  if (parsed && typeof parsed === 'object') {
+    return [parsed.github, parsed.linkedin, parsed.portfolio, ...toStringList(parsed.other)]
+      .map((item) => String(item ?? '').trim())
+      .filter(Boolean);
+  }
+  return [];
 };
 
 export const hasAnyValue = (values: Array<string | boolean | string[]>) =>

@@ -39,14 +39,14 @@ export default function SourcingSection({
       <SectionHeader title="Sourcing & Assignment" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SingleSearchSelect
-          label="Job (Requisition)"
+          label="Job_code"
           placeholder="Type job code or project to search..."
           initialItem={selectedJob}
           searchApi={(search) => searchJobsApi({ search })}
-          displayFn={(job: any) => String(job.job_id || '')}
-          keyProp="job_id"
+          displayFn={(job: any) => String(job.job_code || '')}
+          keyProp="job_code"
           onChange={(id, item) => {
-            setFormData((prev) => ({ ...prev, jobId: id || '' }));
+            setFormData((prev) => ({ ...prev, jobCode: id || '' }));
             setSelectedJob(item);
           }}
           disabled={saving}

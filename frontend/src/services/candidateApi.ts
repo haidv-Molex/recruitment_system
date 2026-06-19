@@ -20,6 +20,14 @@ const appendJson = (fd: FormData, field: string, value: any, emptyValue: any, in
   fd.append(field, JSON.stringify(normalizedValue));
 };
 
+const appendStringArray = (fd: FormData, field: string, value: any, includeEmpty = false) => {
+  const normalizedValue = Array.isArray(value)
+    ? value.map((item) => String(item ?? '').trim()).filter(Boolean)
+    : [];
+  if (!includeEmpty && normalizedValue.length === 0) return;
+  fd.append(field, JSON.stringify(normalizedValue));
+};
+
 const appendCandidateDetailFields = (fd: FormData, formData: any, includeEmpty = false) => {
   appendScalar(fd, 'summary', formData.summary, includeEmpty);
   appendScalar(fd, 'date_of_birth', formData.dateOfBirth, includeEmpty);
@@ -27,9 +35,9 @@ const appendCandidateDetailFields = (fd: FormData, formData: any, includeEmpty =
   appendScalar(fd, 'marital_status', formData.maritalStatus, includeEmpty);
   appendScalar(fd, 'nationality', formData.nationality, includeEmpty);
   appendScalar(fd, 'location', formData.location, includeEmpty);
-  appendJson(fd, 'links', formData.links, { github: '', linkedin: '', portfolio: '', other: [] }, includeEmpty);
-  appendJson(fd, 'skills', formData.skills, [], includeEmpty);
-  appendJson(fd, 'languages', formData.languages, [], includeEmpty);
+  appendStringArray(fd, 'links', formData.links, includeEmpty);
+  appendStringArray(fd, 'skills', formData.skills, includeEmpty);
+  appendStringArray(fd, 'languages', formData.languages, includeEmpty);
   appendJson(fd, 'language_details', formData.languageDetails, [], includeEmpty);
   appendScalar(fd, 'education', formData.education, includeEmpty);
   appendJson(fd, 'education_details', formData.educationDetails, [], includeEmpty);
@@ -40,7 +48,7 @@ const appendCandidateDetailFields = (fd: FormData, formData: any, includeEmpty =
   appendScalar(fd, 'last_company', formData.lastCompany, includeEmpty);
   appendScalar(fd, 'work_experience', formData.workExperience, includeEmpty);
   appendJson(fd, 'work_experience_details', formData.workExperienceDetails, [], includeEmpty);
-  appendJson(fd, 'certifications', formData.certifications, [], includeEmpty);
+  appendStringArray(fd, 'certifications', formData.certifications, includeEmpty);
   appendScalar(fd, 'expected_position', formData.expectedPosition, includeEmpty);
   appendScalar(fd, 'expected_level', formData.expectedLevel, includeEmpty);
   appendScalar(fd, 'expected_salary', formData.expectedSalary, includeEmpty);

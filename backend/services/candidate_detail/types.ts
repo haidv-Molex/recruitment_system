@@ -2,7 +2,6 @@ import type { CandidateDetail } from "@model/candidate_detail/candidate_detailMo
 import type {
   ParsedCVEducation,
   ParsedCVLanguage,
-  ParsedCVLinks,
   ParsedCVWorkExperience,
 } from "@type/cv.d";
 
@@ -13,7 +12,7 @@ export type CandidateDetailWriteData = {
   marital_status?: CandidateDetail["marital_status"];
   nationality?: string | null;
   location?: string | null;
-  links?: ParsedCVLinks;
+  links?: string[];
   skills?: string[];
   languages?: string[];
   language_details?: ParsedCVLanguage[];
@@ -73,7 +72,6 @@ export const candidateDetailWriteFields = [
 export type CandidateDetailWriteField = typeof candidateDetailWriteFields[number];
 
 const jsonbFields = new Set<CandidateDetailWriteField>([
-  "links",
   "language_details",
   "education_details",
   "work_experience_details"

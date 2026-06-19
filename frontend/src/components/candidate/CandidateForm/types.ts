@@ -1,12 +1,5 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
 
-export type LinkFormData = {
-  github: string;
-  linkedin: string;
-  portfolio: string;
-  other: string[];
-};
-
 export type LanguageDetailFormData = {
   language: string;
   proficiency: string;
@@ -37,13 +30,6 @@ export type CandidateFormOptions = {
   agencies: string[];
   statuses: string[];
 };
-
-export const emptyLinks = (): LinkFormData => ({
-  github: '',
-  linkedin: '',
-  portfolio: '',
-  other: [],
-});
 
 export const emptyLanguageDetail = (): LanguageDetailFormData => ({
   language: '',
@@ -94,7 +80,7 @@ export const createEmptyCandidate = () => ({
   maritalStatus: '',
   nationality: '',
   location: '',
-  links: emptyLinks(),
+  links: [] as string[],
   skills: [] as string[],
   languages: [] as string[],
   languageDetails: [] as LanguageDetailFormData[],

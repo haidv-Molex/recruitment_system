@@ -1,7 +1,6 @@
 import type { RequestHandler } from "express";
 
-const stringArrayFields = ["skills", "languages", "certifications"];
-const objectFields = ["links"];
+const stringArrayFields = ["links", "skills", "languages", "certifications"];
 const objectArrayFields = ["language_details", "education_details", "work_experience_details"];
 
 const parseJson = (value: any, fallback: any) => {
@@ -35,10 +34,6 @@ const parseCandidateDetailMultipartFields: RequestHandler = (req, _res, next) =>
 
   stringArrayFields.forEach((field) => {
     if (hasOwn(body, field)) body[field] = parseStringArray(body[field]);
-  });
-
-  objectFields.forEach((field) => {
-    if (hasOwn(body, field)) body[field] = parseJson(body[field], {});
   });
 
   objectArrayFields.forEach((field) => {

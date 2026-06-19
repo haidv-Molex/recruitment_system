@@ -234,12 +234,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
     candidateLevels: formData.candidateLevels.map(Number).filter(Number.isFinite),
     targetedCompanyId: formData.targetedCompanyId || '',
     targetedCompanyName: formData.targetedCompanyId ? '' : formData.targetedCompanyName.trim(),
-    links: {
-      github: formData.links.github.trim(),
-      linkedin: formData.links.linkedin.trim(),
-      portfolio: formData.links.portfolio.trim(),
-      other: formData.links.other.map((item) => item.trim()).filter(Boolean),
-    },
+    links: formData.links.map((item) => item.trim()).filter(Boolean),
     skills: formData.skills.map((item) => item.trim()).filter(Boolean),
     languages: formData.languages.map((item) => item.trim()).filter(Boolean),
     languageDetails: formData.languageDetails

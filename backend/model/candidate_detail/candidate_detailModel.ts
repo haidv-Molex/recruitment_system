@@ -1,7 +1,6 @@
 import type {
   ParsedCVEducation,
   ParsedCVLanguage,
-  ParsedCVLinks,
   ParsedCVWorkExperience,
 } from "@type/cv.d";
 
@@ -17,7 +16,7 @@ export type CandidateDetail = {
   location: string | null;
 
   // ===== Liên kết & kỹ năng =====
-  links: ParsedCVLinks;
+  links: string[];
   skills: string[];
 
   // ===== Ngôn ngữ =====
