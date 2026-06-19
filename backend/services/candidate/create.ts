@@ -2,6 +2,7 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
 import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
+import Company from "@services/company/_Company";
 import { populateCandidateRelations } from "./populate";
 import { insertLinkRows } from "@utilities/db/linking";
 import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
@@ -18,6 +19,7 @@ export interface CreateCandidateInput extends CandidateDetailWriteData {
   platform_id?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
+  targeted_company_name?: string | null;
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
   candidate_levels?: number[];
@@ -52,6 +54,12 @@ export async function create(
   }
 
   try {
+    let targetedCompanyId = data.targeted_company || null;
+    if (!targetedCompanyId && data.targeted_company_name?.trim()) {
+      const company = await Company.create({ company_name: data.targeted_company_name.trim() }, pool);
+      targetedCompanyId = company.company_id;
+    }
+
     const candidateDetail = await CandidateDetailService.create(pickCandidateDetailData(data), pool);
 
     const query = `
@@ -85,7 +93,7 @@ export async function create(
       candidateDetail.candidate_detail_id,
       data.platform_id || null,
       data.job_id || null,
-      data.targeted_company || null,
+      targetedCompanyId,
       data.reference || null,
       fileId
     ];

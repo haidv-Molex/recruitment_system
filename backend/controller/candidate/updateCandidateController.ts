@@ -58,6 +58,9 @@ const updateBodySchema = Joi.object({
     "number.base": "Targeted Company ID phải là số nguyên",
     "number.integer": "Targeted Company ID phải là số nguyên"
   }),
+  targeted_company_name: Joi.string().max(255).empty(["", "null"]).allow(null).optional().messages({
+    "string.max": "Tên công ty đích không được vượt quá 255 ký tự"
+  }),
   reference: Joi.number().integer().empty(["", "null"]).allow(null).optional().messages({
     "number.base": "Reference ID phải là số nguyên",
     "number.integer": "Reference ID phải là số nguyên"
@@ -88,6 +91,7 @@ updateCandidateController.put("",
     if (hasProp(body, "platform_id")) updateData.platform_id = body.platform_id;
     if (hasProp(body, "job_id")) updateData.job_id = body.job_id;
     if (hasProp(body, "targeted_company")) updateData.targeted_company = body.targeted_company;
+    if (hasProp(body, "targeted_company_name")) updateData.targeted_company_name = body.targeted_company_name;
     if (hasProp(body, "reference")) updateData.reference = body.reference;
     if (hasProp(body, "candidate_levels")) updateData.candidate_levels = body.candidate_levels;
 

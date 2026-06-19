@@ -83,6 +83,9 @@ const bodySchema = Joi.object({
     "number.base": "Targeted Company ID phải là số nguyên",
     "number.integer": "Targeted Company ID phải là số nguyên"
   }),
+  targeted_company_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
+    "string.max": "Tên công ty đích không được vượt quá 255 ký tự"
+  }),
   reference: Joi.number().integer().empty(["", "null"]).allow(null).default(null).messages({
     "number.base": "Reference ID phải là số nguyên",
     "number.integer": "Reference ID phải là số nguyên"
@@ -107,6 +110,7 @@ createCandidateController.post("",
       platform_id: req.body.platform_id,
       job_id: req.body.job_id,
       targeted_company: req.body.targeted_company,
+      targeted_company_name: req.body.targeted_company_name,
       reference: req.body.reference,
       candidate_levels: req.body.candidate_levels ?? [],
       file: req.file ? {

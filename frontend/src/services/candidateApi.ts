@@ -71,6 +71,7 @@ export async function createCandidateApi(formData: any): Promise<candidateModel>
   if (formData.platformId) fd.append('platform_id', String(formData.platformId));
   if (formData.jobId) fd.append('job_id', String(formData.jobId));
   if (formData.targetedCompanyId) fd.append('targeted_company', String(formData.targetedCompanyId));
+  if (!formData.targetedCompanyId && formData.targetedCompanyName) fd.append('targeted_company_name', formData.targetedCompanyName);
   if (formData.referenceId) fd.append('reference', String(formData.referenceId));
   if (formData.candidateLevels?.length) fd.append('candidate_levels', JSON.stringify(formData.candidateLevels));
   if (formData.jobCode) fd.append('job_code', formData.jobCode);
@@ -299,6 +300,9 @@ export async function updateCandidateApi(id: number, formData: any): Promise<can
   appendIfPresent('platform_id', 'platformId');
   appendIfPresent('job_id', 'jobId');
   appendIfPresent('targeted_company', 'targetedCompanyId');
+  if (!formData.targetedCompanyId && formData.targetedCompanyName) {
+    fd.append('targeted_company_name', formData.targetedCompanyName);
+  }
   fd.append('candidate_levels', JSON.stringify(formData.candidateLevels || []));
 
   if (formData.referenceId) {

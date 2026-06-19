@@ -134,6 +134,8 @@ export default function SingleSearchSelect<T>({
     } else if (keyProp === 'department_id') {
       (newItem as any).department_code = value;
       (newItem as any).department_name = value;
+    } else if (keyProp === 'company_id') {
+      (newItem as any).company_name = value;
     }
     return newItem;
   };

@@ -2,6 +2,7 @@ import { PoolClient } from "pg";
 import { AppError } from "@middlewares/AppError";
 import FileService from "@services/file/_File";
 import CandidateDetailService from "@services/candidate_detail/_CandidateDetail";
+import Company from "@services/company/_Company";
 import { populateCandidateRelations } from "./populate";
 import { replaceLinkRows } from "@utilities/db/linking";
 import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
@@ -18,6 +19,7 @@ export interface UpdateCandidateInput extends CandidateDetailWriteData {
   platform_id?: number | null;
   job_id?: number | null;
   targeted_company?: number | null;
+  targeted_company_name?: string | null;
   reference?: number | null;
   file?: { originalname: string; buffer: Buffer } | null;
   candidate_levels?: number[];
@@ -79,7 +81,12 @@ export async function update(
     if (data.note !== undefined) addParam(data.note, "note");
     if (data.platform_id !== undefined) addParam(data.platform_id, "platform_id");
     if (data.job_id !== undefined) addParam(data.job_id, "job_id");
-    if (data.targeted_company !== undefined) addParam(data.targeted_company, "targeted_company");
+    if ((data.targeted_company === undefined || data.targeted_company === null) && data.targeted_company_name?.trim()) {
+      const company = await Company.create({ company_name: data.targeted_company_name.trim() }, pool);
+      addParam(company.company_id, "targeted_company");
+    } else if (data.targeted_company !== undefined) {
+      addParam(data.targeted_company, "targeted_company");
+    }
     if (data.reference !== undefined) addParam(data.reference, "reference");
     if (fileId !== undefined) addParam(fileId, "file_id");
 
