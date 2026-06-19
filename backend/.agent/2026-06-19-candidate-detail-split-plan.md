@@ -46,7 +46,9 @@ Nguyên tắc sửa từ 2026-06-19:
 - `note`
 - `platform_id`
 - `job_id`
+- `targeted_company`
 - `reference`
+- `file_id`
 - `create_at`
 - `update_at`
 
@@ -58,9 +60,6 @@ Nguyên tắc sửa từ 2026-06-19:
 - `feedback_date`
 - `current_salary`
 - `expected_salary`
-- `targeted_company`
-- `file_id`
-
 Target schema Phase 1:
 
 ```sql
@@ -78,11 +77,15 @@ CREATE TABLE candidate (
     candidate_detail_id INT,
     platform_id INT,
     job_id INT,
+    targeted_company INT,
     reference INT,
+    file_id INT,
     FOREIGN KEY (candidate_detail_id) REFERENCES candidate_detail(candidate_detail_id) ON DELETE SET NULL,
     FOREIGN KEY (platform_id) REFERENCES platform(platform_id) ON DELETE SET NULL,
     FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE SET NULL,
-    FOREIGN KEY (reference) REFERENCES "user"(user_id) ON DELETE SET NULL
+    FOREIGN KEY (targeted_company) REFERENCES company(company_id) ON DELETE SET NULL,
+    FOREIGN KEY (reference) REFERENCES "user"(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (file_id) REFERENCES file(file_id) ON DELETE SET NULL
 );
 ```
 
@@ -126,15 +129,15 @@ Các field hiện có và tiếp tục giữ ở `candidate_detail`:
 | `note` | `candidate` | Keep |
 | `platform_id` | `candidate` | Keep because not in current `candidate_detail` schema |
 | `job_id` | `candidate` | Keep because not in current `candidate_detail` schema |
+| `targeted_company` | `candidate` | Keep because it has been removed from current `candidate_detail` schema |
 | `reference` | `candidate` | Keep because not in current `candidate_detail` schema |
+| `file_id` | `candidate` | Keep because it has been removed from current `candidate_detail` schema |
 | `offer_date` | `candidate_detail` | Remove duplicate from `candidate` |
 | `onboard_date` | `candidate_detail` | Remove duplicate from `candidate` |
 | `expected_onboard_date` | `candidate_detail` | Remove duplicate from `candidate` |
 | `feedback_date` | `candidate_detail` | Remove duplicate from `candidate` |
 | `current_salary` | `candidate_detail` | Remove duplicate from `candidate` |
 | `expected_salary` | `candidate_detail` | Remove duplicate from `candidate` |
-| `targeted_company` | removed from Phase 1 schemas | Do not re-add to detail; decide candidate-side handling in service phase if still needed |
-| `file_id` | removed from Phase 1 schemas | Do not re-add to detail; decide candidate-side/file handling in service phase if still needed |
 
 ## API Contract Direction
 
@@ -176,7 +179,7 @@ Because `candidate_detail.address`, `candidate_detail.file_id`, and `candidate_d
 ## `GET /candidate/search`
 
 - Search/filter across all candidate information available under current schema ownership.
-- Candidate-owned filters/search: identity, `agency`, `status`, `note`, `platform`, `job`, `reference`.
+- Candidate-owned filters/search: identity, `agency`, `status`, `note`, `platform`, `job`, `targeted_company`, `reference`, `file`.
 - Detail-owned filters/search: salary, timeline dates, and CV/detail fields that still exist in `candidate_detail`.
 
 ## Frontend Direction
@@ -269,24 +272,27 @@ Phase 0B result on 2026-06-19:
 
 Tasks:
 
-- [ ] Update `model/candidate/candidate_schema.sql` to remove only duplicate fields already present in `candidate_detail` after Phase 0B is complete.
-- [ ] Keep `candidate_detail_id`, `agency`, `platform_id`, `job_id`, `reference`, `status`, and `note` in `candidate` if still aligned with the confirmed schema direction.
-- [ ] Do not add columns to `candidate_detail` during Phase 1.
-- [ ] Regenerate `init-db` after schema files are stable.
-- [ ] Run `npm run check`.
+- [x] Update `model/candidate/candidate_schema.sql` to remove only duplicate fields already present in `candidate_detail` after Phase 0B is complete.
+- [x] Keep `candidate_detail_id`, `agency`, `platform_id`, `job_id`, `targeted_company`, `reference`, `file_id`, `status`, and `note` in `candidate`.
+- [x] Do not add columns to `candidate_detail` during Phase 1.
+- [x] Regenerate `init-db` after schema files are stable.
+- [x] Run `npm run check`.
 
 Verification:
 
-- [ ] Generated `init-db` candidate schema matches Phase 1 target.
-- [ ] Generated `init-db` candidate_detail schema remains unchanged except for user-approved schema edits already made before Phase 0B.
-- [ ] `npm run check` passes.
+- [x] Generated `init-db` candidate schema matches Phase 1 target.
+- [x] Generated `init-db` candidate_detail schema remains unchanged except for user-approved schema edits already made before Phase 0B.
+- [x] `npm run check` passes.
 
 Phase 1 result on 2026-06-19:
 
-- Previous Phase 1 source edits were rolled back by the user.
-- Treat any earlier Phase 1 completion notes as obsolete.
-- Phase 1 must be re-run from a clean slate after Phase 0B candidate_detail cleanup is complete.
-- `npm run run-init-db` was not run as part of the rolled-back Phase 1 work.
+- Re-run after Phase 0B cleanup completed.
+- `model/candidate/candidate_schema.sql` now removes only timeline dates and current/expected salary from `candidate`.
+- `model/candidate/candidate_schema.sql` keeps `candidate_detail_id`, `agency`, `platform_id`, `job_id`, `targeted_company`, `reference`, `file_id`, `status`, `note`, and identity fields.
+- `model/candidate_detail/candidate_detail_shema.sql` was not modified during Phase 1.
+- `init-db` regenerated successfully with `npm run init-db`.
+- `npm run check` passed.
+- `npm run run-init-db` was not run.
 
 ## Phase 2 - Service Split Logic
 
@@ -304,7 +310,7 @@ Tasks:
 
 - [ ] Update candidate populate/search according to current schema ownership.
 - [ ] Detail nesting/search should use `candidate.candidate_detail_id -> candidate_detail.candidate_detail_id`.
-- [ ] Candidate-owned relation joins stay rooted on `candidate` for `platform_id`, `job_id`, and `reference`.
+- [ ] Candidate-owned relation joins stay rooted on `candidate` for `platform_id`, `job_id`, `targeted_company`, `reference`, and `file_id`.
 - [ ] Detail-owned joins/search use only existing `candidate_detail` fields. Do not join/search `targeted_company` or `file_id` through candidate_detail because those columns have been removed.
 
 ## Phase 4 - Frontend Table/Form
@@ -325,6 +331,6 @@ Tasks:
 
 ## Recommended Next Step
 
-1. Start Phase 0B candidate_detail code cleanup.
-2. Regenerate `init-db` and run `npm run check` after Phase 0B.
-3. Re-run Phase 1 schema refactor only after candidate_detail-related code is aligned with the current candidate_detail schema.
+1. Start Phase 2 service split logic.
+2. Keep `targeted_company` and `file_id` on candidate in service/controller work.
+3. Do not add columns to `candidate_detail` during Phase 2.
