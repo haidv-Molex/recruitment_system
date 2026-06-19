@@ -7,6 +7,12 @@ import { populateCandidateRelations } from "./populate";
 import { insertLinkRows } from "@utilities/db/linking";
 import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
 import { candidateDetailWriteFields } from "@services/candidate_detail/types";
+import {
+  assertCandidateCodeAvailable,
+  assertCandidateEmailAvailable,
+  normalizeCandidateEmail,
+  resolveCandidateCode
+} from "./identity";
 
 export interface CreateCandidateInput extends CandidateDetailWriteData {
   candidate_code?: string | null;
@@ -43,6 +49,9 @@ export async function create(
 ) {
   let fileId: number | null = null;
   let fileUploadResult: any = null;
+  const candidateEmail = normalizeCandidateEmail(data.candidate_email);
+
+  await assertCandidateEmailAvailable(candidateEmail, pool);
 
   if (data.file) {
     fileUploadResult = await FileService.upload({
@@ -54,6 +63,9 @@ export async function create(
   }
 
   try {
+    const candidateCode = await resolveCandidateCode(data.candidate_code, pool);
+    await assertCandidateCodeAvailable(candidateCode, pool);
+
     let targetedCompanyId = data.targeted_company || null;
     if (!targetedCompanyId && data.targeted_company_name?.trim()) {
       const company = await Company.create({ company_name: data.targeted_company_name.trim() }, pool);
@@ -83,9 +95,9 @@ export async function create(
     `;
 
     const values = [
-      data.candidate_code || null,
+      candidateCode,
       data.candidate_name,
-      data.candidate_email || null,
+      candidateEmail,
       data.candidate_phone || null,
       data.agency || null,
       data.status,

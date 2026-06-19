@@ -7,6 +7,12 @@ import { populateCandidateRelations } from "./populate";
 import { replaceLinkRows } from "@utilities/db/linking";
 import type { CandidateDetailWriteData } from "@services/candidate_detail/types";
 import { candidateDetailWriteFields } from "@services/candidate_detail/types";
+import {
+  assertCandidateCodeAvailable,
+  assertCandidateEmailAvailable,
+  normalizeCandidateEmail,
+  resolveCandidateCode
+} from "./identity";
 
 export interface UpdateCandidateInput extends CandidateDetailWriteData {
   candidate_code?: string | null;
@@ -36,6 +42,20 @@ export async function update(
     throw new AppError("Không tìm thấy thông tin ứng viên để cập nhật", 404);
   }
   let candidateDetailId: number | null = checkCand.rows[0].candidate_detail_id ?? null;
+
+  const candidateEmail = data.candidate_email !== undefined
+    ? normalizeCandidateEmail(data.candidate_email)
+    : undefined;
+  if (data.candidate_email !== undefined) {
+    await assertCandidateEmailAvailable(candidateEmail, pool, id);
+  }
+
+  const candidateCode = data.candidate_code !== undefined
+    ? await resolveCandidateCode(data.candidate_code, pool)
+    : undefined;
+  if (candidateCode !== undefined) {
+    await assertCandidateCodeAvailable(candidateCode, pool, id);
+  }
 
   let fileId: number | undefined = undefined;
   let fileUploadResult: any = null;
@@ -72,9 +92,9 @@ export async function update(
       placeholderIndex++;
     };
 
-    if (data.candidate_code !== undefined) addParam(data.candidate_code, "candidate_code");
+    if (candidateCode !== undefined) addParam(candidateCode, "candidate_code");
     if (data.candidate_name !== undefined) addParam(data.candidate_name, "candidate_name");
-    if (data.candidate_email !== undefined) addParam(data.candidate_email, "candidate_email");
+    if (data.candidate_email !== undefined) addParam(candidateEmail, "candidate_email");
     if (data.candidate_phone !== undefined) addParam(data.candidate_phone, "candidate_phone");
     if (data.agency !== undefined) addParam(data.agency, "agency");
     if (data.status !== undefined) addParam(data.status, "status");

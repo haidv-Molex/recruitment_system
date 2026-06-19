@@ -5,8 +5,14 @@ import Company from "@services/company/_Company";
 import Level from "@services/level/_Level";
 import Job from "@services/job/_Job";
 import { create } from "@services/candidate/create";
+import { update } from "@services/candidate/update";
 import normalizeLookupKey from "@utilities/entity/normalizeLookupKey";
 import resolveAndCreateEntities from "@utilities/entity/resolveAndCreateEntities";
+import {
+  findCandidateByEmail,
+  normalizeCandidateCode,
+  normalizeCandidateEmail
+} from "./identity";
 
 export type CandidateImportItem = {
   candidate_name: string;
@@ -166,34 +172,53 @@ export async function batchImport(
         ...(c.candidate_levels_name || []).map((n) => levelMap.get(normalizeLookupKey(n))).filter(Boolean) as number[],
       ];
 
-      await create(
-        {
-          candidate_code: c.candidate_code || null,
-          candidate_name: c.candidate_name,
-          candidate_email: c.candidate_email || null,
-          candidate_phone: c.candidate_phone || null,
-          agency: c.agency || null,
-          offer_date: c.offer_date || null,
-          onboard_date: c.onboard_date || null,
-          expected_onboard_date: c.expected_onboard_date || null,
-          feedback_date: c.feedback_date || null,
-          current_salary: c.current_salary || null,
-          expected_salary: c.expected_salary || null,
-          status: c.status,
-          note: c.note || null,
-          job_id: resolvedJobId,
-          reference: resolvedReferenceId,
-          platform_id: resolvedPlatformId,
-          targeted_company: resolvedCompanyId,
-          candidate_levels: Array.from(new Set(mergedLevels)),
-        },
-        pool
-      );
+      const candidateEmail = normalizeCandidateEmail(c.candidate_email);
+      const candidateCode = normalizeCandidateCode(c.candidate_code);
+      const candidateData: any = {
+        candidate_name: c.candidate_name,
+        candidate_email: candidateEmail,
+        candidate_phone: c.candidate_phone || null,
+        agency: c.agency || null,
+        offer_date: c.offer_date || null,
+        onboard_date: c.onboard_date || null,
+        expected_onboard_date: c.expected_onboard_date || null,
+        feedback_date: c.feedback_date || null,
+        current_salary: c.current_salary || null,
+        expected_salary: c.expected_salary || null,
+        status: c.status,
+        note: c.note || null,
+        job_id: resolvedJobId,
+        reference: resolvedReferenceId,
+        platform_id: resolvedPlatformId,
+        targeted_company: resolvedCompanyId,
+        candidate_levels: Array.from(new Set(mergedLevels)),
+      };
+
+      if (candidateCode) {
+        candidateData.candidate_code = candidateCode;
+      }
+
+      const existingCandidate = candidateEmail
+        ? await findCandidateByEmail(candidateEmail, pool)
+        : null;
+
+      if (existingCandidate) {
+        await update(existingCandidate.candidate_id, candidateData, pool);
+      } else {
+        await create(
+          {
+            ...candidateData,
+            candidate_code: candidateCode,
+          },
+          pool
+        );
+      }
 
       await pool.query("RELEASE SAVEPOINT import_candidate_savepoint");
       importedCount++;
     } catch (err: any) {
       await pool.query("ROLLBACK TO SAVEPOINT import_candidate_savepoint");
+      await pool.query("RELEASE SAVEPOINT import_candidate_savepoint");
       errors.push({
         candidate_name: c.candidate_name || "Unknown Candidate",
         message: err.message || "Unknown error during candidate creation",
