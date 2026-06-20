@@ -13,3 +13,8 @@ CREATE TRIGGER set_updated_at_user
 BEFORE UPDATE ON "user"
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON "user"
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

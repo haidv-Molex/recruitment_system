@@ -5,3 +5,8 @@ CREATE TABLE employee_level (
     FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE CASCADE,
     FOREIGN KEY (level_id) REFERENCES level(level_id) ON DELETE CASCADE
 );
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON employee_level
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

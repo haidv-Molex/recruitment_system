@@ -2,3 +2,8 @@ CREATE TABLE file (
     file_id SERIAL PRIMARY KEY,
     file_path VARCHAR(255) NOT NULL
 );
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON file
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

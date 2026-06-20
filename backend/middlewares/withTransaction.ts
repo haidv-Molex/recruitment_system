@@ -1,5 +1,6 @@
 import { pool } from "@/middlewares/database";
 import { PoolClient } from "pg";
+import { httpContext } from "./httpContext";
 
 export interface TransactionClient extends PoolClient {
   onRollback?: (() => Promise<void> | void)[];
@@ -12,17 +13,21 @@ export async function withTransaction<T>(
   const client = await pool.connect() as TransactionClient;
   client.onRollback = [];
 
+  const req = httpContext.getStore();
+  const currentUser = user || (req ? (req.user as any) : undefined);
+
   try {
     await client.query("BEGIN");
-    if (user) {
+    if (currentUser) {
       await client.query("SET ROLE app_user");
-      if (user.user_id !== undefined) {
-        await client.query("SELECT set_config('app.current_user_id', $1, true)", [String(user.user_id)]);
+      if (currentUser.user_id !== undefined) {
+        await client.query("SELECT set_config('app.current_user_id', $1, true)", [String(currentUser.user_id)]);
       }
-      if (user.user_role) {
-        await client.query("SELECT set_config('app.current_user_role', $1, true)", [user.user_role]);
+      if (currentUser.user_role) {
+        await client.query("SELECT set_config('app.current_user_role', $1, true)", [currentUser.user_role]);
       }
     }
+
     const result = await callback(client);
     await client.query("COMMIT");
     return result;
@@ -41,13 +46,14 @@ export async function withTransaction<T>(
     }
     throw err;
   } finally {
-    if (user) {
+    if (currentUser) {
       try {
         await client.query("RESET ROLE");
       } catch (resetErr) {
         console.error("Lỗi khi reset role trong database client:", resetErr);
       }
     }
+
     delete client.onRollback;
     client.release();
   }

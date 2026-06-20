@@ -16,6 +16,8 @@ import { AdminPage } from '@/pages/AdminPage';
 import { AccessControlPage } from '@/pages/AccessControl';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { LoginPage } from '@/pages/LoginPage';
+import { AuditLogDashboard } from '@/pages/AuditLogDashboard';
+
 import { mockCandidates, mockJobs } from '@/services/mockData';
 import { HeaderProvider } from '@/contexts/HeaderContext';
 import { ConfirmProvider } from '@/components/ui/ConfirmModal';
@@ -70,6 +72,17 @@ function App() {
                           </ProtectedRoute>
                         }
                       />
+
+                      {/* Audit logs: admin only */}
+                      <Route
+                        path="/admin/audit-logs"
+                        element={
+                          <ProtectedRoute allowedRoles={['admin']}>
+                            <AuditLogDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+
 
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>

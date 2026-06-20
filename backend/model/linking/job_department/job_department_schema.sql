@@ -6,3 +6,8 @@ CREATE TABLE job_department (
     FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE CASCADE,
     FOREIGN KEY (department_id) REFERENCES department(department_id) ON DELETE CASCADE
 );
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON job_department
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

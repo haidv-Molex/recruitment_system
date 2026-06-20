@@ -4,3 +4,8 @@ CREATE TABLE platform (
     platform_name VARCHAR(255) NOT NULL,
     platform_description VARCHAR(255)
 );
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON platform
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

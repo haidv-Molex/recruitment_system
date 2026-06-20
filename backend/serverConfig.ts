@@ -7,9 +7,16 @@ import cookieParser from "cookie-parser";
 import { createClient } from "redis";
 import { createAdapter } from "@socket.io/redis-adapter";
 import helmet from 'helmet';
+import { httpContext } from "./middlewares/httpContext";
+
 
 const app = express();
 const server = http.createServer(app);
+
+app.use((req, res, next) => {
+  httpContext.run(req, next);
+});
+
 
 // 1. Trust Proxy - Phải đặt trên cùng nếu chạy sau Nginx/Cloudflare
 app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);

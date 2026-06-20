@@ -22,9 +22,11 @@ import CandidateExcelImport from '@/components/candidate/CandidateExcelImport';
 import { useHeader } from '@/contexts/HeaderContext';
 import DatabaseFilters from '@/components/candidate-database/DatabaseFilters';
 import { useItem, setItem } from '@/config/zustandStore';
-import { FileUp, Download, Plus, Upload, Edit2, Trash2 } from 'lucide-react';
+import { FileUp, Download, Plus, Upload, Edit2, Trash2, History } from 'lucide-react';
 import { useConfirm } from '@/components/ui/ConfirmModal';
 import Modal from '@/components/ui/Modal';
+import AuditHistoryModal from '@/components/common/AuditHistoryModal';
+
 
 const statusClass = (status: string) =>
   `status-pill status-${String(status || '').toLowerCase().replace(/\s+/g, '-')}`;
@@ -93,8 +95,14 @@ export const CandidateDatabasePage = ({
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
+  const [historyConfig, setHistoryConfig] = useState<{
+    tableName: string;
+    recordId: number;
+    recordLabel: string;
+  } | null>(null);
 
   const [parsedCVInfo, setParsedCVInfo] = useState<{ data: any; file: File } | null>(null);
+
 
   const savedColumns = useItem('visibleCandidateColumns');
   const defaultVisible = savedColumns || [
@@ -343,12 +351,24 @@ export const CandidateDatabasePage = ({
       },
     },
     {
+      label: 'Lịch sử',
+      icon: <History size={14} className="text-indigo-600" />,
+      onClick: (candidate: any) => {
+        setHistoryConfig({
+          tableName: 'candidate',
+          recordId: candidate.id,
+          recordLabel: candidate.name,
+        });
+      },
+    },
+    {
       label: 'Delete',
       icon: <Trash2 size={14} className="text-red-500" />,
       onClick: (candidate: any) => handleDeleteCandidates([candidate]),
       onBulkClick: (selectedRows: any[]) => handleDeleteCandidates(selectedRows),
     },
   ];
+
 
   const headerActions = useMemo(() => (
     <div className="flex flex-wrap gap-2">
@@ -468,7 +488,21 @@ export const CandidateDatabasePage = ({
           onClose={() => setParsedCVInfo(null)}
         />
       )}
+
+      {historyConfig && (
+        <AuditHistoryModal
+          tableName={historyConfig.tableName}
+          recordId={historyConfig.recordId}
+          recordLabel={historyConfig.recordLabel}
+          isOpen={true}
+          onClose={() => setHistoryConfig(null)}
+          onRollbackSuccess={() => {
+            loadCandidatesFromApi(currentPage, pageSize, activeSearchParams);
+          }}
+        />
+      )}
     </div>
   );
+
 };
 export default CandidateDatabasePage;

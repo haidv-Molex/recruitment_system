@@ -30,6 +30,11 @@ BEFORE UPDATE ON access
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON access
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+
+
 -- Grant privileges to app_user
 GRANT USAGE ON SCHEMA public TO app_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO app_user;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Edit2, Trash2, Users, FileUp, Download, Plus } from 'lucide-react';
+import { Edit2, Trash2, Users, FileUp, Download, Plus, History } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 import ExcelTable from '@/components/ui/ExcelTable';
 import JobForm from '@/components/job/JobForm';
@@ -7,6 +7,8 @@ import ToastContainer from '@/components/common/Toast';
 import Modal from '@/components/ui/Modal';
 import { useToast } from '@/hooks/useToast';
 import { formatNotesToString } from './CandidateDatabase';
+import AuditHistoryModal from '@/components/common/AuditHistoryModal';
+
 import {
   createJobApi,
   createJobExtendedApi,
@@ -89,6 +91,12 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<any | null>(null);
   const [showExcelImport, setShowExcelImport] = useState(false);
+  const [historyConfig, setHistoryConfig] = useState<{
+    tableName: string;
+    recordId: number;
+    recordLabel: string;
+  } | null>(null);
+
 
   const savedColumns = useItem('visibleJobColumns');
   const handleVisibleColumnsChange = (cols: string[]) => {
@@ -431,7 +439,19 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
       },
     },
     {
+      label: 'Lịch sử',
+      icon: <History size={14} className="text-indigo-600" />,
+      onClick: (row: any) => {
+        setHistoryConfig({
+          tableName: 'job',
+          recordId: row.id,
+          recordLabel: row.jobCode,
+        });
+      },
+    },
+    {
       label: 'Edit',
+
       icon: <Edit2 size={14} />,
       onClick: async (row: any) => {
         try {
@@ -598,7 +618,21 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
         onConfirm={handleConfirmDelete}
         onCancel={() => setConfirmDeleteState((prev) => ({ ...prev, isOpen: false }))}
       />
+
+      {historyConfig && (
+        <AuditHistoryModal
+          tableName={historyConfig.tableName}
+          recordId={historyConfig.recordId}
+          recordLabel={historyConfig.recordLabel}
+          isOpen={true}
+          onClose={() => setHistoryConfig(null)}
+          onRollbackSuccess={() => {
+            loadJobsFromApi(currentPage, pageSize, { ...activeSearchParams, ...sortParams });
+          }}
+        />
+      )}
     </div>
   );
+
 };
 export default JobTrackingPage;

@@ -5,3 +5,8 @@ CREATE TABLE job_segment (
     FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE CASCADE,
     FOREIGN KEY (segment_id) REFERENCES segment(segment_id) ON DELETE CASCADE
 );
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON job_segment
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

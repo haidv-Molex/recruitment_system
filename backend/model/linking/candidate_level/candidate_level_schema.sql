@@ -5,3 +5,8 @@ CREATE TABLE candidate_level (
     FOREIGN KEY (candidate_id) REFERENCES candidate(candidate_id) ON DELETE CASCADE,
     FOREIGN KEY (level_id) REFERENCES level(level_id) ON DELETE CASCADE
 );
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON candidate_level
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

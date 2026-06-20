@@ -31,3 +31,8 @@ CREATE TRIGGER set_updated_at_candidate
 BEFORE UPDATE ON candidate
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON candidate
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

@@ -31,6 +31,86 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION process_audit_log()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_user_id INT;
+    old_val JSONB := NULL;
+    new_val JSONB := NULL;
+    pk_keys JSONB := '{}'::JSONB;
+    tbl_name TEXT := TG_TABLE_NAME;
+    act TEXT := TG_OP;
+    row_val JSONB;
+BEGIN
+    -- Lấy thông tin user từ session context
+    BEGIN
+        current_user_id := NULLIF(current_setting('app.current_user_id', true), '')::INT;
+    EXCEPTION WHEN OTHERS THEN
+        current_user_id := NULL;
+    END;
+
+    -- Xác định dữ liệu cũ/mới dựa trên hành động
+    IF (TG_OP = 'DELETE') THEN
+        row_val := to_jsonb(OLD);
+        old_val := row_val;
+        IF (tbl_name = 'user') THEN
+            old_val := old_val - 'user_password' - 'user_account';
+        END IF;
+    ELSE
+        row_val := to_jsonb(NEW);
+        new_val := row_val;
+        IF (TG_OP = 'UPDATE') THEN
+            old_val := to_jsonb(OLD);
+            IF (tbl_name = 'user') THEN
+                old_val := old_val - 'user_password' - 'user_account';
+                new_val := new_val - 'user_password' - 'user_account';
+            END IF;
+        ELSE
+            IF (tbl_name = 'user') THEN
+                new_val := new_val - 'user_password' - 'user_account';
+            END IF;
+        END IF;
+    END IF;
+
+    -- Tự động trích xuất khóa chính của bảng (hỗ trợ cả composite key)
+    CASE tbl_name
+        -- Các bảng có khóa chính đơn
+        WHEN 'company' THEN pk_keys := jsonb_build_object('company_id', row_val->'company_id');
+        WHEN 'file' THEN pk_keys := jsonb_build_object('file_id', row_val->'file_id');
+        WHEN 'level' THEN pk_keys := jsonb_build_object('level_id', row_val->'level_id');
+        WHEN 'platform' THEN pk_keys := jsonb_build_object('platform_id', row_val->'platform_id');
+        WHEN 'segment' THEN pk_keys := jsonb_build_object('segment_id', row_val->'segment_id');
+        WHEN 'site' THEN pk_keys := jsonb_build_object('site_id', row_val->'site_id');
+        WHEN 'user' THEN pk_keys := jsonb_build_object('user_id', row_val->'user_id');
+        WHEN 'department' THEN pk_keys := jsonb_build_object('department_id', row_val->'department_id');
+        WHEN 'job' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id');
+        WHEN 'candidate' THEN pk_keys := jsonb_build_object('candidate_id', row_val->'candidate_id');
+        WHEN 'access' THEN pk_keys := jsonb_build_object('access_id', row_val->'access_id');
+        WHEN 'note' THEN pk_keys := jsonb_build_object('note_id', row_val->'note_id');
+        
+        -- Các bảng liên kết trung gian (Composite Primary Keys)
+        WHEN 'employee_level' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'level_id', row_val->'level_id');
+        WHEN 'hiring_manager' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'user_id', row_val->'user_id');
+        WHEN 'job_department' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'department_id', row_val->'department_id');
+        WHEN 'job_segment' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'segment_id', row_val->'segment_id');
+        WHEN 'job_site' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'site_id', row_val->'site_id');
+        WHEN 'job_title' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'level_id', row_val->'level_id');
+        WHEN 'candidate_level' THEN pk_keys := jsonb_build_object('candidate_id', row_val->'candidate_id', 'level_id', row_val->'level_id');
+        ELSE pk_keys := '{}'::JSONB;
+    END CASE;
+
+    -- Ghi log
+    INSERT INTO audit_log (table_name, action, record_keys, old_data, new_data, changed_by)
+    VALUES (tbl_name, act, pk_keys, old_val, new_val, current_user_id);
+
+    IF (TG_OP = 'DELETE') THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 `;
 
 // === BIỂU THỨC ===

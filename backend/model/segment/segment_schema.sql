@@ -11,3 +11,8 @@ CREATE TRIGGER set_updated_at_segment
 BEFORE UPDATE ON segment
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER audit_trigger
+AFTER INSERT OR UPDATE OR DELETE ON segment
+FOR EACH ROW EXECUTE FUNCTION process_audit_log();
+

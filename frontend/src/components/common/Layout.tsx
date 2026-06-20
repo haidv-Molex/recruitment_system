@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronRight,
   Lock,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import HeaderContext from '@/contexts/HeaderContext';
@@ -190,6 +191,22 @@ export default function Layout({ children }: LayoutProps) {
               <span>Access Control</span>
             </Link>
           )}
+
+          {/* Audit Logs tab */}
+          {isAdmin && (
+            <Link
+              to="/admin/audit-logs"
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                isActive('/admin/audit-logs')
+                  ? 'bg-emerald-600 text-white shadow-md hover:bg-emerald-600'
+                  : 'text-slate-650 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <Clock size={18} className={isActive('/admin/audit-logs') ? 'text-white' : 'text-slate-450'} />
+              <span>Audit Logs</span>
+            </Link>
+          )}
+
         </nav>
 
         {/* Sidebar Footer */}
