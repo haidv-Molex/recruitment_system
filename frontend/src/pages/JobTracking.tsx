@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Edit2, Trash2, Users, FileUp, Download, Plus, History } from 'lucide-react';
+import { Edit2, Trash2, FileUp, Download, Plus, History } from 'lucide-react';
 import Pagination from '@/components/ui/Pagination';
 import ExcelTable from '@/components/ui/ExcelTable';
 import JobForm from '@/components/job/JobForm';
@@ -77,14 +77,12 @@ const mapApiJobToRow = (j: any) => ({
 export interface JobTrackingPageProps {
   jobs: any[];
   setJobs: React.Dispatch<React.SetStateAction<any[]>>;
-  candidates: any[];
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
-export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPageProps) => {
+export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
   const { toasts, removeToast, toast } = useToast();
-  const [viewJobCode, setViewJobCode] = useState('');
   const [editingJob, setEditingJob] = useState<any | null>(null);
   const [showJobForm, setShowJobForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -432,13 +430,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
 
   const tableActions = [
     {
-      label: 'View',
-      icon: <Users size={14} className="text-emerald-600" />,
-      onClick: (row: any) => {
-        setViewJobCode(row.jobCode);
-      },
-    },
-    {
       label: 'Lịch sử',
       icon: <History size={14} className="text-indigo-600" />,
       onClick: (row: any) => {
@@ -547,45 +538,6 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
             onPageSizeChange={handlePageSizeChange}
           />
       </div>
-
-      {/* View Candidates Modal */}
-      {viewJobCode && (
-        <Modal
-          isOpen={true}
-          onClose={() => setViewJobCode('')}
-          title={
-            <div className="flex items-center gap-2">
-              <Users className="text-emerald-600" size={20} />
-              <span>Candidates applying for Job code: {viewJobCode}</span>
-            </div>
-          }
-          maxWidthClass="max-w-3xl"
-        >
-          {candidates.filter((c) => c.jobCode === viewJobCode).length === 0 ? (
-            <p className="text-sm text-slate-400 bg-white border border-dashed border-slate-200 rounded-lg p-6 text-center font-medium">
-              No candidates are currently applying for this job.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {candidates
-                .filter((c) => c.jobCode === viewJobCode)
-                .map((c) => (
-                  <div
-                    key={c.id}
-                    className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 hover:shadow-md transition-all"
-                  >
-                    <p className="font-bold text-slate-800 text-sm">{c.name}</p>
-                    <p className="text-xs text-slate-500 font-medium mt-1">
-                      Status:{' '}
-                      <span className="font-semibold text-emerald-600 capitalize">{c.status}</span>
-                    </p>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1">Source: {c.source || '—'}</p>
-                  </div>
-                ))}
-            </div>
-          )}
-        </Modal>
-      )}
 
       {/* Modal - Job Edit / Add form */}
       {showJobForm && (
