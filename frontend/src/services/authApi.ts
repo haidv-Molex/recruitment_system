@@ -36,7 +36,13 @@ export async function refreshTokenApi(): Promise<string> {
   return token;
 }
 
-export function logoutApi(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem('recruitment_auth_user');
+export async function logoutApi(): Promise<void> {
+  try {
+    await axiosInstance.post('/auth/logout');
+  } catch (error) {
+    console.error('Failed to log out from server:', error);
+  } finally {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('recruitment_auth_user');
+  }
 }

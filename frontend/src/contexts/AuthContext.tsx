@@ -15,7 +15,7 @@ export interface AuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
   login: (account: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
   updateProfile: (username: string, description: string) => Promise<{ success: boolean; message?: string }>;
 }
@@ -98,9 +98,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
-    logoutApi();
+    await logoutApi();
   };
 
   const changePassword = async (oldPassword: string, newPassword: string) => {

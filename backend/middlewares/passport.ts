@@ -319,11 +319,30 @@ passport.use(
       const refreshTokenFromClient = req.cookies?.refreshToken || req.body?.refreshToken;
       const accessToken = req.headers.authorization?.split(" ")[1];
 
-      // ✅ Cho token vào blacklist Redis
+      // ✅ Cho token vào blacklist Redis và xoá refreshToken khỏi Redis
       const expiresAccessToken = await jwtTimeToSeconds(process.env.EXPIRES_TOKEN || "15m");
-      const expRefreshToken = await jwtTimeToSeconds(process.env.EXPIRES_REFRESH_TOKEN || "30d")
-      await setCache(`blacklist:${accessToken}`, "true", expiresAccessToken);
-      await setCache(`blacklist:${refreshTokenFromClient}`, "true", expRefreshToken);
+      if (accessToken) {
+        await setCache(`blacklist:${accessToken}`, "true", expiresAccessToken);
+      }
+
+      if (refreshTokenFromClient) {
+        const expRefreshToken = await jwtTimeToSeconds(process.env.EXPIRES_REFRESH_TOKEN || "30d");
+        await setCache(`blacklist:${refreshTokenFromClient}`, "true", expRefreshToken);
+
+        try {
+          const payload: any = jwt.verify(refreshTokenFromClient, secretOrKey);
+          if (payload?.user_id && payload?.jti) {
+            await redis.del(`refreshToken:${payload.user_id}:${payload.jti}`);
+          }
+        } catch (e) {
+          try {
+            const payload: any = jwt.decode(refreshTokenFromClient);
+            if (payload?.user_id && payload?.jti) {
+              await redis.del(`refreshToken:${payload.user_id}:${payload.jti}`);
+            }
+          } catch (e2) {}
+        }
+      }
 
       // ✅ Xoá refreshToken cookie
       req.res!.clearCookie("refreshToken", {

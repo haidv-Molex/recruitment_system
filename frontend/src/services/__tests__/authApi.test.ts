@@ -64,12 +64,17 @@ describe('authApi tests', () => {
     expect(result).toEqual(mockUser);
   });
 
-  it('logoutApi should clear token and user details from localStorage', () => {
+  it('logoutApi should clear token and user details from localStorage', async () => {
+    vi.mocked(axiosInstance.post).mockResolvedValueOnce({
+      data: { result: true },
+    });
+
     localStorage.setItem('authToken', 'token');
     localStorage.setItem('recruitment_auth_user', 'user');
 
-    logoutApi();
+    await logoutApi();
 
+    expect(axiosInstance.post).toHaveBeenCalledWith('/auth/logout');
     expect(localStorage.getItem('authToken')).toBeNull();
     expect(localStorage.getItem('recruitment_auth_user')).toBeNull();
   });
