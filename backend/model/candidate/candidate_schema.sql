@@ -36,3 +36,28 @@ CREATE TRIGGER audit_trigger
 AFTER INSERT OR UPDATE OR DELETE ON candidate
 FOR EACH ROW EXECUTE FUNCTION process_audit_log();
 
+CREATE OR REPLACE FUNCTION set_default_candidate_code()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.candidate_code IS NULL OR TRIM(NEW.candidate_code) = '' THEN
+        IF NEW.candidate_id IS NULL THEN
+            NEW.candidate_id = nextval(pg_get_serial_sequence('candidate', 'candidate_id'));
+        END IF;
+        NEW.candidate_code = 'V' || LPAD(NEW.candidate_id::TEXT, GREATEST(5, LENGTH(NEW.candidate_id::TEXT)), '0');
+    ELSE
+        NEW.candidate_code = TRIM(NEW.candidate_code);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE UNIQUE INDEX candidate_candidate_code_unique_idx ON candidate (LOWER(TRIM(candidate_code)));
+
+CREATE UNIQUE INDEX candidate_candidate_email_unique_idx ON candidate (LOWER(TRIM(candidate_email))) WHERE candidate_email IS NOT NULL AND TRIM(candidate_email) <> '';
+
+CREATE TRIGGER set_default_candidate_code_before_insert
+BEFORE INSERT ON candidate
+FOR EACH ROW
+EXECUTE FUNCTION set_default_candidate_code();
+

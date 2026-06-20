@@ -5,6 +5,7 @@ import Company from "@services/company/_Company";
 import Level from "@services/level/_Level";
 import Job from "@services/job/_Job";
 import { create } from "@services/candidate/create";
+import { update } from "@services/candidate/update";
 import normalizeLookupKey from "@utilities/entity/normalizeLookupKey";
 import resolveAndCreateEntities from "@utilities/entity/resolveAndCreateEntities";
 
@@ -157,7 +158,7 @@ export async function batchImport(
         resolvedJobId = jobMap.get(normalizeLookupKey(c.job_code)) ?? null;
       }
 
-      const resolvedReferenceId = c.reference || (c.reference_name?.trim() ? referenceMap.get(normalizeLookupKey(c.reference_name)) : null) || null;
+            const resolvedReferenceId = c.reference || (c.reference_name?.trim() ? referenceMap.get(normalizeLookupKey(c.reference_name)) : null) || null;
       const resolvedPlatformId = c.platform_id || (c.platform_name?.trim() ? platformMap.get(normalizeLookupKey(c.platform_name)) : null) || null;
       const resolvedCompanyId = c.targeted_company || (c.targeted_company_name?.trim() ? companyMap.get(normalizeLookupKey(c.targeted_company_name)) : null) || null;
 
@@ -166,29 +167,70 @@ export async function batchImport(
         ...(c.candidate_levels_name || []).map((n) => levelMap.get(normalizeLookupKey(n))).filter(Boolean) as number[],
       ];
 
-      await create(
-        {
-          candidate_code: c.candidate_code || null,
-          candidate_name: c.candidate_name,
-          candidate_email: c.candidate_email || null,
-          candidate_phone: c.candidate_phone || null,
-          agency: c.agency || null,
-          offer_date: c.offer_date || null,
-          onboard_date: c.onboard_date || null,
-          expected_onboard_date: c.expected_onboard_date || null,
-          feedback_date: c.feedback_date || null,
-          current_salary: c.current_salary || null,
-          expected_salary: c.expected_salary || null,
-          status: c.status,
-          note: c.note || null,
-          job_id: resolvedJobId,
-          reference: resolvedReferenceId,
-          platform_id: resolvedPlatformId,
-          targeted_company: resolvedCompanyId,
-          candidate_levels: Array.from(new Set(mergedLevels)),
-        },
-        pool
-      );
+      const candidateCode = c.candidate_code?.trim() || null;
+      const candidateEmail = c.candidate_email?.trim() || null;
+
+      let existingCandidate: any = null;
+
+      if (candidateCode) {
+        const codeRes = await pool.query(
+          `SELECT candidate_id FROM candidate WHERE LOWER(TRIM(candidate_code)) = $1 LIMIT 1`,
+          [normalizeLookupKey(candidateCode)]
+        );
+        if (codeRes.rows.length > 0) {
+          existingCandidate = codeRes.rows[0];
+        }
+      }
+
+      if (!existingCandidate && candidateEmail) {
+        const emailRes = await pool.query(
+          `SELECT candidate_id FROM candidate WHERE LOWER(TRIM(candidate_email)) = $1 LIMIT 1`,
+          [normalizeLookupKey(candidateEmail)]
+        );
+        if (emailRes.rows.length > 0) {
+          existingCandidate = emailRes.rows[0];
+        }
+      }
+
+      const candidateData = {
+        candidate_name: c.candidate_name,
+        candidate_phone: c.candidate_phone || null,
+        agency: c.agency || null,
+        offer_date: c.offer_date || null,
+        onboard_date: c.onboard_date || null,
+        expected_onboard_date: c.expected_onboard_date || null,
+        feedback_date: c.feedback_date || null,
+        current_salary: c.current_salary || null,
+        expected_salary: c.expected_salary || null,
+        status: c.status,
+        note: c.note || null,
+        job_id: resolvedJobId,
+        reference: resolvedReferenceId,
+        platform_id: resolvedPlatformId,
+        targeted_company: resolvedCompanyId,
+        candidate_levels: Array.from(new Set(mergedLevels)),
+      };
+
+      if (existingCandidate) {
+        await update(
+          Number(existingCandidate.candidate_id),
+          {
+            ...candidateData,
+            candidate_code: candidateCode,
+            candidate_email: candidateEmail,
+          },
+          pool
+        );
+      } else {
+        await create(
+          {
+            ...candidateData,
+            candidate_code: candidateCode,
+            candidate_email: candidateEmail,
+          },
+          pool
+        );
+      }
 
       await pool.query("RELEASE SAVEPOINT import_candidate_savepoint");
       importedCount++;

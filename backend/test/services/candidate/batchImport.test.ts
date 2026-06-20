@@ -219,4 +219,114 @@ describe("Candidate batchImport service", () => {
     expect(candidateRes.rows).to.have.lengthOf(1);
     expect(candidateRes.rows[0].candidate_email).to.be.null;
   });
+
+  it("should auto-generate candidate_code in V00001 format when candidate_code is not provided", async () => {
+    const importItems = [
+      {
+        candidate_name: "Candidate Without Code",
+        status: "CV Sent",
+      }
+    ];
+
+    const result = await batchImport(importItems, client);
+    expect(result.success).to.be.true;
+
+    const candidateRes = await client.query(
+      `SELECT candidate_id, candidate_code FROM candidate WHERE candidate_name = $1`,
+      ["Candidate Without Code"]
+    );
+    expect(candidateRes.rows).to.have.lengthOf(1);
+    const candidate = candidateRes.rows[0];
+    const expectedCode = "V" + String(candidate.candidate_id).padStart(5, "0");
+    expect(candidate.candidate_code).to.equal(expectedCode);
+  });
+
+  it("should update candidate details instead of creating a new one if candidate_email already exists", async () => {
+    // 1. Pre-insert a candidate with a specific email
+    const preRes = await client.query(
+      `INSERT INTO candidate (candidate_name, candidate_email, status, candidate_phone)
+       VALUES ($1, $2, $3, $4) RETURNING candidate_id`,
+      ["Original Candidate", "existing.email@example.com", "CV Sent", "111111"]
+    );
+    const preId = preRes.rows[0].candidate_id;
+
+    // 2. Batch import candidate with the same email but different details
+    const importItems = [
+      {
+        candidate_name: "Updated Candidate Name",
+        status: "Interview",
+        candidate_email: "existing.email@example.com",
+        candidate_phone: "222222",
+      }
+    ];
+
+    const result = await batchImport(importItems, client);
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+
+    // 3. Verify that no new candidate record was created, and existing record was updated
+    const candCountRes = await client.query(
+      `SELECT COUNT(*) AS count FROM candidate WHERE candidate_email = $1`,
+      ["existing.email@example.com"]
+    );
+    expect(Number(candCountRes.rows[0].count)).to.equal(1);
+
+    const candRes = await client.query(
+      `SELECT * FROM candidate WHERE candidate_id = $1`,
+      [preId]
+    );
+    expect(candRes.rows[0].candidate_name).to.equal("Updated Candidate Name");
+    expect(candRes.rows[0].status).to.equal("Interview");
+    expect(candRes.rows[0].candidate_phone).to.equal("222222");
+  });
+
+  it("should prioritize candidate_code match and fallback to candidate_email match", async () => {
+    // Insert Candidate 1: code='V99999', email='first@example.com', name='Original One'
+    await client.query(
+      `INSERT INTO candidate (candidate_code, candidate_name, candidate_email, status)
+       VALUES ($1, $2, $3, $4)`,
+      ["V99999", "Original One", "first@example.com", "CV Sent"]
+    );
+
+    // Insert Candidate 2: code='V88888', email='second@example.com', name='Original Two'
+    await client.query(
+      `INSERT INTO candidate (candidate_code, candidate_name, candidate_email, status)
+       VALUES ($1, $2, $3, $4)`,
+      ["V88888", "Original Two", "second@example.com", "CV Sent"]
+    );
+
+    // Import Item 1: candidate_code='V99999', email='third@example.com'
+    // This should match Candidate 1 by code, and update email/name.
+    const importItems1 = [
+      {
+        candidate_code: "V99999",
+        candidate_name: "Updated One",
+        candidate_email: "third@example.com",
+        status: "Interview",
+      }
+    ];
+    const result1 = await batchImport(importItems1, client);
+    expect(result1.success).to.be.true;
+
+    const cand1 = await client.query(`SELECT * FROM candidate WHERE candidate_code = $1`, ["V99999"]);
+    expect(cand1.rows[0].candidate_name).to.equal("Updated One");
+    expect(cand1.rows[0].candidate_email).to.equal("third@example.com");
+
+    // Import Item 2: candidate_code='V77777', email='second@example.com'
+    // Code doesn't match, but email matches Candidate 2. Should update Candidate 2.
+    const importItems2 = [
+      {
+        candidate_code: "V77777",
+        candidate_name: "Updated Two",
+        candidate_email: "second@example.com",
+        status: "Interview",
+      }
+    ];
+    const result2 = await batchImport(importItems2, client);
+    expect(result2.success).to.be.true;
+
+    const cand2 = await client.query(`SELECT * FROM candidate WHERE candidate_email = $1`, ["second@example.com"]);
+    expect(cand2.rows[0].candidate_code).to.equal("V77777");
+    expect(cand2.rows[0].candidate_name).to.equal("Updated Two");
+  });
 });
