@@ -105,7 +105,7 @@ export const DashboardPage = () => {
   ), [handleDownloadTemplate, handleDownloadFullWorkbook]);
 
   useHeader({
-    title: '📊 IDL Recruitment Dashboard',
+    title: 'IDL Recruitment Dashboard',
     subTitle: 'Headcount, status & pipeline analytics.',
     actions: headerActions,
   }, [headerActions]);

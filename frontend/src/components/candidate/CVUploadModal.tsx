@@ -56,7 +56,7 @@ export default function CVUploadModal({ onParsed, onClose }: CVUploadModalProps)
     <Modal
       isOpen={true}
       onClose={onClose}
-      title="📄 Tải lên & Phân tích CV bằng AI"
+      title="Tải lên & Phân tích CV bằng AI"
       maxWidthClass="max-w-4xl"
     >
       <div className="space-y-4">

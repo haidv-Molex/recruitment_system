@@ -169,7 +169,7 @@ export const DepartmentPage = () => {
   ), []);
 
   useHeader({
-    title: '🏢 Department Management',
+    title: 'Department Management',
     subTitle: 'Manage corporate departments and operations structure.',
     actions: headerActions,
   }, [headerActions]);
@@ -292,7 +292,7 @@ export const DepartmentPage = () => {
         <Modal
           isOpen={true}
           onClose={closeForm}
-          title={editingDept ? '✏️ Edit Department' : '🏢 Create Department'}
+          title={editingDept ? 'Edit Department' : 'Create Department'}
         >
           <MasterDataForm
             entityLabel="Department"

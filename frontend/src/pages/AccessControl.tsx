@@ -138,7 +138,7 @@ export const AccessControlPage = () => {
   ), []);
 
   useHeader({
-    title: '🔑 Access Control',
+    title: 'Access Control',
     subTitle: 'Configure display restrictions of specific jobs and candidates for non-admin users.',
     actions: headerActions,
   }, [headerActions]);

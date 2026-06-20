@@ -57,7 +57,7 @@ export default function JobRelationFields({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
       <div className="flex flex-col gap-2.5">
         <OutlookSearchSelect
-          label="🏬 Departments"
+          label="Departments"
           placeholder="Search departments..."
           initialItems={selectedDepts}
           searchApi={(search) => searchDepartmentsApi({ search })}
@@ -160,7 +160,7 @@ export default function JobRelationFields({
       </div>
 
       <OutlookSearchSelect
-        label="📦 Segments"
+        label="Segments"
         placeholder="Search or type a new segment..."
         initialItems={selectedSegs}
         searchApi={(search) => searchSegmentsApi({ search })}
@@ -177,7 +177,7 @@ export default function JobRelationFields({
       />
 
       <OutlookSearchSelect
-        label="📍 Sites"
+        label="Sites"
         placeholder="Search or type a new site..."
         initialItems={selectedSites}
         searchApi={(search) => searchSitesApi({ search })}
@@ -194,7 +194,7 @@ export default function JobRelationFields({
       />
 
       <OutlookSearchSelect
-        label="🏅 Titles (Job Level)"
+        label="Titles (Job Level)"
         placeholder="Search titles..."
         initialItems={selectedTitles}
         searchApi={(search) => searchLevelsApi({ search })}
@@ -209,7 +209,7 @@ export default function JobRelationFields({
       />
 
       <OutlookSearchSelect
-        label="🏅 Employee Levels"
+        label="Employee Levels"
         placeholder="Search or type a new employee level..."
         initialItems={selectedEmpLevels}
         searchApi={(search) => searchLevelsApi({ search })}
@@ -226,7 +226,7 @@ export default function JobRelationFields({
       />
 
       <OutlookSearchSelect
-        label="👔 Hiring Managers"
+        label="Hiring Managers"
         placeholder="Search or type a new manager..."
         initialItems={selectedManagers}
         searchApi={(search) => fetchUsersApi({ search })}

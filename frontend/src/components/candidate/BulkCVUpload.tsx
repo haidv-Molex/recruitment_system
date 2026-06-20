@@ -99,7 +99,7 @@ export default function BulkCVUpload({ onUpload, onClose }: BulkCVUploadProps) {
     <Modal
       isOpen={true}
       onClose={onClose}
-      title="📄 Mass CV Upload"
+      title="Mass CV Upload"
       maxWidthClass="max-w-xl"
       footer={
         <div className="flex items-center justify-between w-full">

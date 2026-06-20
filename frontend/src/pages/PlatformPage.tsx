@@ -153,7 +153,7 @@ export const PlatformPage = () => {
   ), []);
 
   useHeader({
-    title: '🌎 Kênh tuyển dụng',
+    title: 'Kênh tuyển dụng',
     subTitle: 'Manage sourcing channels and recruitment platforms.',
     actions: headerActions,
   }, [headerActions]);
@@ -259,7 +259,7 @@ export const PlatformPage = () => {
         <Modal
           isOpen={true}
           onClose={closeForm}
-          title={editingPlatform ? '✏️ Edit Platform' : '🌎 Create Platform'}
+          title={editingPlatform ? 'Edit Platform' : 'Create Platform'}
         >
           <MasterDataForm
             entityLabel="Platform"

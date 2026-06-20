@@ -87,7 +87,7 @@ export const ProfilePage = () => {
   ), [logout]);
 
   useHeader({
-    title: '👤 User Profile & Settings',
+    title: 'User Profile & Settings',
     subTitle: 'Customize your display name and update your credentials.',
     actions: headerActions,
   }, [headerActions]);
@@ -100,7 +100,7 @@ export const ProfilePage = () => {
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-6">
           <div>
             <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-              📝 Profile Information
+              Profile Information
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Personal bio and details visible to other team members.
@@ -118,7 +118,7 @@ export const ProfilePage = () => {
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-6">
           <div>
             <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
-              🔒 Security & Password
+              Security & Password
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Change your password to ensure your account security.

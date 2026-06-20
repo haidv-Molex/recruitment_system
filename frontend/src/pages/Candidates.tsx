@@ -122,7 +122,7 @@ export const CandidatesPage = () => {
   ), []);
 
   useHeader({
-    title: '👤 Candidates',
+    title: 'Candidates',
     subTitle: `Total: ${filteredCandidates.length} candidates listed`,
     actions: headerActions,
   }, [filteredCandidates.length, headerActions]);
@@ -132,7 +132,7 @@ export const CandidatesPage = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5 space-y-4">
-        <h3 className="font-bold text-slate-800 text-sm tracking-tight">🔍 Filter Options</h3>
+        <h3 className="font-bold text-slate-800 text-sm tracking-tight">Filter Options</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <InputField

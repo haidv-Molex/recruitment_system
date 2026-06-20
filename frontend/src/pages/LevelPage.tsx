@@ -152,7 +152,7 @@ export const LevelPage = () => {
   ), []);
 
   useHeader({
-    title: '🏷️ Employee Level Management',
+    title: 'Employee Level Management',
     subTitle: 'Manage corporate job levels and employee career levels.',
     actions: headerActions,
   }, [headerActions]);
@@ -258,7 +258,7 @@ export const LevelPage = () => {
         <Modal
           isOpen={true}
           onClose={closeForm}
-          title={editingLevel ? '✏️ Edit Level' : '🏷️ Create Level'}
+          title={editingLevel ? 'Edit Level' : 'Create Level'}
         >
           <MasterDataForm
             entityLabel="Level"

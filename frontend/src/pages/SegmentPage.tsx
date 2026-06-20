@@ -152,7 +152,7 @@ export const SegmentPage = () => {
   ), []);
 
   useHeader({
-    title: '📊 Segment Management',
+    title: 'Segment Management',
     subTitle: 'Manage organization segments and target divisions.',
     actions: headerActions,
   }, [headerActions]);
@@ -258,7 +258,7 @@ export const SegmentPage = () => {
         <Modal
           isOpen={true}
           onClose={closeForm}
-          title={editingSegment ? '✏️ Edit Segment' : '📊 Create Segment'}
+          title={editingSegment ? 'Edit Segment' : 'Create Segment'}
         >
           <MasterDataForm
             entityLabel="Segment"

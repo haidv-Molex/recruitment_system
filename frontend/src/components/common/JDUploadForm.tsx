@@ -157,7 +157,7 @@ export default function JDUploadForm({ jobs, onSubmit, onClose }: JDUploadFormPr
     <Modal
       isOpen={true}
       onClose={onClose}
-      title="📄 Upload Job Description"
+      title="Upload Job Description"
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>

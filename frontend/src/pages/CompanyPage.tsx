@@ -147,7 +147,7 @@ export const CompanyPage = () => {
   ), []);
 
   useHeader({
-    title: '🏢 Company Database',
+    title: 'Company Database',
     subTitle: 'Manage corporate entities and partner companies.',
     actions: headerActions,
   }, [headerActions]);
@@ -241,7 +241,7 @@ export const CompanyPage = () => {
         <Modal
           isOpen={true}
           onClose={closeForm}
-          title={editingCompany ? '✏️ Edit Company' : '🏢 Create Company'}
+          title={editingCompany ? 'Edit Company' : 'Create Company'}
         >
           <SimpleEntityForm
             entityLabel="Company"

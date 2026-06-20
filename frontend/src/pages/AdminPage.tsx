@@ -205,7 +205,7 @@ export const AdminPage = () => {
   ), [canCreateHr]);
 
   useHeader({
-    title: '👤 Account Management',
+    title: 'Account Management',
     subTitle: 'Manage user accounts for recruitment operations.',
     actions: headerActions,
   }, [headerActions]);

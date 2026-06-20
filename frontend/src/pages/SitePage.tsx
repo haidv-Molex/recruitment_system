@@ -152,7 +152,7 @@ export const SitePage = () => {
   ), []);
 
   useHeader({
-    title: '📍 Site Location Management',
+    title: 'Site Location Management',
     subTitle: 'Manage corporate office locations and operational sites.',
     actions: headerActions,
   }, [headerActions]);
@@ -258,7 +258,7 @@ export const SitePage = () => {
         <Modal
           isOpen={true}
           onClose={closeForm}
-          title={editingSite ? '✏️ Edit Site' : '📍 Create Site'}
+          title={editingSite ? 'Edit Site' : 'Create Site'}
         >
           <MasterDataForm
             entityLabel="Site"

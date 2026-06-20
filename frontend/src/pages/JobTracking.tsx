@@ -493,7 +493,7 @@ export const JobTrackingPage = ({ jobs, setJobs, candidates }: JobTrackingPagePr
   ), [handleExportIDL]);
 
   useHeader({
-    title: '📊 Job Tracking Sheet',
+    title: 'Job Tracking Sheet',
     subTitle: `Excel-like job tracking database. Total: ${totalItems} job requests`,
     actions: headerActions,
   }, [totalItems, headerActions]);
