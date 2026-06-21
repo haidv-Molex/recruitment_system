@@ -38,6 +38,7 @@ services:
 
   # Backend App Service (Express & Socket.io Server)
   backend:
+    image: recruitment_backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -59,13 +60,14 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # Frontend App Service (React + Vite served via Nginx)
   frontend:
+    image: recruitment_frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile
