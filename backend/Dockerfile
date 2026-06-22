@@ -38,6 +38,8 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/ecosystem.config.cjs ./
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/utilities ./utilities
+COPY --from=builder /app/model ./model
+COPY --from=builder /app/init-db ./init-db
 
 # Install pm2 globally for cluster management inside the container
 RUN npm install -g pm2
