@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "novel-server",
+      name: "recruitment-system-server",
       script: "./dist/index.js",
       instances: "max",
       exec_mode: "cluster",

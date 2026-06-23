@@ -37,7 +37,11 @@ app.use(helmet({
         "'self'",
         ...clientUrls,
         `${process.env.HOST}`,
-        "ws://localhost:3000"
+        "ws://localhost:3000",
+        "http://mlxvhavwpapp4.molex.com",
+        "https://mlxvhavwpapp4.molex.com",
+        "http://mlxvhavwpapp4.molex.com:*",
+        "https://mlxvhavwpapp4.molex.com:*"
       ],
       "img-src": ["'self'", "data:", "https:", "http:"],
       "script-src": ["'self'"],
@@ -52,7 +56,8 @@ const corsOptions = {
 
     // Nếu có origin (từ Web), kiểm tra whitelist
     const allowed = [...clientUrls, "http://localhost:5173"];
-    if (allowed.includes(origin) || origin.startsWith("http://localhost:")) {
+    const isMolexSite = /^https?:\/\/mlxvhavwpapp4\.molex\.com(:\d+)?$/.test(origin);
+    if (allowed.includes(origin) || origin.startsWith("http://localhost:") || isMolexSite) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));

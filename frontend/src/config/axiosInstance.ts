@@ -48,7 +48,7 @@ window.addEventListener('offline', () => {
 
 // ─── Axios instance ───────────────────────────────────────────────────────────
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    baseURL: import.meta.env.VITE_API_URL || 'http://mlxvhavwpapp4.molex.com:3000',
     timeout: 30 * 1000,
     withCredentials: true, // tự động gửi & nhận cookie
     headers: { 'X-Custom-Header': 'foobar' }
