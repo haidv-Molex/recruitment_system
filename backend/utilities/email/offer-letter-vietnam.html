@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offer Letter Vietnam</title>
+  <style>
+    :root {
+      --molex-green: #007a53;
+      --molex-dark: #1f2933;
+      --molex-muted: #5b6770;
+      --molex-line: #d8e2dc;
+      --molex-soft: #f3faf7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #e5e7eb;
+      color: var(--molex-dark);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 14mm 16mm 16mm;
+      position: relative;
+    }
+
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 8mm;
+      border: 1px solid var(--molex-line);
+      pointer-events: none;
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 14px;
+      align-items: center;
+      border-bottom: 3px solid var(--molex-green);
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+
+    .logo {
+      width: 88px;
+      height: 42px;
+      border-radius: 4px;
+      background: var(--molex-green);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .company-name {
+      margin: 0 0 3px;
+      color: var(--molex-green);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .company-address,
+    .company-contact {
+      margin: 0;
+      color: var(--molex-muted);
+      font-size: 10px;
+    }
+
+    .candidate-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 18px;
+      row-gap: 5px;
+      margin-bottom: 14px;
+    }
+
+    .field {
+      display: grid;
+      grid-template-columns: 78px 1fr;
+      gap: 6px;
+      align-items: baseline;
+    }
+
+    .label {
+      color: var(--molex-muted);
+      font-weight: 700;
+    }
+
+    .value {
+      min-height: 17px;
+      border-bottom: 1px dotted #9ca3af;
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .subject {
+      margin: 16px 0 14px;
+      padding: 9px 12px;
+      background: var(--molex-soft);
+      border-left: 5px solid var(--molex-green);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .content-title {
+      text-align: center;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+
+    p {
+      margin: 0 0 8px;
+      text-align: justify;
+    }
+
+    .salutation {
+      margin-top: 8px;
+      font-weight: 700;
+    }
+
+    .section {
+      margin-top: 12px;
+      break-inside: avoid;
+    }
+
+    .section-title {
+      margin: 0 0 6px;
+      padding: 5px 8px;
+      color: #ffffff;
+      background: var(--molex-green);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .info-row .label {
+      color: #111827;
+    }
+
+    .highlight-line {
+      display: inline-block;
+      min-width: 170px;
+      border-bottom: 1px dotted #6b7280;
+      font-weight: 700;
+    }
+
+    .signature-block {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 24px;
+      margin-top: 24px;
+      align-items: end;
+    }
+
+    .signature-card {
+      text-align: center;
+    }
+
+    .signature-greeting {
+      margin-bottom: 42px;
+      font-weight: 700;
+    }
+
+    .signed-note {
+      margin-bottom: 6px;
+      color: var(--molex-muted);
+      font-style: italic;
+    }
+
+    .signer-name {
+      margin: 0;
+      color: #111827;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .signer-title {
+      margin: 2px 0 0;
+      color: var(--molex-muted);
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      padding-top: 8px;
+      border-top: 1px solid var(--molex-line);
+      color: var(--molex-muted);
+      font-size: 9px;
+      text-align: center;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+      }
+
+      .page {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div class="logo">MOLEX</div>
+      <div>
+        <p class="company-name">Molex Vietnam Co., Ltd - Hung Yen Branch</p>
+        <p class="company-address">Lot No. T8, 9 at Thang Long II Industrial Park, Duong Hao Ward, Hung Yen Province, Vietnam</p>
+        <p class="company-contact">Tel.: (84-24) 39550196 / Fax: (84-24) 39550197</p>
+      </div>
+    </header>
+
+    <section class="candidate-grid" aria-label="Candidate information">
+      <div class="field"><span class="label">Date:</span><span class="value">{{offer_date}}</span></div>
+      <div class="field"><span class="label">Name:</span><span class="value">{{candidate_name}}</span></div>
+      <div class="field"><span class="label">Date of birth:</span><span class="value">{{date_of_birth}}</span></div>
+      <div class="field"><span class="label">ID Number:</span><span class="value">{{id_number}}</span></div>
+      <div class="field"><span class="label">Date of issue:</span><span class="value">{{id_issue_date}}</span></div>
+      <div class="field"><span class="label">Place of issue:</span><span class="value">{{id_issue_place}}</span></div>
+      <div class="field"><span class="label">Address:</span><span class="value">{{address}}</span></div>
+      <div class="field"><span class="label">Mobile:</span><span class="value">{{mobile}}</span></div>
+      <div class="field"><span class="label">Email:</span><span class="value">{{email}}</span></div>
+    </section>
+
+    <div class="subject">Subject: Offer Letter / Thư mời làm việc</div>
+    <p class="content-title">Nội dung</p>
+
+    <p class="salutation">Dear {{salutation}} {{candidate_name}},</p>
+
+    <p>Welcome you as a member of Molex Vietnam Co., Ltd - Hung Yen Branch (MXHY) by this offer letter with the following terms and conditions.</p>
+    <p>Chúng tôi rất vui mừng chào đón bạn là thành viên của Công ty TNHH Molex Việt Nam - Chi Nhánh Hưng Yên (MXHY) bằng thư mời làm việc này với các điều khoản được nêu dưới đây.</p>
+
+    <section class="section">
+      <h2 class="section-title">Working Place / Địa điểm làm việc</h2>
+      <p><strong>Main work location:</strong> Lot No. T8, 9 at Thang Long II Industrial Park, Duong Hao Ward, Hung Yen Province, Vietnam.</p>
+      <p><strong>Địa điểm làm việc chính:</strong> Lô Đất Số T8, 9 tại Khu Công Nghiệp Thăng Long II, Phường Đường Hào, Tỉnh Hưng Yên, Việt Nam.</p>
+      <p><strong>Other work location (if any):</strong> Other offices, facility sites or other places decided by the Company.</p>
+      <p><strong>Địa điểm làm việc khác (nếu có):</strong> Các văn phòng, nhà máy hoặc các địa điểm khác do công ty chỉ định.</p>
+
+      <div class="info-row"><span class="label">Department / Phòng:</span><span class="value">{{department}}</span></div>
+      <div class="info-row"><span class="label">Job title / Chức danh:</span><span class="value">{{position}}</span></div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Start Working Date / Ngày bắt đầu làm việc</h2>
+      <p><span class="highlight-line">{{start_date}}</span></p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Offered Basic Salary (Gross) / Lương cơ bản</h2>
+      <p>The offered basic gross salary is <strong>{{basic_salary}}</strong> VND ({{basic_salary_text}}) per month, excluding allowances and benefits as the company's policies, if any. It is paid on 5th monthly via individual bank account. Insurances of Social, Health and Unemployment as stipulated by the law will be deducted from your monthly gross income in probation.</p>
+      <p>Tiền lương cơ bản là <strong>{{basic_salary}}</strong> VND ({{basic_salary_text}}) một tháng, không bao gồm tiền trợ cấp và chế độ phúc lợi của công ty, nếu có. Tiền lương được trả qua tài khoản ngân hàng vào ngày 5 hàng tháng. BHXH, BHYT, BHTN theo luật định sẽ được trích từ lương trong thời gian thử việc.</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Working Hour / Thời gian làm việc</h2>
+      <p>The office hours from 8.00am to 4.30pm, including break-time, and working day from Monday to Friday, Saturday off as the company's business calendar. However, shift-working is applied to workshop sections. More detail, please refer to yearly working calendar and section's working calendar.</p>
+      <p>Thời gian làm việc từ 08:00 sáng đến 04:30 chiều, bao gồm thời gian nghỉ giải lao, ngày làm việc từ thứ Hai đến thứ Sáu, nghỉ thứ Bảy theo lịch làm việc của công ty. Tuy nhiên, làm việc theo ca sẽ được áp dụng cho một số bộ phận sản xuất. Cụ thể, xin xem thêm tại lịch làm việc hàng năm của công ty và lịch cụ thể của từng bộ phận.</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Probation & Internal Training / Thử việc & Đào tạo nội bộ</h2>
+      <p>You are asked to complete the period of <strong>{{probation_days}}</strong> days including probation and internal training for new job standard and knowledge. At the end of the period, the personal evaluation will be conducted to confirm whether or not your ability, performance and competencies are suitable to our requirements. The labour contract with definite term will be signed when you are evaluated "Qualified".</p>
+      <p>Bạn được yêu cầu hoàn thành thời gian thử việc và đào tạo nội bộ cho tiêu chuẩn và kiến thức công việc mới là <strong>{{probation_days}}</strong> ngày kể từ ngày bắt đầu làm việc. Cuối thời gian này, bản đánh giá cá nhân được thực hiện để khẳng định liệu năng lực thực hiện công việc của bạn có phù hợp với yêu cầu của chúng tôi hay không. Hợp đồng lao động với thời hạn xác định sẽ được ký kết sau khi bạn được đánh giá là "Đạt yêu cầu".</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Termination Notice / Thông báo chấm dứt làm việc</h2>
+      <p>In the event that your performance is unsatisfactory to the company's requirements, then your employment will be terminated with no compensation liability payable. During the above-mentioned probation period, your employment may be terminated by giving three (3) days' notice or in lieu thereof.</p>
+      <p>Trong trường hợp hiệu suất công việc của bạn không phù hợp với yêu cầu của công ty, việc tuyển dụng sẽ kết thúc ngay mà không có trách nhiệm bồi hoàn nào. Trong khoảng thời gian thử việc nêu trên, việc tuyển dụng của bạn có thể được kết thúc khi thông báo cho bên kia trước 3 ngày.</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Other / Khác</h2>
+      <p>All contents of this Offer Letter shall be kept private and confidential. Any intentional disclosure by you will be sufficient grounds for immediate cancellation of employment.</p>
+      <p>Mọi thông tin liên quan đến thư mời tuyển dụng này được bảo mật và giữ kín. Việc cố tình để lộ thông tin sẽ là cơ sở để hủy bỏ lời mời tuyển dụng.</p>
+      <p>Wish you every success in your future career in Molex Viet Nam!</p>
+      <p>Chúc bạn có sự nghiệp thành công tại Molex Việt Nam.</p>
+    </section>
+
+    <section class="signature-block">
+      <div></div>
+      <div class="signature-card">
+        <p class="signature-greeting">Sincerely / Chân thành,</p>
+        <p class="signed-note">(Đã ký)</p>
+        <p class="signer-name">Hoang Thu Huong</p>
+        <p class="signer-title">Country Sr Manager, HR Vietnam<br />Quản lý Cấp cao, Nhân sự Việt Nam</p>
+      </div>
+    </section>
+
+    <p class="footer-note">This offer letter is confidential and intended only for {{candidate_name}}.</p>
+  </main>
+</body>
+</html>

@@ -51,6 +51,19 @@ export async function sendEmailApi(body: {
     startDate: string;
     templateId?: string;
     password: string;
+    offerDate?: string;
+    dateOfBirth?: string;
+    idNumber?: string;
+    idIssueDate?: string;
+    idIssuePlace?: string;
+    address?: string;
+    mobile?: string;
+    email?: string;
+    salutation?: string;
+    department?: string;
+    basicSalary?: string;
+    basicSalaryText?: string;
+    probationDays?: string;
   };
 }): Promise<any> {
   const response = await axiosInstance.post('/email/send', body);

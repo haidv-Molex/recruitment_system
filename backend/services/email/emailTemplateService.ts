@@ -21,13 +21,20 @@ const templateDefinitions = [
     subject: "Internship Offer Letter - {{position}}",
     fileName: "offer-letter-internship.html",
   },
+  {
+    id: "offer-letter-vietnam",
+    name: "Vietnam Offer Letter",
+    subject: "Offer Letter - {{position}} - {{candidate_name}}",
+    fileName: "offer-letter-vietnam.html",
+    directory: path.join(process.cwd(), "utilities", "email"),
+  },
 ];
 
 export async function getEmailTemplates(): Promise<EmailTemplate[]> {
   const templateDir = path.join(process.cwd(), "templates", "email");
 
   return Promise.all(templateDefinitions.map(async (template) => {
-    const html = await fs.readFile(path.join(templateDir, template.fileName), "utf8");
+    const html = await fs.readFile(path.join(template.directory || templateDir, template.fileName), "utf8");
     return {
       id: template.id,
       name: template.name,
