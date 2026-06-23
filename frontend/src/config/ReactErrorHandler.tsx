@@ -34,7 +34,8 @@ class ReactErrorHandlerInner extends React.Component<Props & { _onReset?: () => 
                 this.props._onReset()
             } else {
                 // Fallback: reload trang
-                window.location.href = '/'
+                window.location.hash = '#/'
+                window.location.reload()
             }
         }, 100)
     }

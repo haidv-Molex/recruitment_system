@@ -23,8 +23,8 @@ const handleLogoutAndRedirect = () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('recruitment_auth_user')
     showToast('warning', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
-    if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+    if (window.location.hash !== '#/login') {
+        window.location.hash = '#/login'
     }
 }
 
