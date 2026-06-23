@@ -36,6 +36,10 @@ async function axiosFetch(url: any, init?: any) {
 }
 
 export function getCohereClient(): CohereClientV2 {
+  if (!process.env.CO_API_KEY) {
+    throw new Error("CO_API_KEY is not configured");
+  }
+
   // Auto-configure proxy for corporate Zscaler if on Windows and no proxy is set
   if (process.platform === "win32" && !process.env.HTTPS_PROXY && !process.env.HTTP_PROXY) {
     process.env.HTTPS_PROXY = "http://127.0.0.1:9000";
@@ -48,7 +52,7 @@ export function getCohereClient(): CohereClientV2 {
   }
 
   return new CohereClientV2({
-    token: process.env.CO_API_KEY!,
+    token: process.env.CO_API_KEY,
     fetch: axiosFetch as any,
   });
 }

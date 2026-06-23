@@ -24,6 +24,7 @@ import DashboardController from "@controller/dashboard/_DashboardController";
 import NoteController from "@controller/note/_NoteController";
 import AccessController from "@controller/access/_AccessController";
 import AuditController from "@controller/audit/_AuditController";
+import EmailController from "@controller/email/_EmailController";
 
 
 app.get('/', (req, res) => {
@@ -56,6 +57,7 @@ app.use("/dashboard", DashboardController);
 app.use("/note", NoteController);
 app.use("/access", AccessController);
 app.use("/audit", AuditController);
+app.use("/email", EmailController);
 
 
 // Route không khớp → 404

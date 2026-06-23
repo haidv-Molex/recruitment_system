@@ -3,6 +3,7 @@ import { showToast } from '@/config/ToastConfig'
 import { setItem } from '@/config/zustandStore'
 
 let isRefreshing = false
+let hasShownSessionExpiredToast = false
 let failedQueue: Array<{
     resolve: (token: string) => void
     reject: (error: any) => void
@@ -22,7 +23,10 @@ const processQueue = (error: any, token: string | null = null) => {
 const handleLogoutAndRedirect = () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('recruitment_auth_user')
-    showToast('warning', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
+    if (!hasShownSessionExpiredToast) {
+        hasShownSessionExpiredToast = true
+        showToast('warning', 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
+    }
     if (window.location.hash !== '#/login') {
         window.location.hash = '#/login'
     }
@@ -48,7 +52,7 @@ window.addEventListener('offline', () => {
 
 // ─── Axios instance ───────────────────────────────────────────────────────────
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://mlxvhavwpapp4.molex.com:3000',
+    baseURL: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_HOST || 'http://localhost:3000',
     timeout: 30 * 1000,
     withCredentials: true, // tự động gửi & nhận cookie
     headers: { 'X-Custom-Header': 'foobar' }

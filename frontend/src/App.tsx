@@ -15,6 +15,7 @@ import { LevelPage } from '@/pages/LevelPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { AccessControlPage } from '@/pages/AccessControl';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { EmailPage } from '@/pages/EmailPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { AuditLogDashboard } from '@/pages/AuditLogDashboard';
 
@@ -31,7 +32,7 @@ function App() {
     <ConfirmProvider>
       <AuthProvider>
         <HeaderProvider>
-          <Router>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
 
@@ -51,6 +52,7 @@ function App() {
                       <Route path="/segments" element={<SegmentPage />} />
                       <Route path="/sites" element={<SitePage />} />
                       <Route path="/levels" element={<LevelPage />} />
+                      <Route path="/email" element={<EmailPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
 
                       {/* Account management: admin and HR can create regular users */}

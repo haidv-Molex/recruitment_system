@@ -35,9 +35,9 @@ export default function CandidatesByDeptDonutChart({ data }: CandidatesByDeptDon
     <DashboardCard title="Recruitment Source">
 
       {/* Chart and Legend */}
-      <div className="flex-1 p-4 flex flex-row items-center justify-between gap-4 min-h-[220px]">
+      <div className="flex-1 p-4 flex flex-row items-center justify-between gap-4 h-[220px]">
         {/* Donut Chart */}
-        <div className="w-[45%] h-full min-h-[160px] relative flex items-center justify-center">
+        <div className="w-[45%] h-[180px] relative flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie

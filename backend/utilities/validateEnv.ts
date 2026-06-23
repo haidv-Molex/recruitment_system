@@ -26,7 +26,6 @@ const REQUIRED_ENV = [
   "PATH_SAVE_FILE",
   "HOST",
   "CLIENT_URL",
-  "CO_API_KEY",
 ];
 
 if (process.env.USE_REDIS === "true") {
