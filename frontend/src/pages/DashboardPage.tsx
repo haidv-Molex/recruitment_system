@@ -234,7 +234,7 @@ export const DashboardPage = () => {
         />
 
         {/* Row 1 */}
-        <div className="flex gap-3 shrink-0" style={{ height: ROW_1_H }}>
+        <div className="flex gap-3 shrink-0 overflow-x-auto pb-1" style={{ height: ROW_1_H }}>
           {/* HRBP */}
           <div className="flex flex-col" style={{ width: 220 }}>
             <DashboardTable
@@ -284,15 +284,15 @@ export const DashboardPage = () => {
             />
           </div>
           {/* Monthly HC Chart */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-[320px]">
             <MonthlyHCChart data={monthHCData} />
           </div>
         </div>
 
         {/* Row 2 */}
-        <div className="flex gap-3 shrink-0" style={{ height: ROW_2_H }}>
+        <div className="flex gap-3 shrink-0 overflow-x-auto pb-1" style={{ height: ROW_2_H }}>
           {/* Status Line Chart */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-[360px]">
             <StatusLineChart
               inProgressData={filteredInProgressData}
               offeredData={filteredOfferedData}
@@ -352,13 +352,13 @@ export const DashboardPage = () => {
         </div>
 
         {/* Row 3 (New Funnel & Source widgets) */}
-        <div className="flex gap-3 shrink-0" style={{ height: ROW_1_H }}>
+        <div className="flex gap-3 shrink-0 overflow-x-auto pb-1" style={{ height: ROW_1_H }}>
           {/* Recruitment Source Donut Chart */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-[320px]">
             <CandidatesByDeptDonutChart data={candidatesByPlatformData} />
           </div>
           {/* Recruitment Funnel Chart */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-[320px]">
             <RecruitmentFunnelChart data={funnelData} />
           </div>
         </div>

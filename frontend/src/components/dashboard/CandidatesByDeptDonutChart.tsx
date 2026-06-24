@@ -35,10 +35,10 @@ export default function CandidatesByDeptDonutChart({ data }: CandidatesByDeptDon
     <DashboardCard title="Recruitment Source">
 
       {/* Chart and Legend */}
-      <div className="flex-1 p-4 flex flex-row items-center justify-between gap-4 h-[220px]">
+      <div className="flex-1 p-4 flex flex-row items-center justify-between gap-4 h-full min-h-[220px] min-w-[320px]">
         {/* Donut Chart */}
-        <div className="w-[45%] h-[180px] relative flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="w-[45%] min-w-[160px] h-[180px] relative flex items-center justify-center">
+          <ResponsiveContainer width="100%" height="100%" minWidth={160} minHeight={160}>
             <PieChart>
               <Pie
                 data={sortedData}

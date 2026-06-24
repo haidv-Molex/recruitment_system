@@ -50,7 +50,7 @@ export async function sendEmailApi(body: {
     position: string;
     startDate: string;
     templateId?: string;
-    password: string;
+    password?: string;
     offerDate?: string;
     dateOfBirth?: string;
     idNumber?: string;

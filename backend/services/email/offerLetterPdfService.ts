@@ -1,5 +1,8 @@
 import PDFDocument from "pdfkit";
 import fs from "fs";
+import fsPromises from "fs/promises";
+import path from "path";
+import puppeteer from "puppeteer-core";
 import { AppError } from "@middlewares/AppError";
 
 export type OfferLetterPdfInput = {
@@ -7,7 +10,7 @@ export type OfferLetterPdfInput = {
   position: string;
   startDate: string;
   templateId?: string;
-  password: string;
+  password?: string;
   offerDate?: string;
   dateOfBirth?: string;
   idNumber?: string;
@@ -28,8 +31,176 @@ type PdfFonts = {
   bold: string;
 };
 
+type TemplateValues = Record<string, string>;
+
+type RenderedPageImage = {
+  image: Buffer;
+  heightPoints: number;
+};
+
+const A4_WIDTH_POINTS = 595.28;
+const A4_HEIGHT_POINTS = 841.89;
+const A4_VIEWPORT_WIDTH = 794;
+
 function firstExistingPath(paths: string[]) {
   return paths.find((candidatePath) => fs.existsSync(candidatePath));
+}
+
+function getBrowserExecutablePath() {
+  const configuredPath = process.env.PDF_BROWSER_PATH;
+  if (configuredPath && fs.existsSync(configuredPath)) {
+    return configuredPath;
+  }
+
+  return firstExistingPath([
+    "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
+    "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+  ]);
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderTemplate(html: string, values: TemplateValues) {
+  return html.replace(/{{\s*([\w.-]+)\s*}}/g, (_match, key: string) => escapeHtml(values[key] || ""));
+}
+
+async function renderHtmlToPageImages(html: string): Promise<RenderedPageImage[]> {
+  const executablePath = getBrowserExecutablePath();
+  if (!executablePath) {
+    throw new AppError("PDF browser renderer is not configured. Set PDF_BROWSER_PATH to Chrome or Edge executable.", 500);
+  }
+
+  const browser = await puppeteer.launch({
+    executablePath,
+    headless: "new",
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--font-render-hinting=none"],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: A4_VIEWPORT_WIDTH, height: 1123, deviceScaleFactor: 2 });
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.emulateMediaType("screen");
+
+    const pageElement = await page.$(".page");
+    if (!pageElement) {
+      throw new AppError("Offer letter HTML does not contain a .page element", 500);
+    }
+
+    const pageBox = await pageElement.boundingBox();
+    if (!pageBox?.width || !pageBox.height) {
+      throw new AppError("Unable to measure offer letter HTML page", 500);
+    }
+
+    const a4HeightCssPx = pageBox.width * (A4_HEIGHT_POINTS / A4_WIDTH_POINTS);
+    const images: RenderedPageImage[] = [];
+
+    for (let top = 0; top < pageBox.height; top += a4HeightCssPx) {
+      const clipHeight = Math.min(a4HeightCssPx, pageBox.height - top);
+      const image = Buffer.from(await page.screenshot({
+        type: "png",
+        omitBackground: false,
+        clip: {
+          x: pageBox.x,
+          y: pageBox.y + top,
+          width: pageBox.width,
+          height: clipHeight,
+        },
+      }));
+
+      images.push({
+        image,
+        heightPoints: Math.min(A4_HEIGHT_POINTS, A4_WIDTH_POINTS * (clipHeight / pageBox.width)),
+      });
+    }
+
+    return images;
+  } finally {
+    await browser.close();
+  }
+}
+
+async function pageImagesToEncryptedPdf(pages: RenderedPageImage[], password: string, title: string) {
+  if (!pages.length) {
+    throw new AppError("Unable to render offer letter pages for PDF", 500);
+  }
+
+  const document = new PDFDocument({
+    autoFirstPage: false,
+    size: "A4",
+    margin: 0,
+    userPassword: password,
+    ownerPassword: process.env.OFFER_LETTER_PDF_OWNER_PASSWORD || `${password}-owner`,
+    permissions: {
+      printing: "highResolution",
+      modifying: false,
+      copying: false,
+      annotating: false,
+      fillingForms: false,
+      contentAccessibility: true,
+      documentAssembly: false,
+    },
+    info: {
+      Title: title,
+      Author: "Molex Recruitment Team",
+    },
+  });
+
+  const chunks: Buffer[] = [];
+  document.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+  const result = new Promise<Buffer>((resolve, reject) => {
+    document.on("end", () => resolve(Buffer.concat(chunks)));
+    document.on("error", reject);
+  });
+
+  for (const page of pages) {
+    document.addPage({ size: "A4", margin: 0 });
+    document.rect(0, 0, A4_WIDTH_POINTS, A4_HEIGHT_POINTS).fill("#ffffff");
+    document.image(page.image, 0, 0, { width: A4_WIDTH_POINTS, height: page.heightPoints });
+  }
+
+  document.end();
+  return result;
+}
+
+async function renderVietnamOfferLetterPdf(input: OfferLetterPdfInput, candidateName: string, position: string, startDate: string, password: string) {
+  const templatePath = path.join(process.cwd(), "utilities", "email", "offer-letter-vietnam.html");
+  const html = await fsPromises.readFile(templatePath, "utf8");
+  const offerDate = formatDate(optionalValue(input.offerDate, new Date().toISOString()));
+  const values: TemplateValues = {
+    offer_date: offerDate,
+    candidate_name: candidateName,
+    date_of_birth: formatDate(optionalValue(input.dateOfBirth)),
+    id_number: optionalValue(input.idNumber),
+    id_issue_date: formatDate(optionalValue(input.idIssueDate)),
+    id_issue_place: optionalValue(input.idIssuePlace),
+    address: optionalValue(input.address),
+    mobile: optionalValue(input.mobile),
+    email: optionalValue(input.email),
+    salutation: optionalValue(input.salutation, "Mr./Ms."),
+    department: optionalValue(input.department),
+    position,
+    start_date: startDate,
+    basic_salary: optionalValue(input.basicSalary, "__________"),
+    basic_salary_text: optionalValue(input.basicSalaryText, "__________"),
+    probation_days: optionalValue(input.probationDays, "60"),
+  };
+
+  const renderedHtml = renderTemplate(html, values);
+  const pageImages = await renderHtmlToPageImages(renderedHtml);
+  return pageImagesToEncryptedPdf(pageImages, password, `Offer Letter - ${position}`);
 }
 
 function registerPdfFonts(document: PDFKit.PDFDocument): PdfFonts {
@@ -76,49 +247,70 @@ function optionalValue(value: string | undefined, fallback = "") {
   return trimmed || fallback;
 }
 
-function drawInfoLine(
-  document: PDFKit.PDFDocument,
-  label: string,
-  value: string,
-  x: number,
-  y: number,
-  width: number,
-  fonts: PdfFonts
-) {
-  document.font(fonts.bold).fontSize(9).fillColor("#475569").text(label, x, y, { width: 80 });
-  document.font(fonts.regular).fontSize(9).fillColor("#0f172a").text(value, x + 84, y, { width: width - 84 });
-  document.moveTo(x + 84, y + 12).lineTo(x + width, y + 12).lineWidth(0.5).strokeColor("#cbd5e1").stroke();
+function buildPasswordFromDateOfBirth(value: string | undefined) {
+  const dateOfBirth = optionalValue(value);
+
+  if (!dateOfBirth) {
+    throw new AppError("Candidate date of birth is required to generate PDF password", 400);
+  }
+
+  const isoDateMatch = dateOfBirth.match(/^(\d{4})-(\d{2})(?:-\d{2})?(?:[T\s].*)?$/);
+  if (isoDateMatch) {
+    const month = Number(isoDateMatch[2]);
+    if (month >= 1 && month <= 12) {
+      return `${isoDateMatch[1]}${isoDateMatch[2]}`;
+    }
+  }
+
+  const parsedDate = new Date(dateOfBirth);
+  if (Number.isNaN(parsedDate.getTime())) {
+    throw new AppError("Candidate date of birth must be a valid date to generate PDF password", 400);
+  }
+
+  const year = String(parsedDate.getUTCFullYear()).padStart(4, "0");
+  const month = String(parsedDate.getUTCMonth() + 1).padStart(2, "0");
+
+  if (!/^\d{4}$/.test(year)) {
+    throw new AppError("Candidate date of birth must include a valid year to generate PDF password", 400);
+  }
+
+  return `${year}${month}`;
 }
 
-function drawVietnamSection(
-  document: PDFKit.PDFDocument,
-  title: string,
-  x: number,
-  width: number,
-  fonts: PdfFonts
-) {
-  document.moveDown(0.7);
-  document.rect(x, document.y, width, 18).fill("#0f766e");
-  document.font(fonts.bold).fontSize(9).fillColor("#ffffff").text(title, x + 8, document.y + 5, { width: width - 16 });
-  document.moveDown(1.4);
-}
+function resolveOfferLetterPdfPassword(input: OfferLetterPdfInput) {
+  if (input.templateId === "offer-letter-vietnam") {
+    return buildPasswordFromDateOfBirth(input.dateOfBirth);
+  }
 
-export async function generateProtectedOfferLetterPdf(input: OfferLetterPdfInput): Promise<Buffer> {
-  const candidateName = input.candidateName.trim();
-  const position = input.position.trim();
-  const startDate = formatDate(input.startDate.trim());
-  const password = input.password.trim();
-
-  if (!candidateName || !position || !startDate || !password) {
-    throw new AppError("Candidate name, position, start date and PDF password are required", 400);
+  const password = optionalValue(input.password);
+  if (!password) {
+    throw new AppError("PDF password is required", 400);
   }
 
   if (password.length < 6) {
     throw new AppError("PDF password must be at least 6 characters", 400);
   }
 
+  return password;
+}
+
+export async function generateProtectedOfferLetterPdf(input: OfferLetterPdfInput): Promise<Buffer> {
+  const candidateName = input.candidateName.trim();
+  const position = input.position.trim();
+  const startDate = formatDate(input.startDate.trim());
+  const password = resolveOfferLetterPdfPassword(input);
+
+  if (!candidateName || !position || !startDate) {
+    throw new AppError("Candidate name, position and start date are required", 400);
+  }
+
   const isInternship = input.templateId === "offer-letter-internship";
   const isVietnam = input.templateId === "offer-letter-vietnam";
+
+  if (isVietnam) {
+    return renderVietnamOfferLetterPdf(input, candidateName, position, startDate, password);
+  }
+
   const document = new PDFDocument({
     size: "A4",
     margins: { top: 54, left: 58, right: 58, bottom: 58 },
@@ -177,76 +369,6 @@ export async function generateProtectedOfferLetterPdf(input: OfferLetterPdfInput
     width: contentWidth,
     align: "center",
   });
-
-  if (isVietnam) {
-    const offerDate = formatDate(optionalValue(input.offerDate, new Date().toISOString()));
-    const salutation = optionalValue(input.salutation, "Mr./Ms.");
-    const probationDays = optionalValue(input.probationDays, "60");
-    const basicSalary = optionalValue(input.basicSalary, "__________");
-    const basicSalaryText = optionalValue(input.basicSalaryText, "__________");
-
-    document.y = 190;
-    const columnWidth = (contentWidth - 18) / 2;
-    drawInfoLine(document, "Date:", offerDate, contentLeft, document.y, columnWidth, fonts);
-    drawInfoLine(document, "Name:", candidateName, contentLeft + columnWidth + 18, document.y, columnWidth, fonts);
-    document.y += 22;
-    drawInfoLine(document, "Date of birth:", formatDate(optionalValue(input.dateOfBirth)), contentLeft, document.y, columnWidth, fonts);
-    drawInfoLine(document, "ID Number:", optionalValue(input.idNumber), contentLeft + columnWidth + 18, document.y, columnWidth, fonts);
-    document.y += 22;
-    drawInfoLine(document, "Date of issue:", formatDate(optionalValue(input.idIssueDate)), contentLeft, document.y, columnWidth, fonts);
-    drawInfoLine(document, "Place of issue:", optionalValue(input.idIssuePlace), contentLeft + columnWidth + 18, document.y, columnWidth, fonts);
-    document.y += 22;
-    drawInfoLine(document, "Address:", optionalValue(input.address), contentLeft, document.y, contentWidth, fonts);
-    document.y += 22;
-    drawInfoLine(document, "Mobile:", optionalValue(input.mobile), contentLeft, document.y, columnWidth, fonts);
-    drawInfoLine(document, "Email:", optionalValue(input.email), contentLeft + columnWidth + 18, document.y, columnWidth, fonts);
-
-    document.y += 34;
-    document.rect(contentLeft, document.y, contentWidth, 26).fill("#f0fdf4");
-    document.font(fonts.bold).fontSize(11).fillColor("#0f766e").text("Subject: OFFER LETTER / THƯ MỜI LÀM VIỆC", contentLeft + 10, document.y + 7, { width: contentWidth - 20 });
-    document.y += 44;
-
-    document.font(fonts.bold).fontSize(11).fillColor("#0f172a").text(`Dear ${salutation} ${candidateName},`, contentLeft, document.y, { width: contentWidth });
-    document.moveDown(0.8);
-    drawParagraph(document, "Welcome you as a member of Molex Vietnam Co., Ltd - Hung Yen Branch (MXHY) by this offer letter with the following terms and conditions.", { width: contentWidth }, fonts.regular);
-    drawParagraph(document, "Chúng tôi rất vui mừng chào đón bạn là thành viên của Công ty TNHH Molex Việt Nam - Chi Nhánh Hưng Yên (MXHY) bằng thư mời làm việc này với các điều khoản được nêu dưới đây.", { width: contentWidth }, fonts.regular);
-
-    drawVietnamSection(document, "WORKING PLACE / ĐỊA ĐIỂM LÀM VIỆC", contentLeft, contentWidth, fonts);
-    drawParagraph(document, "Main work location: Lot No. T8, 9 at Thang Long II Industrial Park, Duong Hao Ward, Hung Yen Province, Vietnam.", { width: contentWidth }, fonts.regular);
-    drawParagraph(document, "Địa điểm làm việc chính: Lô Đất Số T8, 9 tại Khu Công Nghiệp Thăng Long II, Phường Đường Hào, Tỉnh Hưng Yên, Việt Nam.", { width: contentWidth }, fonts.regular);
-    document.font(fonts.bold).fontSize(10).fillColor("#0f172a").text(`Department / Phòng: ${optionalValue(input.department)}`, contentLeft, document.y, { width: contentWidth });
-    document.moveDown(0.4);
-    document.text(`Job title / Chức danh: ${position}`, { width: contentWidth });
-
-    drawVietnamSection(document, "START WORKING DATE / NGÀY BẮT ĐẦU LÀM VIỆC", contentLeft, contentWidth, fonts);
-    document.font(fonts.bold).fontSize(11).fillColor("#0f172a").text(startDate, contentLeft, document.y, { width: contentWidth });
-
-    drawVietnamSection(document, "OFFERED BASIC SALARY (GROSS) / LƯƠNG CƠ BẢN", contentLeft, contentWidth, fonts);
-    drawParagraph(document, `The offered basic gross salary is ${basicSalary} VND (${basicSalaryText}) per month, excluding allowances and benefits as the company's policies, if any. It is paid on 5th monthly via individual bank account.`, { width: contentWidth }, fonts.regular);
-    drawParagraph(document, `Tiền lương cơ bản là ${basicSalary} VND (${basicSalaryText}) một tháng, không bao gồm tiền trợ cấp và chế độ phúc lợi của công ty, nếu có. Tiền lương được trả qua tài khoản ngân hàng vào ngày 5 hàng tháng.`, { width: contentWidth }, fonts.regular);
-
-    drawVietnamSection(document, "WORKING HOUR / THỜI GIAN LÀM VIỆC", contentLeft, contentWidth, fonts);
-    drawParagraph(document, "The office hours from 8.00am to 4.30pm, including break-time, and working day from Monday to Friday, Saturday off as the company's business calendar.", { width: contentWidth }, fonts.regular);
-    drawParagraph(document, "Thời gian làm việc từ 08:00 sáng đến 04:30 chiều, bao gồm thời gian nghỉ giải lao, ngày làm việc từ thứ Hai đến thứ Sáu, nghỉ thứ Bảy theo lịch làm việc của công ty.", { width: contentWidth }, fonts.regular);
-
-    drawVietnamSection(document, "PROBATION & INTERNAL TRAINING / THỬ VIỆC & ĐÀO TẠO NỘI BỘ", contentLeft, contentWidth, fonts);
-    drawParagraph(document, `You are asked to complete the period of ${probationDays} days including probation and internal training for new job standard and knowledge.`, { width: contentWidth }, fonts.regular);
-    drawParagraph(document, `Bạn được yêu cầu hoàn thành thời gian thử việc và đào tạo nội bộ cho tiêu chuẩn và kiến thức công việc mới là ${probationDays} ngày kể từ ngày bắt đầu làm việc.`, { width: contentWidth }, fonts.regular);
-
-    drawVietnamSection(document, "OTHER / KHÁC", contentLeft, contentWidth, fonts);
-    drawParagraph(document, "All contents of this Offer Letter shall be kept private and confidential. Wish you every success in your future career in Molex Viet Nam!", { width: contentWidth }, fonts.regular);
-    drawParagraph(document, "Mọi thông tin liên quan đến thư mời tuyển dụng này được bảo mật và giữ kín. Chúc bạn có sự nghiệp thành công tại Molex Việt Nam.", { width: contentWidth }, fonts.regular);
-
-    document.moveDown(1.4);
-    document.font(fonts.bold).fontSize(11).fillColor("#0f172a").text("Sincerely / Chân thành,", contentLeft + contentWidth - 220, document.y, { width: 220, align: "center" });
-    document.moveDown(2.2);
-    document.font(fonts.regular).fontSize(10).fillColor("#64748b").text("(Đã ký)", { width: 220, align: "center" });
-    document.font(fonts.bold).fontSize(10).fillColor("#0f172a").text("HOÀNG THU HƯƠNG", { width: 220, align: "center" });
-    document.font(fonts.regular).fontSize(8).fillColor("#64748b").text("Country Sr Manager, HR Vietnam\nQuản lý Cấp cao, Nhân sự Việt Nam", { width: 220, align: "center" });
-
-    document.end();
-    return result;
-  }
 
   document.y = 205;
   document.font(fonts.regular).fontSize(11).fillColor("#334155").text(`Dear ${candidateName},`, contentLeft, document.y, {

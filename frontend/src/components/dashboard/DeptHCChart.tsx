@@ -18,8 +18,8 @@ interface DeptHCChartProps {
 export default function DeptHCChart({ data }: DeptHCChartProps) {
   return (
     <DashboardCard title="HC Requested by Dept.">
-      <div className="flex-1 p-3 h-[200px] min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="flex-1 p-3 h-full min-h-[200px] min-w-[180px]">
+        <ResponsiveContainer width="100%" height="100%" minWidth={180} minHeight={180}>
           <BarChart
             data={data}
             layout="vertical"

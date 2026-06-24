@@ -39,6 +39,12 @@ function decodeJwt(token: string): any {
   }
 }
 
+function isJwtUsable(token: string) {
+  const decoded = decodeJwt(token);
+  if (!decoded?.exp) return true;
+  return decoded.exp * 1000 > Date.now();
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const savedUser = localStorage.getItem(USER_KEY);
         const savedToken = localStorage.getItem('authToken');
 
-        if (savedUser && savedToken) {
+        if (savedUser && savedToken && isJwtUsable(savedToken)) {
           setUser(JSON.parse(savedUser));
           setIsLoading(false);
           return;

@@ -55,6 +55,11 @@ const emptyOfferLetterFields: OfferLetterFields = {
 const renderOfferTemplate = (value: string, fields: OfferLetterFields) =>
   value.replace(/{{\s*([\w.-]+)\s*}}/g, (_, key: keyof OfferLetterFields) => fields[key] || '');
 
+const getDateOfBirthPdfPassword = (dateOfBirth: string) => {
+  const dateMatch = dateOfBirth.match(/^(\d{4})-(\d{2})/);
+  return dateMatch ? `${dateMatch[1]}${dateMatch[2]}` : '';
+};
+
 export function EmailPage() {
   const { toasts, removeToast, toast } = useToast();
   const [session, setSession] = useState<OutlookSession | null>(null);
@@ -73,6 +78,8 @@ export function EmailPage() {
   const renderedSubject = renderOfferTemplate(subject, offerFields);
   const renderedHtml = renderOfferTemplate(html, offerFields);
   const isVietnamTemplate = selectedTemplateId === 'offer-letter-vietnam';
+  const generatedPdfPassword = isVietnamTemplate ? getDateOfBirthPdfPassword(offerFields.date_of_birth) : '';
+  const hasValidPdfPassword = isVietnamTemplate ? Boolean(generatedPdfPassword) : pdfPassword.trim().length >= 6;
 
   const loadEmailData = async () => {
     setLoading(true);
@@ -148,7 +155,7 @@ export function EmailPage() {
           position: offerFields.position,
           startDate: offerFields.start_date,
           templateId: selectedTemplateId,
-          password: pdfPassword,
+          password: isVietnamTemplate ? generatedPdfPassword : pdfPassword,
           offerDate: offerFields.offer_date,
           dateOfBirth: offerFields.date_of_birth,
           idNumber: offerFields.id_number,
@@ -342,17 +349,29 @@ export function EmailPage() {
               PDF Protection
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wide text-emerald-700">PDF Password</label>
-                <input
-                  type="password"
-                  value={pdfPassword}
-                  onChange={(event) => setPdfPassword(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                />
-              </div>
+              {isVietnamTemplate ? (
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wide text-emerald-700">Generated PDF Password</label>
+                  <input
+                    type="text"
+                    value={generatedPdfPassword || 'YYYYMM'}
+                    readOnly
+                    className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wide text-emerald-700">PDF Password</label>
+                  <input
+                    type="password"
+                    value={pdfPassword}
+                    onChange={(event) => setPdfPassword(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  />
+                </div>
+              )}
               <div className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-emerald-800 shadow-sm">
-                Share this password separately.
+                {isVietnamTemplate ? 'Uses candidate birth year and month.' : 'Share this password separately.'}
               </div>
             </div>
           </div>
@@ -405,7 +424,7 @@ export function EmailPage() {
                 !offerFields.candidate_name.trim() ||
                 !offerFields.position.trim() ||
                 !offerFields.start_date.trim() ||
-                pdfPassword.trim().length < 6
+                !hasValidPdfPassword
               }
               icon={<Send size={16} />}
             >
