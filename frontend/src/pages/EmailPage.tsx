@@ -73,13 +73,12 @@ export function EmailPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [showHtmlSource, setShowHtmlSource] = useState(false);
   const [offerFields, setOfferFields] = useState<OfferLetterFields>(emptyOfferLetterFields);
-  const [pdfPassword, setPdfPassword] = useState('');
 
   const renderedSubject = renderOfferTemplate(subject, offerFields);
   const renderedHtml = renderOfferTemplate(html, offerFields);
   const isVietnamTemplate = selectedTemplateId === 'offer-letter-vietnam';
-  const generatedPdfPassword = isVietnamTemplate ? getDateOfBirthPdfPassword(offerFields.date_of_birth) : '';
-  const hasValidPdfPassword = isVietnamTemplate ? Boolean(generatedPdfPassword) : pdfPassword.trim().length >= 6;
+  const generatedPdfPassword = getDateOfBirthPdfPassword(offerFields.date_of_birth);
+  const hasValidPdfPassword = Boolean(generatedPdfPassword);
 
   const loadEmailData = async () => {
     setLoading(true);
@@ -90,6 +89,9 @@ export function EmailPage() {
       ]);
       setSession(sessionResult);
       setTemplates(templateResult);
+      if (templateResult.length === 1) {
+        applyTemplate(templateResult[0]);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || error.message || 'Failed to load email page.');
     } finally {
@@ -155,7 +157,7 @@ export function EmailPage() {
           position: offerFields.position,
           startDate: offerFields.start_date,
           templateId: selectedTemplateId,
-          password: isVietnamTemplate ? generatedPdfPassword : pdfPassword,
+          password: generatedPdfPassword,
           offerDate: offerFields.offer_date,
           dateOfBirth: offerFields.date_of_birth,
           idNumber: offerFields.id_number,
@@ -201,7 +203,7 @@ export function EmailPage() {
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
         <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-bold text-slate-800">Offer Letter Templates</h2>
+          <h2 className="text-sm font-bold text-slate-800">Offer Letter Template</h2>
           <div className="mt-4 space-y-2">
             {templates.map((template) => (
               <button
@@ -349,29 +351,17 @@ export function EmailPage() {
               PDF Protection
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-              {isVietnamTemplate ? (
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wide text-emerald-700">Generated PDF Password</label>
-                  <input
-                    type="text"
-                    value={generatedPdfPassword || 'YYYYMM'}
-                    readOnly
-                    className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="text-xs font-bold uppercase tracking-wide text-emerald-700">PDF Password</label>
-                  <input
-                    type="password"
-                    value={pdfPassword}
-                    onChange={(event) => setPdfPassword(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wide text-emerald-700">Generated PDF Password</label>
+                <input
+                  type="text"
+                  value={generatedPdfPassword || 'YYYYMM'}
+                  readOnly
+                  className="mt-1 w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none"
+                />
+              </div>
               <div className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-emerald-800 shadow-sm">
-                {isVietnamTemplate ? 'Uses candidate birth year and month.' : 'Share this password separately.'}
+                Uses candidate birth year and month.
               </div>
             </div>
           </div>
