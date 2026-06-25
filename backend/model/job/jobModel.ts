@@ -1,6 +1,5 @@
 import type { userOutputModel } from "@model/user/userModel";
 import type { departmentModel } from "@model/department/departmentModel";
-import type { segmentModel } from "@model/segment/segmentModel";
 import type { siteModel } from "@model/site/siteModel";
 import type { levelModel } from "@model/level/levelModel";
 import type { noteOutputModel } from "@model/note/noteModel";
@@ -27,7 +26,6 @@ export type jobOutputModel = Omit<jobModel, 'file_id' | 'note'> & {
   recruiter?: userOutputModel | null;
   partners?: userOutputModel[];
   departments?: (departmentModel & { candidate_required: number })[];
-  segments?: segmentModel[];
   sites?: siteModel[];
   titles?: levelModel[];
   managers?: userOutputModel[];

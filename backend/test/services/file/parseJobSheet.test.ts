@@ -8,7 +8,6 @@ describe("parseJobSheet service", () => {
   let seededManagerId: number;
   let seededBPId: number;
   let seededDeptId: number;
-  let seededSegmentId: number;
   let seededSiteId: number;
   let seededTitleId: number;
   let seededLevelId: number;
@@ -40,12 +39,6 @@ describe("parseJobSheet service", () => {
       ["AS_TEST_CODE", "AS_TEST"]
     );
     seededDeptId = d.rows[0].department_id;
-
-    const seg = await client.query(
-      `INSERT INTO segment (segment_code, segment_name) VALUES ($1, $2) RETURNING segment_id`,
-      ["OSBU_CODE", "OSBU"]
-    );
-    seededSegmentId = seg.rows[0].segment_id;
 
     const s = await client.query(
       `INSERT INTO site (site_code, site_name) VALUES ($1, $2) RETURNING site_id`,
@@ -81,7 +74,6 @@ describe("parseJobSheet service", () => {
         "Job title": "Engineer, Production",
         "EE Level": "Engineer",
         "Sites": "MXV",
-        "Project Segment": "OSBU",
         "Hiring manager": "Nguyễn Lê Hoàng",
         "HRBP": "Thanh",
         "Note": "This is a note"
@@ -103,10 +95,6 @@ describe("parseJobSheet service", () => {
     expect(job.departments[0].department_id).to.equal(seededDeptId);
     expect(job.departments[0].department_name).to.equal("AS_TEST");
     expect(job.departments[0].candidate_required).to.equal(1);
-
-    expect(job.segments).to.be.an("array").with.lengthOf(1);
-    expect(job.segments[0].segment_id).to.equal(seededSegmentId);
-    expect(job.segments[0].segment_name).to.equal("OSBU");
 
     expect(job.sites).to.be.an("array").with.lengthOf(1);
     expect(job.sites[0].site_id).to.equal(seededSiteId);
@@ -139,7 +127,6 @@ describe("parseJobSheet service", () => {
         "Job title": "Unknown Title",
         "EE Level": "Unknown Level",
         "Sites": "Unknown Site",
-        "Project Segment": "Unknown Segment",
         "Hiring manager": "Unknown Manager",
         "HRBP": "Unknown HRBP",
         "Note": null
@@ -159,10 +146,6 @@ describe("parseJobSheet service", () => {
     expect(job.departments[0].department_id).to.be.null;
     expect(job.departments[0].department_name).to.equal("Unknown Dept");
     expect(job.departments[0].candidate_required).to.equal(0);
-
-    expect(job.segments).to.be.an("array").with.lengthOf(1);
-    expect(job.segments[0].segment_id).to.be.null;
-    expect(job.segments[0].segment_name).to.equal("Unknown Segment");
 
     expect(job.sites).to.be.an("array").with.lengthOf(1);
     expect(job.sites[0].site_id).to.be.null;

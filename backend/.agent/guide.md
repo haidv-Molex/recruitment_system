@@ -42,7 +42,6 @@ recruitment_system/backend/
 │   ├── job/                    # APIs quản lý tin tuyển dụng (Jobs)
 │   ├── level/                  # APIs quản lý cấp bậc vị trí
 │   ├── platform/               # APIs quản lý nền tảng tuyển dụng
-│   ├── segment/                # APIs quản lý phân khúc/bộ phận tuyển dụng
 │   ├── site/                   # APIs quản lý địa điểm làm việc (Site)
 │   └── dashboard/              # APIs Dashboard — chỉ dùng để trả dữ liệu chart
 │
@@ -55,7 +54,6 @@ recruitment_system/backend/
 │   ├── job/                    # Logic cho tin tuyển dụng
 │   ├── level/                  # Logic cho cấp bậc
 │   ├── platform/               # Logic cho nền tảng
-│   ├── segment/                # Logic cho phân khúc
 │   ├── site/                   # Logic cho địa điểm
 │   ├── user/                   # Logic quản lý tài khoản & phân quyền
 │   └── dashboard/              # Logic tổng hợp dữ liệu chart cho Dashboard
@@ -68,7 +66,6 @@ recruitment_system/backend/
 │   ├── job/                    # Types & Schema cho công việc
 │   ├── level/                  # Types & Schema cho cấp bậc
 │   ├── platform/               # Types & Schema cho nền tảng
-│   ├── segment/                # Types & Schema cho phân khúc
 │   ├── site/                   # Types & Schema cho địa điểm
 │   ├── user/                   # Types & Schema cho người dùng
 │   ├── config/                 # SQL script dùng chung (ví dụ: update_updated_at_column.sql)
@@ -78,7 +75,6 @@ recruitment_system/backend/
 │       ├── hiring_manager/
 │       ├── job_business_partner/
 │       ├── job_department/
-│       ├── job_segment/
 │       ├── job_site/
 │       └── job_title/
 │

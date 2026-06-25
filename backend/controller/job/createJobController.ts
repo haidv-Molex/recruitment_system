@@ -12,7 +12,6 @@
  * - file (file, optional): File mô tả công việc (JD), max 5MB
  * - partners (number[] / string, optional): Mảng danh sách user_id của đối tác
  * - departments (number[] / string, optional): Mảng danh sách department_id
- * - segments (number[] / string, optional): Mảng danh sách segment_id
  * - sites (number[] / string, optional): Mảng danh sách site_id
  * - titles (number[] / string, optional): Mảng danh sách level_id của chức danh
  * - managers (number[] / string, optional): Mảng danh sách user_id của hiring managers
@@ -52,7 +51,6 @@ const bodySchema = Joi.object({
     "number.integer": "Recruiter ID phải là số nguyên"
   }),
   departments: departmentArray().optional(),
-  segments: numberArray().optional(),
   sites: numberArray().optional(),
   titles: numberArray().optional(),
   managers: numberArray().optional(),
@@ -81,7 +79,6 @@ createJobController.post(
           recruiter_id: body.recruiter_id,
           file,
           departments: body.departments ?? [],
-          segments: body.segments ?? [],
           sites: body.sites ?? [],
           titles: body.titles ?? [],
           managers: body.managers ?? [],

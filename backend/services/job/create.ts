@@ -5,7 +5,6 @@ import type { userOutputModel } from "@model/user/userModel";
 import uploadFile from "@services/file/upload";
 import Department from "@services/department/_Department";
 import Level from "@services/level/_Level";
-import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import User from "@services/user/_User";
 import { insertLinkRows, type LinkRow } from "@utilities/db/linking";
@@ -23,7 +22,6 @@ type CreateJobData = {
     buffer: Buffer;
   } | null;
   departments?: { department_id: number; candidate_required: number }[];
-  segments?: number[];
   sites?: number[];
   titles?: number[];
   managers?: number[];
@@ -42,7 +40,6 @@ async function create(
     recruiter_id = null,
     file = null,
     departments = [],
-    segments = [],
     sites = [],
     titles = [],
     managers = [],
@@ -110,19 +107,6 @@ async function create(
     const partnersList = Array.from(new Map(
       departmentsList.map(d => d.user).filter(Boolean).map(u => [u!.user_id, u])
     ).values()) as userOutputModel[];
-
-    // segments -> job_segment (job_id, segment_id)
-    const segmentsList = [];
-    const segmentLinkRows: LinkRow[] = [];
-    for (const segmentId of segments) {
-      try {
-        segmentsList.push(await Segment.getById(segmentId, pool));
-      } catch (error) {
-        throw new AppError(`Phân khúc (segment_id = ${segmentId}) không tồn tại`, 400);
-      }
-      segmentLinkRows.push({ job_id: jobId, segment_id: segmentId });
-    }
-    await insertLinkRows(pool, "job_segment", segmentLinkRows);
 
     // sites -> job_site (job_id, site_id)
     const sitesList = [];
@@ -200,7 +184,6 @@ async function create(
       recruiter,
       partners: partnersList,
       departments: departmentsList,
-      segments: segmentsList,
       sites: sitesList,
       titles: titlesList,
       managers: managersList,

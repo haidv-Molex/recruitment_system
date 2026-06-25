@@ -104,9 +104,6 @@ export default function OutlookSearchSelect<T>({
     if (keyProp === 'department_id') {
       (newItem as any).department_code = trimmed;
       (newItem as any).department_name = trimmed;
-    } else if (keyProp === 'segment_id') {
-      (newItem as any).segment_code = trimmed;
-      (newItem as any).segment_name = trimmed;
     } else if (keyProp === 'site_id') {
       (newItem as any).site_code = trimmed;
       (newItem as any).site_name = trimmed;

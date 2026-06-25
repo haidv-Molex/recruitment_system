@@ -115,7 +115,6 @@ src/
 │   ├── CompanyPage.tsx
 │   ├── DepartmentPage.tsx
 │   ├── PlatformPage.tsx
-│   ├── SegmentPage.tsx
 │   ├── SitePage.tsx
 │   ├── LevelPage.tsx
 │   ├── AdminPage.tsx              # Chỉ Admin
@@ -137,7 +136,6 @@ src/
 | `/companies` | CompanyPage | Đã đăng nhập |
 | `/departments` | DepartmentPage | Đã đăng nhập |
 | `/platforms` | PlatformPage | Đã đăng nhập |
-| `/segments` | SegmentPage | Đã đăng nhập |
 | `/sites` | SitePage | Đã đăng nhập |
 | `/levels` | LevelPage | Đã đăng nhập |
 | `/profile` | ProfilePage | Đã đăng nhập |
@@ -167,7 +165,7 @@ Alias `@` trỏ đến `./src` — được cấu hình trong `vite.config.js`.
 
 Khi cần form cho một entity cấu hình mới, **không tạo form riêng** — dùng 2 shared form trong `components/ui/`:
 
-**`MasterDataForm`** — entity có `code + name + description` (Department, Segment, Site, Level...):
+**`MasterDataForm`** — entity có `code + name + description` (Department, Site, Level...):
 
 ```tsx
 import MasterDataForm from '@/components/ui/MasterDataForm'

@@ -24,7 +24,6 @@ export async function createJobApi(formData: any): Promise<jobOutputModel> {
     fd.append('file', formData.file);
   }
   if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
-  if (formData.segments?.length) fd.append('segments', JSON.stringify(formData.segments));
   if (formData.sites?.length) fd.append('sites', JSON.stringify(formData.sites));
   if (formData.titles?.length) fd.append('titles', JSON.stringify(formData.titles));
   if (formData.managers?.length) fd.append('managers', JSON.stringify(formData.managers));
@@ -41,7 +40,6 @@ export interface JobSearchParams {
   job_code?: string;
   project?: string;
   department?: string;
-  segment?: string;
   site?: string;
   job_title?: string;
   ee_level?: string;
@@ -102,14 +100,12 @@ export async function updateJobApi(id: number, formData: any): Promise<jobOutput
   if (formData.file) fd.append('file', formData.file);
 
   if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
-  if (formData.segments?.length) fd.append('segments', JSON.stringify(formData.segments));
   if (formData.sites?.length) fd.append('sites', JSON.stringify(formData.sites));
   if (formData.titles?.length) fd.append('titles', JSON.stringify(formData.titles));
   if (formData.managers?.length) fd.append('managers', JSON.stringify(formData.managers));
   if (formData.employee_levels?.length) fd.append('employee_levels', JSON.stringify(formData.employee_levels));
 
   if (formData.departments_name?.length) fd.append('departments_name', JSON.stringify(formData.departments_name));
-  if (formData.segments_name?.length) fd.append('segments_name', JSON.stringify(formData.segments_name));
   if (formData.sites_name?.length) fd.append('sites_name', JSON.stringify(formData.sites_name));
   if (formData.titles_name?.length) fd.append('titles_name', JSON.stringify(formData.titles_name));
   if (formData.managers_name?.length) fd.append('managers_name', JSON.stringify(formData.managers_name));
@@ -148,7 +144,6 @@ export async function createJobExtendedApi(formData: any): Promise<jobOutputMode
 
   if (formData.partners?.length) fd.append('partners', JSON.stringify(formData.partners));
   if (formData.departments?.length) fd.append('departments', JSON.stringify(formData.departments));
-  if (formData.segments?.length) fd.append('segments', JSON.stringify(formData.segments));
   if (formData.sites?.length) fd.append('sites', JSON.stringify(formData.sites));
   if (formData.titles?.length) fd.append('titles', JSON.stringify(formData.titles));
   if (formData.managers?.length) fd.append('managers', JSON.stringify(formData.managers));
@@ -157,7 +152,6 @@ export async function createJobExtendedApi(formData: any): Promise<jobOutputMode
   if (formData.partners_name?.length) fd.append('partners_name', JSON.stringify(formData.partners_name));
   if (formData.managers_name?.length) fd.append('managers_name', JSON.stringify(formData.managers_name));
   if (formData.departments_name?.length) fd.append('departments_name', JSON.stringify(formData.departments_name));
-  if (formData.segments_name?.length) fd.append('segments_name', JSON.stringify(formData.segments_name));
   if (formData.sites_name?.length) fd.append('sites_name', JSON.stringify(formData.sites_name));
   if (formData.titles_name?.length) fd.append('titles_name', JSON.stringify(formData.titles_name));
   if (formData.employee_levels_name?.length) fd.append('employee_levels_name', JSON.stringify(formData.employee_levels_name));

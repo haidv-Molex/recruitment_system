@@ -10,7 +10,6 @@ type GetAllJobsParams = PaginationQueryMetadata & {
   job_code?: string;
   project?: string;
   department?: string;
-  segment?: string;
   site?: string;
   job_title?: string;
   ee_level?: string;
@@ -50,7 +49,6 @@ async function getAll(
       OR j.note ILIKE ${placeholder}
       OR CAST(j.request_date AS TEXT) ILIKE ${placeholder}
       OR EXISTS (SELECT 1 FROM job_department jd JOIN department d ON jd.department_id = d.department_id WHERE jd.job_id = j.job_id AND (d.department_code ILIKE ${placeholder} OR d.department_name ILIKE ${placeholder}))
-      OR EXISTS (SELECT 1 FROM job_segment js JOIN segment sg ON js.segment_id = sg.segment_id WHERE js.job_id = j.job_id AND (sg.segment_code ILIKE ${placeholder} OR sg.segment_name ILIKE ${placeholder}))
       OR EXISTS (SELECT 1 FROM job_site jsi JOIN site si ON jsi.site_id = si.site_id WHERE jsi.job_id = j.job_id AND (si.site_code ILIKE ${placeholder} OR si.site_name ILIKE ${placeholder}))
       OR EXISTS (SELECT 1 FROM job_title jt JOIN level l ON jt.level_id = l.level_id WHERE jt.job_id = j.job_id AND (l.level_code ILIKE ${placeholder} OR l.level_name ILIKE ${placeholder}))
       OR EXISTS (SELECT 1 FROM employee_level el JOIN level l ON el.level_id = l.level_id WHERE el.job_id = j.job_id AND (l.level_code ILIKE ${placeholder} OR l.level_name ILIKE ${placeholder}))
@@ -84,10 +82,6 @@ async function getAll(
   if (params.department) {
     values.push(`%${params.department}%`);
     conditions.push(`EXISTS (SELECT 1 FROM job_department jd JOIN department d ON jd.department_id = d.department_id WHERE jd.job_id = j.job_id AND (d.department_code ILIKE $${values.length} OR d.department_name ILIKE $${values.length}))`);
-  }
-  if (params.segment) {
-    values.push(`%${params.segment}%`);
-    conditions.push(`EXISTS (SELECT 1 FROM job_segment js JOIN segment sg ON js.segment_id = sg.segment_id WHERE js.job_id = j.job_id AND (sg.segment_code ILIKE $${values.length} OR sg.segment_name ILIKE $${values.length}))`);
   }
   if (params.site) {
     values.push(`%${params.site}%`);

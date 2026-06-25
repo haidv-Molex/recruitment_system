@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 import OutlookSearchSelect from '../ui/OutlookSearchSelect';
 import SingleSearchSelect from '../ui/SingleSearchSelect';
 import { searchDepartmentsApi } from '../../services/departmentApi';
-import { searchSegmentsApi } from '../../services/segmentApi';
 import { searchSitesApi } from '../../services/siteApi';
 import { searchLevelsApi } from '../../services/levelApi';
 import { fetchUsersApi } from '../../services/userApi';
@@ -14,9 +13,6 @@ interface JobRelationFieldsProps {
 
   selectedDepts: any[];
   setSelectedDepts: (items: any[]) => void;
-
-  selectedSegs: any[];
-  setSelectedSegs: (items: any[]) => void;
 
   selectedSites: any[];
   setSelectedSites: (items: any[]) => void;
@@ -39,8 +35,6 @@ export default function JobRelationFields({
   setFormData,
   selectedDepts,
   setSelectedDepts,
-  selectedSegs,
-  setSelectedSegs,
   selectedSites,
   setSelectedSites,
   selectedTitles,
@@ -159,23 +153,6 @@ export default function JobRelationFields({
           </div>
         )}
       </div>
-
-      <OutlookSearchSelect
-        label="Segments"
-        placeholder="Search or type a new segment..."
-        initialItems={selectedSegs}
-        searchApi={(search) => searchSegmentsApi({ search })}
-        displayFn={(s: any) => s.segment_name || ''}
-        chipDisplayFn={(s: any) => s.segment_code || s.segment_name || ''}
-        keyProp="segment_id"
-        onChange={(ids, items) => {
-          setFormData((prev: any) => ({ ...prev, segments: ids }));
-          setSelectedSegs(items);
-        }}
-        disabled={saving}
-        allowCreation={true}
-        commitOnBlur={true}
-      />
 
       <OutlookSearchSelect
         label="Sites"

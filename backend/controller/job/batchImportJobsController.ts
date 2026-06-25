@@ -23,7 +23,6 @@ const jobItemSchema = Joi.object({
   // ID gốc
   partners: numberArray().optional(),
   departments: departmentArray().optional(),
-  segments: numberArray().optional(),
   sites: numberArray().optional(),
   titles: numberArray().optional(),
   managers: numberArray().optional(),
@@ -32,7 +31,6 @@ const jobItemSchema = Joi.object({
   // _name tự động tạo mới
   partners_name: stringArray().optional(),
   departments_name: departmentNameArray().optional(),
-  segments_name: stringArray().optional(),
   sites_name: stringArray().optional(),
   titles_name: stringArray().optional(),
   managers_name: stringArray().optional(),

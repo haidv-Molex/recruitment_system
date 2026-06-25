@@ -8,7 +8,6 @@ import fs from "fs";
 import path from "path";
 import Department from "@services/department/_Department";
 import User from "@services/user/_User";
-import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import Level from "@services/level/_Level";
 import { replaceLinkRows, type LinkRow } from "@utilities/db/linking";
@@ -25,14 +24,12 @@ type UpdateJobData = {
     buffer: Buffer;
   } | null;
   departments?: { department_id: number; candidate_required: number }[];
-  segments?: number[];
   sites?: number[];
   titles?: number[];
   managers?: number[];
   employee_levels?: number[];
 
   departments_name?: { name: string; candidate_required: number }[];
-  segments_name?: string[];
   sites_name?: string[];
   titles_name?: string[];
   managers_name?: string[];
@@ -178,31 +175,6 @@ async function update(
       }
 
       await replaceLinkRows(pool, "job_department", "job_id", id, departmentLinkRows);
-    }
-
-    // segments
-    if (data.segments !== undefined || data.segments_name !== undefined) {
-      const segsList = data.segments || [];
-      const newSegIds: number[] = [];
-      if (data.segments_name) {
-        for (const name of data.segments_name) {
-          const seg = await Segment.create({ segment_name: name }, pool);
-          newSegIds.push(seg.segment_id);
-        }
-      }
-      const merged = [...segsList, ...newSegIds];
-
-      const segmentLinkRows: LinkRow[] = [];
-      for (const segmentId of merged) {
-        try {
-          await Segment.getById(segmentId, pool);
-        } catch (error) {
-          throw new AppError(`Phân khúc (segment_id = ${segmentId}) không tồn tại`, 400);
-        }
-        segmentLinkRows.push({ job_id: id, segment_id: segmentId });
-      }
-
-      await replaceLinkRows(pool, "job_segment", "job_id", id, segmentLinkRows);
     }
 
     // sites

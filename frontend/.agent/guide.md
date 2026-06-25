@@ -82,7 +82,6 @@ Tất cả routes đăng ký trong `App.jsx`.
 | `/companies`    | CompanyPage           | Quản lý công ty                           |
 | `/departments`  | DepartmentPage        | Quản lý phòng ban                         |
 | `/platforms`    | PlatformPage          | Quản lý kênh tuyển dụng                   |
-| `/segments`     | SegmentPage           | Quản lý phân khúc                         |
 | `/sites`        | SitePage              | Quản lý địa điểm làm việc                 |
 | `/levels`       | LevelPage             | Quản lý cấp bậc tuyển dụng                |
 | `/profile`      | ProfilePage           | Thông tin tài khoản                       |
@@ -223,7 +222,7 @@ Thay vì tạo form mới cho mỗi entity cấu hình, hãy dùng 2 form dùng 
 
 ### `MasterDataForm` — entity có `code + name + description`
 
-Dùng cho: **Department, Segment, Site, Level** (và bất kỳ entity tương tự).
+Dùng cho: **Department, Site, Level** (và bất kỳ entity tương tự).
 
 ```tsx
 import MasterDataForm from '@/components/ui/MasterDataForm'

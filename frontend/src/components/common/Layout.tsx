@@ -37,7 +37,7 @@ export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [now, setNow] = useState(new Date());
 
-  const configRoutes = ['/companies', '/departments', '/platforms', '/segments', '/sites', '/levels'];
+  const configRoutes = ['/companies', '/departments', '/platforms', '/sites', '/levels'];
   const [configOpen, setConfigOpen] = useState(() => configRoutes.includes(location.pathname));
 
   useEffect(() => {
@@ -69,7 +69,6 @@ export default function Layout({ children }: LayoutProps) {
     { path: '/companies', label: 'Companies', icon: Building2 },
     { path: '/departments', label: 'Departments', icon: Layers },
     { path: '/platforms', label: 'Platforms', icon: Globe },
-    { path: '/segments', label: 'Segments', icon: LayoutGrid },
     { path: '/sites', label: 'Sites', icon: MapPin },
     { path: '/levels', label: 'Levels', icon: Award },
   ];

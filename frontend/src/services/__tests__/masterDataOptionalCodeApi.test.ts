@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import axiosInstance from '@/config/axiosInstance';
 import { createLevelApi } from '../levelApi';
-import { createSegmentApi } from '../segmentApi';
 import { createSiteApi } from '../siteApi';
 
 vi.mock('@/config/axiosInstance', () => {
@@ -31,22 +30,6 @@ describe('master data optional code API tests', () => {
       level_description: '',
     });
     expect(result).toEqual(mockLevel);
-  });
-
-  it('createSegmentApi should allow omitted code via undefined', async () => {
-    const mockSegment = { segment_id: 1, segment_name: 'Operations' };
-    vi.mocked(axiosInstance.post).mockResolvedValueOnce({
-      data: { result: true, data: mockSegment },
-    });
-
-    const result = await createSegmentApi(undefined, 'Operations', '');
-
-    expect(axiosInstance.post).toHaveBeenCalledWith('/segment', {
-      segment_code: '',
-      segment_name: 'Operations',
-      segment_description: '',
-    });
-    expect(result).toEqual(mockSegment);
   });
 
   it('createSiteApi should allow omitted code via undefined', async () => {

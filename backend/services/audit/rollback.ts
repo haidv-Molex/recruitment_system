@@ -7,9 +7,9 @@ type RollbackProps = {
 
 // Thứ tự ưu tiên phụ thuộc khóa ngoại (topological sorting order)
 const TABLE_ORDER = [
-  "company", "file", "level", "platform", "segment", "site", "user", 
+  "company", "file", "level", "platform", "site", "user", 
   "department", "job", "candidate", "employee_level", "hiring_manager", 
-  "job_department", "job_segment", "job_site", "job_title", "access", 
+  "job_department", "job_site", "job_title", "access", 
   "candidate_level", "note"
 ];
 
@@ -19,7 +19,6 @@ const SINGLE_PK_MAP: Record<string, string> = {
   "file": "file_id",
   "level": "level_id",
   "platform": "platform_id",
-  "segment": "segment_id",
   "site": "site_id",
   "user": "user_id",
   "department": "department_id",

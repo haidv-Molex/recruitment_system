@@ -80,7 +80,6 @@ BEGIN
         WHEN 'file' THEN pk_keys := jsonb_build_object('file_id', row_val->'file_id');
         WHEN 'level' THEN pk_keys := jsonb_build_object('level_id', row_val->'level_id');
         WHEN 'platform' THEN pk_keys := jsonb_build_object('platform_id', row_val->'platform_id');
-        WHEN 'segment' THEN pk_keys := jsonb_build_object('segment_id', row_val->'segment_id');
         WHEN 'site' THEN pk_keys := jsonb_build_object('site_id', row_val->'site_id');
         WHEN 'user' THEN pk_keys := jsonb_build_object('user_id', row_val->'user_id');
         WHEN 'department' THEN pk_keys := jsonb_build_object('department_id', row_val->'department_id');
@@ -93,7 +92,6 @@ BEGIN
         WHEN 'employee_level' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'level_id', row_val->'level_id');
         WHEN 'hiring_manager' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'user_id', row_val->'user_id');
         WHEN 'job_department' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'department_id', row_val->'department_id');
-        WHEN 'job_segment' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'segment_id', row_val->'segment_id');
         WHEN 'job_site' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'site_id', row_val->'site_id');
         WHEN 'job_title' THEN pk_keys := jsonb_build_object('job_id', row_val->'job_id', 'level_id', row_val->'level_id');
         WHEN 'candidate_level' THEN pk_keys := jsonb_build_object('candidate_id', row_val->'candidate_id', 'level_id', row_val->'level_id');

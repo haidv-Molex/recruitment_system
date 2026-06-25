@@ -64,7 +64,6 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
           file: j.file || null,
           partners: j.partners || [],
           departments: j.departments || [],
-          segments: j.segments || [],
           sites: j.sites || [],
           titles: j.titles || [],
           managers: j.managers || [],
@@ -147,8 +146,6 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
           job.departments = parts.map(p => ({ department_id: null, department_name: p }));
         } else if (field === 'sites') {
           job.sites = parts.map(p => ({ site_id: null, site_name: p }));
-        } else if (field === 'segments') {
-          job.segments = parts.map(p => ({ segment_id: null, segment_name: p }));
         } else if (field === 'titles') {
           job.titles = parts.map(p => ({ level_id: null, level_name: p }));
         } else if (field === 'employeeLevels') {
@@ -188,9 +185,9 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
   const countNewEntities = () => {
     let count = 0;
     parsedJobs.forEach((job) => {
-      ['partners', 'departments', 'segments', 'sites', 'titles', 'managers', 'employeeLevels'].forEach((field) => {
+      ['partners', 'departments', 'sites', 'titles', 'managers', 'employeeLevels'].forEach((field) => {
         (job[field] || []).forEach((item: any) => {
-          if (item.id === null || item.department_id === null || item.site_id === null || item.segment_id === null || item.level_id === null || item.user_id === null) {
+          if (item.id === null || item.department_id === null || item.site_id === null || item.level_id === null || item.user_id === null) {
             count++;
           }
         });
@@ -239,10 +236,10 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
     return (
       <div className="flex gap-1 flex-wrap">
         {items.map((item, i) => {
-          const isNew = item.id === null || item.department_id === null || item.site_id === null || item.segment_id === null || item.level_id === null || item.user_id === null;
+          const isNew = item.id === null || item.department_id === null || item.site_id === null || item.level_id === null || item.user_id === null;
           return (
             <span key={i} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles}`}>
-              {item.department_code || item.site_code || item.level_code || item.segment_code || item.code || item.department_name || item.site_name || item.level_name || item.segment_name || (item.user_code ? `${item.user_code} - ${item.user_name}` : item.user_name) || item.name}
+              {item.department_code || item.site_code || item.level_code || item.code || item.department_name || item.site_name || item.level_name || (item.user_code ? `${item.user_code} - ${item.user_name}` : item.user_name) || item.name}
               {isNew && <span className="bg-amber-100 text-amber-700 text-[8px] font-bold px-0.5 rounded ml-0.5">NEW</span>}
             </span>
           );
@@ -392,7 +389,6 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
                 { label: 'Job Title', widthClass: 'w-44' },
                 { label: 'EE Level', widthClass: 'w-36' },
                 { label: 'Site', widthClass: 'w-36' },
-                { label: 'Segment', widthClass: 'w-40' },
                 { label: 'Manager', widthClass: 'w-44' },
                 { label: 'Recruiter', widthClass: 'w-44' },
                 { label: 'HRBP / Partner', widthClass: 'w-44' },
@@ -419,9 +415,6 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
                   </td>
                   <td className="p-2.5">
                     {renderTags(job.sites, 'bg-emerald-50 border border-emerald-200 text-emerald-600')}
-                  </td>
-                  <td className="p-2.5">
-                    {renderTags(job.segments, 'bg-amber-50 border border-amber-200 text-amber-600')}
                   </td>
                   <td className="p-2.5">
                     {renderTags(job.managers, 'bg-red-50 border border-red-200 text-red-600')}
@@ -525,7 +518,6 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
                     { label: 'Job Title', widthClass: 'w-44' },
                     { label: 'EE Level', widthClass: 'w-36' },
                     { label: 'Site', widthClass: 'w-36' },
-                    { label: 'Segment', widthClass: 'w-40' },
                     { label: 'Manager', widthClass: 'w-44' },
                     { label: 'Recruiter', widthClass: 'w-44' },
                     { label: 'HRBP / Partner', widthClass: 'w-44' },
@@ -555,9 +547,6 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
                       </td>
                       <td className="p-2.5">
                         {renderTags(job.sites, 'bg-emerald-50 border border-emerald-200 text-emerald-600')}
-                      </td>
-                      <td className="p-2.5">
-                        {renderTags(job.segments, 'bg-amber-50 border border-amber-200 text-amber-600')}
                       </td>
                       <td className="p-2.5">
                         {renderTags(job.managers, 'bg-red-50 border border-red-200 text-red-600')}

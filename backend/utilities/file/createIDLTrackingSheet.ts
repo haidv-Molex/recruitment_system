@@ -15,7 +15,6 @@ export interface JdRow {
     job_title: string;
     ee_level: string;
     sites: string;
-    project_segment: string | null;
     hiring_manager: string;
     hrbp: string;
     recruiter: string;
@@ -50,7 +49,6 @@ const JD_FIELDS: { key: string; header: string; width: number; isDate?: boolean 
     { key: "job_title", header: "Job title", width: 22 },
     { key: "ee_level", header: "EE Level", width: 12 },
     { key: "sites", header: "Sites", width: 10 },
-    { key: "project_segment", header: "Project Segment", width: 16 },
     { key: "hiring_manager", header: "Hiring manager", width: 20 },
     { key: "hrbp", header: "HRBP", width: 10 },
     { key: "recruiter", header: "Recruiter", width: 14 },

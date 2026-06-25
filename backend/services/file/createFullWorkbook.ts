@@ -336,7 +336,6 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         job_title: job.titles?.map((t) => t.level_name).filter(Boolean).join(", ") ?? "",
         ee_level: job.employee_levels?.map((el) => el.level_name).filter(Boolean).join(", ") ?? "",
         sites: job.sites?.map((s) => s.site_code || s.site_name || "").filter(Boolean).join(", ") ?? "",
-        project_segment: job.segments?.[0]?.segment_name ?? null,
         hiring_manager: job.managers?.map((m) => m.user_name).join(", ") ?? "",
         hrbp: job.departments?.map((d) => d.user?.user_name || "").filter(Boolean).join(", ") ?? "",
         recruiter: job.recruiter?.user_name ?? "",

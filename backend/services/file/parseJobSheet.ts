@@ -1,7 +1,6 @@
 import { PoolClient } from "pg";
 import type { userOutputModel } from "@model/user/userModel";
 import type { departmentModel } from "@model/department/departmentModel";
-import type { segmentModel } from "@model/segment/segmentModel";
 import type { siteModel } from "@model/site/siteModel";
 import type { levelModel } from "@model/level/levelModel";
 import User from "@services/user/_User";
@@ -28,11 +27,6 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     SELECT department_id, department_code, department_name, department_description, create_at, update_at
     FROM department
   `;
-  // Query all segments
-  const segmentsQuery = `
-    SELECT segment_id, segment_code, segment_name, segment_description, create_at, update_at
-    FROM segment
-  `;
   // Query all sites
   const sitesQuery = `
     SELECT site_id, site_code, site_name, site_description, create_at, update_at
@@ -44,17 +38,15 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
     FROM level
   `;
 
-  const [usersResult, deptsRes, segmentsRes, sitesRes, levelsRes] = await Promise.all([
+  const [usersResult, deptsRes, sitesRes, levelsRes] = await Promise.all([
     User.getAll({ unlimited: true }, pool),
     pool.query(departmentsQuery),
-    pool.query(segmentsQuery),
     pool.query(sitesQuery),
     pool.query(levelsQuery)
   ]);
 
   const userMap = buildEntityMap<userOutputModel>(usersResult.items, (user) => user.user_name);
   const deptMap = buildEntityMap<departmentModel>(deptsRes.rows, (row) => row.department_name, { duplicateStrategy: "last" });
-  const segmentMap = buildEntityMap<segmentModel>(segmentsRes.rows, (row) => row.segment_name, { duplicateStrategy: "last" });
   const siteMap = buildEntityMap<siteModel>(sitesRes.rows, (row) => row.site_name, { duplicateStrategy: "last" });
   const levelMap = buildEntityMap<levelModel>(levelsRes.rows, (row) => row.level_name, { duplicateStrategy: "last" });
 
@@ -104,15 +96,6 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       };
     });
 
-    const segments = resolveEntities(row["Project Segment"], segmentMap, (name) => ({
-      segment_id: null,
-      segment_code: null,
-      segment_name: name,
-      segment_description: null,
-      create_at: null,
-      update_at: null
-    } as any));
-
     const sites = resolveEntities(row["Sites"], siteMap, (name) => ({
       site_id: null,
       site_code: null,
@@ -153,7 +136,6 @@ export default async function parseJobSheet(rows: any[], pool: PoolClient): Prom
       file: null,
       partners,
       departments,
-      segments,
       sites,
       titles,
       managers,

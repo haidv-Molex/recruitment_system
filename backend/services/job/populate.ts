@@ -1,7 +1,6 @@
 import { PoolClient } from "pg";
 import Department from "@services/department/_Department";
 import Level from "@services/level/_Level";
-import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import User from "@services/user/_User";
 
@@ -18,12 +17,6 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     FROM job_department jd
     JOIN department d ON jd.department_id = d.department_id
     WHERE jd.job_id = $1
-  `;
-  const segmentsQuery = `
-    SELECT s.segment_id
-    FROM job_segment js
-    JOIN segment s ON js.segment_id = s.segment_id
-    WHERE js.job_id = $1
   `;
   const sitesQuery = `
     SELECT si.site_id
@@ -53,7 +46,6 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
   const [
     partnersRes,
     departmentsRes,
-    segmentsRes,
     sitesRes,
     titlesRes,
     managersRes,
@@ -61,7 +53,6 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
   ] = await Promise.all([
     pool.query(partnersQuery, [jobId]),
     pool.query(departmentsQuery, [jobId]),
-    pool.query(segmentsQuery, [jobId]),
     pool.query(sitesQuery, [jobId]),
     pool.query(titlesQuery, [jobId]),
     pool.query(managersQuery, [jobId]),
@@ -75,9 +66,8 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
     }))
   );
 
-  const [partners, segments, sites, titles, managers, employeeLevels] = await Promise.all([
+  const [partners, sites, titles, managers, employeeLevels] = await Promise.all([
     Promise.all(partnersRes.rows.map((row) => User.findById(row.user_id, pool))),
-    Promise.all(segmentsRes.rows.map((row) => Segment.getById(row.segment_id, pool))),
     Promise.all(sitesRes.rows.map((row) => Site.getById(row.site_id, pool))),
     Promise.all(titlesRes.rows.map((row) => Level.getById(row.level_id, pool))),
     Promise.all(managersRes.rows.map((row) => User.findById(row.user_id, pool))),
@@ -87,7 +77,6 @@ export async function populateJobRelations(jobId: number, pool: PoolClient) {
   return {
     partners,
     departments: departmentsList,
-    segments,
     sites,
     titles,
     managers,

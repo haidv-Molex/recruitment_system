@@ -62,21 +62,21 @@ describe("rollback (Audit Log)", () => {
   });
 
   it("should rollback DELETE action successfully", async () => {
-    // 1. Insert a segment
-    const segmentRes = await client.query(
-      `INSERT INTO segment (segment_code, segment_name, segment_description) VALUES ($1, $2, $3) RETURNING segment_id`,
-      ["TEST_SEG", "Test Segment", "Segment Desc"]
+    // 1. Insert a site
+    const siteRes = await client.query(
+      `INSERT INTO site (site_code, site_name, site_description) VALUES ($1, $2, $3) RETURNING site_id`,
+      ["TEST_DELETE_S", "Test Delete Site", "Site Desc"]
     );
-    const segmentId = segmentRes.rows[0].segment_id;
+    const siteId = siteRes.rows[0].site_id;
 
     // Clear logs from insert
     await client.query("DELETE FROM audit_log");
 
-    // 2. Delete the segment
-    await client.query("DELETE FROM segment WHERE segment_id = $1", [segmentId]);
+    // 2. Delete the site
+    await client.query("DELETE FROM site WHERE site_id = $1", [siteId]);
 
     // 3. Find the delete log
-    const logRes = await client.query("SELECT * FROM audit_log WHERE table_name = 'segment' AND action = 'DELETE'");
+    const logRes = await client.query("SELECT * FROM audit_log WHERE table_name = 'site' AND action = 'DELETE'");
     expect(logRes.rows.length).to.equal(1);
     const deleteLog = logRes.rows[0];
 
@@ -85,9 +85,9 @@ describe("rollback (Audit Log)", () => {
     expect(result).to.be.true;
 
     // 5. Verify database state is restored
-    const verifyRes = await client.query("SELECT * FROM segment WHERE segment_id = $1", [segmentId]);
+    const verifyRes = await client.query("SELECT * FROM site WHERE site_id = $1", [siteId]);
     expect(verifyRes.rows.length).to.equal(1);
-    expect(verifyRes.rows[0].segment_name).to.equal("Test Segment");
+    expect(verifyRes.rows[0].site_name).to.equal("Test Delete Site");
   });
 
   it("should rollback INSERT action successfully", async () => {

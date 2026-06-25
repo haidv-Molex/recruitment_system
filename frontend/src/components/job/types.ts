@@ -8,7 +8,6 @@ export const emptyJob = {
   recruiterName: '',
   file: null as File | null,
   departments: [] as any[],
-  segments: [] as any[],
   sites: [] as any[],
   titles: [] as any[],
   employeeLevels: [] as any[],

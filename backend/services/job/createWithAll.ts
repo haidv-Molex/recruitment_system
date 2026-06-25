@@ -2,7 +2,6 @@ import { PoolClient } from "pg";
 import type { jobOutputModel } from "@model/job/jobModel";
 import Department from "@services/department/_Department";
 import User from "@services/user/_User";
-import Segment from "@services/segment/_Segment";
 import Site from "@services/site/_Site";
 import Level from "@services/level/_Level";
 import create from "@services/job/create";
@@ -22,7 +21,6 @@ type CreateJobWithAllData = {
   // ID gốc (các record đã có sẵn)
   partners?: number[];
   departments?: { department_id: number; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
-  segments?: number[];
   sites?: number[];
   titles?: number[];
   managers?: number[];
@@ -31,7 +29,6 @@ type CreateJobWithAllData = {
   // _name: tự động tạo record mới rồi lấy ID
   partners_name?: string[];
   departments_name?: { name: string; candidate_required: number; user_id?: number | null; partner_name?: string | null }[];
-  segments_name?: string[];
   sites_name?: string[];
   /**
    * titles_name và employee_levels_name được gộp lại thành một danh sách duy nhất.
@@ -56,14 +53,12 @@ async function createWithAll(
     file = null,
     partners = [],
     departments = [],
-    segments = [],
     sites = [],
     titles = [],
     managers = [],
     employee_levels = [],
     partners_name = [],
     departments_name = [],
-    segments_name = [],
     sites_name = [],
     titles_name = [],
     managers_name = [],
@@ -146,21 +141,14 @@ async function createWithAll(
     });
   }
 
-  // 4. Tạo segment mới cho segments_name
-  const newSegmentIds: number[] = [];
-  for (const name of segments_name) {
-    const seg = await Segment.create({ segment_name: name }, pool);
-    newSegmentIds.push(seg.segment_id);
-  }
-
-  // 5. Tạo site mới cho sites_name
+  // 4. Tạo site mới cho sites_name
   const newSiteIds: number[] = [];
   for (const name of sites_name) {
     const site = await Site.create({ site_name: name }, pool);
     newSiteIds.push(site.site_id);
   }
 
-  // 6. Gộp titles_name và employee_levels_name thành một danh sách duy nhất:
+  // 5. Gộp titles_name và employee_levels_name thành một danh sách duy nhất:
   //    chuẩn hóa về lowercase và loại bỏ trùng lặp trước khi tạo Level record.
   //    Level ID tạo ra sẽ được dùng cho cả titles lẫn employee_levels.
   const combinedLevelNames = [
@@ -176,16 +164,15 @@ async function createWithAll(
     newLevelIds.push(level.level_id);
   }
 
-  // 7. Gộp ID mới vào danh sách ID gốc
+  // 6. Gộp ID mới vào danh sách ID gốc
   const mergedPartners = [...partners, ...newPartnerIds];
   const mergedManagers = [...managers, ...newManagerIds];
   const mergedDepartments = [...resolvedDepartments, ...newDepartments];
-  const mergedSegments = [...segments, ...newSegmentIds];
   const mergedSites = [...sites, ...newSiteIds];
   const mergedTitles = [...titles, ...newLevelIds];
   const mergedEmployeeLevels = [...employee_levels, ...newLevelIds];
 
-  // 8. Gọi service create gốc với dữ liệu đã gộp
+  // 7. Gọi service create gốc với dữ liệu đã gộp
   return create(
     {
       job_code,
@@ -195,7 +182,6 @@ async function createWithAll(
       request_date: data.request_date,
       recruiter_id: resolvedRecruiterId,
       departments: mergedDepartments,
-      segments: mergedSegments,
       sites: mergedSites,
       titles: mergedTitles,
       managers: mergedManagers,

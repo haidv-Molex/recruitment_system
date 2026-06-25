@@ -29,7 +29,6 @@ describe("Job batchImport service", () => {
         partners_name: ["Phase3 HRBP Unique"],
         managers_name: ["Phase3 Manager Unique"],
         departments_name: [{ name: "Phase3 Department Unique", candidate_required: 2, partner_name: "Phase3 HRBP Unique" }],
-        segments_name: ["Phase3 Segment Unique"],
         sites_name: ["Phase3 Site Unique"],
         titles_name: ["Phase3 Title Unique"],
         employee_levels_name: ["Phase3 Employee Level Unique"]
@@ -40,7 +39,6 @@ describe("Job batchImport service", () => {
         partners_name: ["phase3 hrbp unique"],
         managers_name: ["phase3 manager unique"],
         departments_name: [{ name: "phase3 department unique", candidate_required: 3, partner_name: "phase3 hrbp unique" }],
-        segments_name: ["phase3 segment unique"],
         sites_name: ["phase3 site unique"],
         titles_name: ["phase3 title unique"],
         employee_levels_name: ["phase3 employee level unique"]
@@ -79,7 +77,7 @@ describe("Job batchImport service", () => {
       {
         job_code: "JOB-BATCH-PHASE3-BAD",
         project: "Some project name",
-        segments: [999999]
+        sites: [999999]
       }
     ], client);
 
@@ -143,7 +141,6 @@ describe("Job batchImport service", () => {
         project: "Original Project",
         note: "old note",
         departments_name: [{ name: "Upsert Dept Old", candidate_required: 1 }],
-        segments_name: ["Upsert Segment Old"],
       }
     ], client);
 
@@ -161,7 +158,6 @@ describe("Job batchImport service", () => {
         project: "Updated Project",
         note: "new note",
         departments_name: [{ name: "Upsert Dept New", candidate_required: 4 }],
-        segments_name: ["Upsert Segment New"],
       }
     ], client);
 
@@ -190,17 +186,6 @@ describe("Job batchImport service", () => {
     );
     expect(departments.rows).to.deep.equal([
       { department_name: "Upsert Dept New", candidate_required: 4 }
-    ]);
-
-    const segments = await client.query(
-      `SELECT s.segment_name
-       FROM job_segment js
-       JOIN segment s ON s.segment_id = js.segment_id
-       WHERE js.job_id = $1`,
-      [jobId]
-    );
-    expect(segments.rows).to.deep.equal([
-      { segment_name: "Upsert Segment New" }
     ]);
   });
 

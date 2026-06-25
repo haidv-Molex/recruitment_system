@@ -60,7 +60,6 @@ export interface MockJob {
   jobTitle: string;
   eeLevel: string;
   sites: string;
-  projectSegment: string;
   hiringManager: string;
   hrbp: string;
   recruiter: string;
@@ -84,7 +83,6 @@ export const mockJobs: MockJob[] = [
     jobTitle: 'HR Specialist',
     eeLevel: 'Professional',
     sites: 'Hanoi',
-    projectSegment: 'Operations Excellence',
     hiringManager: 'Nguyen Minh Anh',
     hrbp: 'Pham Thu Ha',
     recruiter: 'Tran Lan',
@@ -106,7 +104,6 @@ export const mockJobs: MockJob[] = [
     jobTitle: 'Quality Engineer',
     eeLevel: 'Engineer',
     sites: 'Hanoi',
-    projectSegment: 'Quality',
     hiringManager: 'Le Quang Huy',
     hrbp: 'Pham Thu Ha',
     recruiter: 'Tran Lan',
@@ -128,7 +125,6 @@ export const mockJobs: MockJob[] = [
     jobTitle: 'Logistics Supervisor',
     eeLevel: 'Supervisor',
     sites: 'Hanoi',
-    projectSegment: 'Supply Chain',
     hiringManager: 'Do Thanh Son',
     hrbp: 'Bui Hoang Yen',
     recruiter: 'Nguyen Thuy',
@@ -150,7 +146,6 @@ export const mockJobs: MockJob[] = [
     jobTitle: 'Automation Technician',
     eeLevel: 'Technician',
     sites: 'Hanoi',
-    projectSegment: 'Automation',
     hiringManager: 'Vu Duc Long',
     hrbp: 'Pham Thu Ha',
     recruiter: 'Tran Lan',

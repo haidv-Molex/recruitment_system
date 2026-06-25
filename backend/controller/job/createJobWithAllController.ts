@@ -9,7 +9,6 @@
  * - partners_name   (string / JSON array, optional): Tên các đối tác mới – user sẽ được tạo mới
  * - managers_name   (string / JSON array, optional): Tên các hiring manager mới – user sẽ được tạo mới
  * - departments_name(string / JSON array, optional): Tên phòng ban mới (code = name.toUpperCase())
- * - segments_name   (string / JSON array, optional): Tên phân khúc mới
  * - sites_name      (string / JSON array, optional): Tên địa điểm mới
  * - titles_name     (string / JSON array, optional): Tên chức danh mới (gộp với employee_levels_name)
  * - employee_levels_name (string / JSON array, optional): Tên cấp bậc nhân viên mới (gộp với titles_name)
@@ -52,7 +51,6 @@ const bodySchema = Joi.object({
   // --- ID gốc (các record đã tồn tại) ---
   partners: numberArray().optional(),
   departments: departmentArray().optional(),
-  segments: numberArray().optional(),
   sites: numberArray().optional(),
   titles: numberArray().optional(),
   managers: numberArray().optional(),
@@ -65,7 +63,6 @@ const bodySchema = Joi.object({
   partners_name: stringArray().optional(),
   managers_name: stringArray().optional(),
   departments_name: departmentNameArray().optional(),
-  segments_name: stringArray().optional(),
   sites_name: stringArray().optional(),
   titles_name: stringArray().optional(),
   employee_levels_name: stringArray().optional(),
@@ -96,7 +93,6 @@ createJobWithAllController.post(
           // ID gốc
           partners: body.partners ?? [],
           departments: body.departments ?? [],
-          segments: body.segments ?? [],
           sites: body.sites ?? [],
           titles: body.titles ?? [],
           managers: body.managers ?? [],
@@ -107,7 +103,6 @@ createJobWithAllController.post(
           partners_name: body.partners_name ?? [],
           managers_name: body.managers_name ?? [],
           departments_name: body.departments_name ?? [],
-          segments_name: body.segments_name ?? [],
           sites_name: body.sites_name ?? [],
           titles_name: body.titles_name ?? [],
           employee_levels_name: body.employee_levels_name ?? [],

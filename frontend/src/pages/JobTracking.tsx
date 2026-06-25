@@ -36,7 +36,6 @@ const COLUMN_KEY_TO_API: Record<string, string> = {
   jobTitle: 'job_title',
   eeLevel: 'ee_level',
   sites: 'site',
-  projectSegment: 'segment',
   hiringManager: 'manager',
   hrbp: 'partner',
   recruiter: 'recruiter',
@@ -52,7 +51,6 @@ const mapApiJobToRow = (j: any) => ({
   jobTitle: (j.titles || []).map((t: any) => t.level_name).join(', '),
   eeLevel: (j.employee_levels || []).map((el: any) => el.level_name).join(', '),
   sites: (j.sites || []).map((s: any) => s.site_code || s.site_name || '').filter(Boolean).join(', '),
-  projectSegment: (j.segments || []).map((sg: any) => sg.segment_code || sg.segment_name || '').filter(Boolean).join(', '),
   hiringManager: (j.managers || []).map((m: any) => m.user_name).join(', '),
   hrbp: (j.departments || [])
     .map((d: any) => d.user?.user_name || '—')
@@ -63,7 +61,6 @@ const mapApiJobToRow = (j: any) => ({
   offerDate: '',
   note: formatNotesToString(j.note),
   departments: j.departments || [],
-  segments: j.segments || [],
   sitesData: j.sites || [],
   titles: j.titles || [],
   employee_levels: j.employee_levels || [],
@@ -161,7 +158,6 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
             candidate_required: 1,
           };
         }),
-      segments: (formData.segments || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
       sites: (formData.sites || []).filter((s: any) => typeof s === 'number' || !isNaN(Number(s))).map(Number),
       titles: (formData.titles || []).filter((t: any) => typeof t === 'number' || !isNaN(Number(t))).map(Number),
       managers: (formData.managers || []).filter((m: any) => typeof m === 'number' || !isNaN(Number(m))).map(Number),
@@ -182,7 +178,6 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
             candidate_required: 1,
           };
         }),
-      segments_name: (formData.segments || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
       sites_name: (formData.sites || []).filter((s: any) => typeof s === 'string' && isNaN(Number(s))),
       titles_name: (formData.titles || []).filter((t: any) => typeof t === 'string' && isNaN(Number(t))),
       managers_name: (formData.managers || []).filter((m: any) => typeof m === 'string' && isNaN(Number(m))),
@@ -287,15 +282,14 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
         const idVal = item.id !== null && item.id !== undefined ? item.id
                     : item.department_id !== null && item.department_id !== undefined ? item.department_id
                     : item.site_id !== null && item.site_id !== undefined ? item.site_id
-                    : item.segment_id !== null && item.segment_id !== undefined ? item.segment_id
                     : item.level_id !== null && item.level_id !== undefined ? item.level_id
                     : item.user_id !== null && item.user_id !== undefined ? item.user_id
                     : null;
 
         if (idVal !== null && idVal !== undefined) {
           ids.push(idVal);
-        } else if (item.name || item.department_name || item.site_name || item.segment_name || item.level_name || item.user_name) {
-          names.push(item.name || item.department_name || item.site_name || item.segment_name || item.level_name || (item.user_code ? `${item.user_code} - ${item.user_name}` : item.user_name));
+        } else if (item.name || item.department_name || item.site_name || item.level_name || item.user_name) {
+          names.push(item.name || item.department_name || item.site_name || item.level_name || (item.user_code ? `${item.user_code} - ${item.user_name}` : item.user_name));
         }
       });
       return { ids, names };
@@ -305,7 +299,6 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
       const partners = splitByIdExists(parsedJob.partners);
       const managers = splitByIdExists(parsedJob.managers);
       const recruiter = parsedJob.recruiter || null;
-      const segments = splitByIdExists(parsedJob.segments);
       const sites = splitByIdExists(parsedJob.sites);
       const titles = splitByIdExists(parsedJob.titles);
       const employeeLevels = splitByIdExists(parsedJob.employeeLevels);
@@ -337,7 +330,6 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
         recruiter_name: recruiter && recruiter.user_id === null ? recruiter.user_name : null,
         partners: partners.ids,
         departments: depts,
-        segments: segments.ids,
         sites: sites.ids,
         titles: titles.ids,
         managers: managers.ids,
@@ -345,7 +337,6 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
         partners_name: partners.names,
         managers_name: managers.names,
         departments_name: depts_name,
-        segments_name: segments.names,
         sites_name: sites.names,
         titles_name: titles.names,
         employee_levels_name: employeeLevels.names,
@@ -401,7 +392,6 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
       { key: 'jobTitle', label: 'Job Title', width: 160 },
       { key: 'eeLevel', label: 'EE Level', width: 100 },
       { key: 'sites', label: 'Site', width: 80 },
-      { key: 'projectSegment', label: 'Segment', width: 120 },
       { key: 'hiringManager', label: 'Manager', width: 130 },
       { key: 'recruiter', label: 'Recruiter', width: 130 },
       { key: 'hrbp', label: 'HRBP / Partner', width: 135 },

@@ -9,7 +9,6 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { CompanyPage } from '@/pages/CompanyPage';
 import { DepartmentPage } from '@/pages/DepartmentPage';
 import { PlatformPage } from '@/pages/PlatformPage';
-import { SegmentPage } from '@/pages/SegmentPage';
 import { SitePage } from '@/pages/SitePage';
 import { LevelPage } from '@/pages/LevelPage';
 import { AdminPage } from '@/pages/AdminPage';
@@ -49,7 +48,6 @@ function App() {
                       <Route path="/companies" element={<CompanyPage />} />
                       <Route path="/departments" element={<DepartmentPage />} />
                       <Route path="/platforms" element={<PlatformPage />} />
-                      <Route path="/segments" element={<SegmentPage />} />
                       <Route path="/sites" element={<SitePage />} />
                       <Route path="/levels" element={<LevelPage />} />
                       <Route path="/email" element={<EmailPage />} />

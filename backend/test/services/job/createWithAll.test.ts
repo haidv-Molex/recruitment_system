@@ -99,21 +99,6 @@ describe("createWithAll job service", () => {
     );
   });
 
-  // --- segments_name: tự động tạo segment mới ---
-  it("should create new segments for segments_name", async () => {
-    const result = await createWithAll(
-      {
-        job_code: "JOB-SEG-001",
-        project: "Project Epsilon",
-        segments_name: ["Enterprise"],
-      },
-      client
-    );
-
-    expect(result.segments).to.be.an("array").with.lengthOf(1);
-    expect(result.segments![0]).to.have.property("segment_name", "Enterprise");
-  });
-
   // --- sites_name: tự động tạo site mới ---
   it("should create new sites for sites_name", async () => {
     const result = await createWithAll(
@@ -190,7 +175,6 @@ describe("createWithAll job service", () => {
         partners_name: [],
         managers_name: [],
         departments_name: [],
-        segments_name: [],
         sites_name: [],
         titles_name: [],
         employee_levels_name: [],

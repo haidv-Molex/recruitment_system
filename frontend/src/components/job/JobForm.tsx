@@ -16,7 +16,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
   const [error, setError] = useState('');
 
   const [selectedDepts, setSelectedDepts] = useState<any[]>([]);
-  const [selectedSegs, setSelectedSegs] = useState<any[]>([]);
   const [selectedSites, setSelectedSites] = useState<any[]>([]);
   const [selectedTitles, setSelectedTitles] = useState<any[]>([]);
   const [selectedEmpLevels, setSelectedEmpLevels] = useState<any[]>([]);
@@ -37,9 +36,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
         departments: Array.isArray(job.departments)
           ? job.departments.map((d: any) => (typeof d === 'object' ? d.department_id : d))
           : [],
-        segments: Array.isArray(job.segments)
-          ? job.segments.map((s: any) => (typeof s === 'object' ? s.segment_id : s))
-          : [],
         sites: Array.isArray(job.sitesData || job.sites)
           ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])).map((s: any) => (typeof s === 'object' ? s.site_id : s))
           : [],
@@ -54,7 +50,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
           : [],
       });
       setSelectedDepts(Array.isArray(job.departments) ? job.departments : []);
-      setSelectedSegs(Array.isArray(job.segments) ? job.segments : []);
       setSelectedSites(Array.isArray(job.sitesData || job.sites) ? (job.sitesData || (Array.isArray(job.sites) ? job.sites : [])) : []);
       setSelectedTitles(Array.isArray(job.titles) ? job.titles : []);
       setSelectedEmpLevels(Array.isArray(job.employee_levels) ? job.employee_levels : []);
@@ -63,7 +58,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
     } else {
       setFormData(emptyJob);
       setSelectedDepts([]);
-      setSelectedSegs([]);
       setSelectedSites([]);
       setSelectedTitles([]);
       setSelectedEmpLevels([]);
@@ -193,8 +187,6 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
           setFormData={setFormData}
           selectedDepts={selectedDepts}
           setSelectedDepts={setSelectedDepts}
-          selectedSegs={selectedSegs}
-          setSelectedSegs={setSelectedSegs}
           selectedSites={selectedSites}
           setSelectedSites={setSelectedSites}
           selectedTitles={selectedTitles}

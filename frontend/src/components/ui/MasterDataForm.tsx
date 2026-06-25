@@ -9,7 +9,7 @@ export interface MasterDataFormData {
 }
 
 export interface MasterDataFormProps {
-  /** Tên thực thể, ví dụ: "Department", "Segment", "Site", "Level" */
+  /** Tên thực thể, ví dụ: "Department", "Site", "Level" */
   entityLabel: string;
   /** Label tuỳ chỉnh cho trường code, mặc định: `${entityLabel} Code` */
   codeLabel?: string;
@@ -25,7 +25,7 @@ export interface MasterDataFormProps {
 
 /**
  * Form dùng chung cho entity có 3 trường: code + name + description.
- * Dùng cho: Department, Segment, Site, Level.
+ * Dùng cho: Department, Site, Level.
  */
 export default function MasterDataForm({
   entityLabel,

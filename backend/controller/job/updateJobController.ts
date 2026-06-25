@@ -12,7 +12,6 @@
  * - file (file, optional): File mô tả công việc (JD), max 5MB
  * - partners (number[] / string, optional): Mảng user_id đối tác
  * - departments (number[] / string, optional): Mảng department_id
- * - segments (number[] / string, optional): Mảng segment_id
  * - sites (number[] / string, optional): Mảng site_id
  * - titles (number[] / string, optional): Mảng level_id chức danh
  * - managers (number[] / string, optional): Mảng user_id hiring managers
@@ -71,14 +70,12 @@ const bodySchema = Joi.object({
     "string.max": "Tên recruiter không được vượt quá 255 ký tự",
   }),
   departments: departmentArray().optional(),
-  segments: numberArray().optional(),
   sites: numberArray().optional(),
   titles: numberArray().optional(),
   managers: numberArray().optional(),
   employee_levels: numberArray().optional(),
 
   departments_name: departmentNameArray().optional(),
-  segments_name: stringArray().optional(),
   sites_name: stringArray().optional(),
   titles_name: stringArray().optional(),
   managers_name: stringArray().optional(),
@@ -107,13 +104,11 @@ updateJobController.put(
       "recruiter_id",
       "recruiter_name",
       "departments",
-      "segments",
       "sites",
       "titles",
       "managers",
       "employee_levels",
       "departments_name",
-      "segments_name",
       "sites_name",
       "titles_name",
       "managers_name",

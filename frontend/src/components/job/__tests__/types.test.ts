@@ -12,8 +12,6 @@ describe('Job types and default values', () => {
     expect(emptyJob.file).toBeNull();
     expect(Array.isArray(emptyJob.departments)).toBe(true);
     expect(emptyJob.departments.length).toBe(0);
-    expect(Array.isArray(emptyJob.segments)).toBe(true);
-    expect(emptyJob.segments.length).toBe(0);
     expect(Array.isArray(emptyJob.sites)).toBe(true);
     expect(emptyJob.sites.length).toBe(0);
     expect(Array.isArray(emptyJob.titles)).toBe(true);

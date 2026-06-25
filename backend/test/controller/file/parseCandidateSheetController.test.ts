@@ -91,7 +91,6 @@ describe("parseCandidateSheetController API", () => {
       "Job title",
       "EE Level",
       "Sites",
-      "Project Segment",
       "Hiring manager",
       "HRBP",
       "Recruiter",

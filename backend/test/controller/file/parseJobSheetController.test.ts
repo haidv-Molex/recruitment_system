@@ -97,7 +97,6 @@ describe("parseJobSheetController API", () => {
         file: null,
         partners: [],
         departments: [{ department_id: null, department_name: "AS", candidate_required: 1 }],
-        segments: [],
         sites: [],
         titles: [],
         managers: [],
