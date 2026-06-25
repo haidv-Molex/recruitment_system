@@ -11,6 +11,7 @@ import normalizeLookupKey from "@utilities/entity/normalizeLookupKey";
 import resolveAndCreateEntities from "@utilities/entity/resolveAndCreateEntities";
 
 export type JobImportItem = {
+  row_index?: number | null;
   job_code?: string | null;
   project?: string | null;
   note?: string | null;
@@ -36,7 +37,7 @@ export type JobImportItem = {
 export type BatchImportResult = {
   success: boolean;
   importedCount: number;
-  errors: Array<{ job_code: string | null; message: string }>;
+  errors: Array<{ row_index?: number | null; job_code: string | null; message: string }>;
 };
 
 async function batchImport(
@@ -173,7 +174,7 @@ async function batchImport(
 
   // 2. Process and insert each Job
   let importedCount = 0;
-  const errors: Array<{ job_code: string | null; message: string }> = [];
+  const errors: BatchImportResult["errors"] = [];
 
   for (const job of jobs) {
     try {
@@ -276,6 +277,7 @@ async function batchImport(
       await pool.query("ROLLBACK TO SAVEPOINT import_job_savepoint");
       await pool.query("RELEASE SAVEPOINT import_job_savepoint");
       errors.push({
+        row_index: job.row_index ?? null,
         job_code: job.job_code || null,
         message: err.message || "Lỗi không xác định khi import Job",
       });

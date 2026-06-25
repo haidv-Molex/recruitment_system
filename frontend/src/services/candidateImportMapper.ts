@@ -8,6 +8,7 @@ export interface CandidateImportError {
 }
 
 export interface CandidateBatchImportPayload {
+  row_index?: number;
   candidate_name: string | null;
   status: string;
   candidate_code: string | null;
@@ -112,6 +113,7 @@ export function mapParsedCandidateToBatchPayload(
 
   return {
     payload: {
+      row_index: typeof candidate.row_index === 'number' ? candidate.row_index : rowIndex,
       candidate_name: toNullableString(candidate.candidate_name),
       status: toStringValue(candidate.status),
       candidate_code: toNullableString(candidate.employee_code),

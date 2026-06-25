@@ -62,8 +62,12 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
     try {
       const candidates = await parseCandidateSheetApi(file);
       if (candidates && candidates.length > 0) {
-        setParsedCandidates(candidates);
-        setSelectedIndices(new Set(candidates.map((_: any, i: number) => i)));
+        const candidatesWithIndex = candidates.map((c: any, index: number) => ({
+          ...c,
+          row_index: index,
+        }));
+        setParsedCandidates(candidatesWithIndex);
+        setSelectedIndices(new Set(candidatesWithIndex.map((_: any, i: number) => i)));
         setStep(STEPS.PREVIEW);
       } else {
         setParseError('No candidates found in this file. Please check the format.');
@@ -94,7 +98,9 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
           current: result.importedCount + result.errors.length,
           total: selectedCandidates.length,
           errors: result.errors.map(err => ({
+            row_index: err.row_index,
             name: err.candidate_name,
+            email: err.candidate_email,
             message: err.message
           }))
         });
@@ -402,34 +408,115 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
 
         {/* STEP 4: Done */}
         {step === STEPS.DONE && (
-          <div className="text-center py-12 px-6 flex flex-col items-center justify-center flex-1">
-            <div className="mb-4">
-              {importProgress.errors.length === 0 ? (
-                <Check size={48} className="text-emerald-600" />
-              ) : (
-                <AlertTriangle size={48} className="text-amber-600" />
-              )}
-            </div>
-            <p className="text-lg font-bold text-slate-900 mb-1">
-              {importProgress.errors.length === 0
-                ? 'Selected Candidates Imported Successfully!'
-                : `Imported with ${importProgress.errors.length} error(s)`}
-            </p>
-            <p className="text-sm text-slate-500 mb-6">
-              {importProgress.current - importProgress.errors.length} of {importProgress.total} candidates imported successfully.
-            </p>
-            {importProgress.errors.length > 0 && (
-              <div className="w-full max-w-lg text-left max-h-[160px] overflow-y-auto bg-red-50 border border-red-200 rounded-lg p-3">
-                {importProgress.errors.map((err, i) => (
-                  <div key={i} className="text-xs text-red-600 py-1">
-                    ❌ <strong>{err.name}</strong>: {err.message}
+          <div className="space-y-4 flex flex-col flex-grow flex-shrink min-h-0 h-full">
+            <div className="flex items-center justify-between flex-shrink-0 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-3">
+                {importProgress.errors.length === 0 ? (
+                  <div className="p-2 bg-emerald-100 rounded-full text-emerald-600">
+                    <Check size={24} />
                   </div>
-                ))}
+                ) : (
+                  <div className="p-2 bg-red-100 rounded-full text-red-600">
+                    <AlertTriangle size={24} />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {importProgress.errors.length === 0
+                      ? 'Import Completed Successfully!'
+                      : `Import Completed with ${importProgress.errors.length} error(s)`}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {importProgress.total - importProgress.errors.length} of {importProgress.total} candidates imported successfully.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={onClose} icon={<Check size={16} />}>
+                Close
+              </Button>
+            </div>
+
+            {importProgress.errors.length > 0 && (
+              <div className="flex flex-col flex-grow min-h-0 overflow-hidden space-y-2">
+                <p className="text-xs font-semibold text-slate-500 flex-shrink-0">
+                  Failed Candidates Grid View:
+                </p>
+                <ExcelImportTable
+                  minWidth="2200px"
+                  rows={importProgress.errors.map(err => {
+                    const original = typeof err.row_index === 'number'
+                      ? parsedCandidates.find(c => c.row_index === err.row_index) || {}
+                      : parsedCandidates.find(c =>
+                          (c.candidate_email && err.email && c.candidate_email === err.email) ||
+                          (c.candidate_name && c.candidate_name === err.name)
+                        ) || {};
+                    return {
+                      ...original,
+                      _importError: err.message
+                    };
+                  })}
+                  selectedIndices={new Set()}
+                  onSelectRow={() => {}}
+                  onSelectAll={() => {}}
+                  headers={[
+                    { label: 'Import Error', widthClass: 'w-80' },
+                    { label: 'Name', widthClass: 'w-44' },
+                    { label: 'Email', widthClass: 'w-52' },
+                    { label: 'Phone', widthClass: 'w-36' },
+                    { label: 'Job Code', widthClass: 'w-28' },
+                    { label: 'Project', widthClass: 'w-40' },
+                    { label: 'Status', widthClass: 'w-36' },
+                    { label: 'Source', widthClass: 'w-36' },
+                    { label: 'Input Date', widthClass: 'w-32' },
+                    { label: 'Offer Date', widthClass: 'w-32' },
+                    { label: 'Onboard Date', widthClass: 'w-32' },
+                    { label: 'Current Salary', widthClass: 'w-36' },
+                    { label: 'Expected Salary', widthClass: 'w-36' },
+                    { label: 'Agency', widthClass: 'w-36' },
+                    { label: 'Reference', widthClass: 'w-36' },
+                    { label: 'Targeted Company', widthClass: 'w-36' },
+                    { label: 'Note', widthClass: 'w-60' },
+                  ]}
+                  renderRow={(c) => (
+                    <>
+                      <td className="p-2.5 font-bold text-red-600 truncate bg-red-50/50 sticky left-12 z-10 border-r border-red-100" title={c._importError}>
+                        ❌ {c._importError}
+                      </td>
+                      <td className="p-2.5 font-semibold text-slate-800 truncate" title={c.candidate_name}>
+                        {c.candidate_name || '—'}
+                      </td>
+                      <td className="p-2.5 text-slate-600 truncate" title={c.candidate_email}>
+                        {c.candidate_email || '—'}
+                      </td>
+                      <td className="p-2.5 text-slate-600">{c.candidate_phone || '—'}</td>
+                      <td className="p-2.5">
+                        {c.job_code
+                          ? <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-600">{c.job_code}</span>
+                          : <span className="text-slate-300">—</span>
+                        }
+                      </td>
+                      <td className="p-2.5 text-slate-600 truncate" title={c.project}>{c.project || '—'}</td>
+                      <td className="p-2.5">
+                        {c.status
+                          ? <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 border border-slate-200 text-slate-700">{c.status}</span>
+                          : <span className="text-slate-300">—</span>
+                        }
+                      </td>
+                      <td className="p-2.5 text-slate-600">{c.source || '—'}</td>
+                      <td className="p-2.5 text-slate-500">{formatDate(c.input_date)}</td>
+                      <td className="p-2.5 text-slate-500">{formatDate(c.offer_date)}</td>
+                      <td className="p-2.5 text-slate-500">{formatDate(c.onboard_date)}</td>
+                      <td className="p-2.5 text-slate-600">{c.current_salary || '—'}</td>
+                      <td className="p-2.5 text-slate-600">{c.expected_salary || '—'}</td>
+                      <td className="p-2.5 text-slate-600 truncate" title={c.agency}>{c.agency || '—'}</td>
+                      <td className="p-2.5 text-slate-600">{c.reference_name || '—'}</td>
+                      <td className="p-2.5 text-slate-600 truncate" title={c.targeted_company_name}>{c.targeted_company_name || '—'}</td>
+                      <td className="p-2.5 text-slate-500 truncate" title={c.note}>{c.note || '—'}</td>
+                    </>
+                  )}
+                />
               </div>
             )}
-            <Button onClick={onClose} icon={<Check size={16} />} className="mt-4">
-              Done
-            </Button>
           </div>
         )}
       </div>

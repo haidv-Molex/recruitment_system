@@ -51,7 +51,8 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
       const jobs = await parseJobSheetApi(file);
       if (jobs && jobs.length > 0) {
         // Map keys from snake_case (backend) to camelCase (expected by frontend JobExcelImport)
-        const mappedJobs = jobs.map((j: any) => ({
+        const mappedJobs = jobs.map((j: any, index: number) => ({
+          row_index: index,
           jobCode: j.job_code || '',
           project: j.project || '',
           candidateRequired: (j.departments || []).reduce((sum: number, d: any) => sum + (d.candidate_required || 0), 0),
@@ -98,6 +99,7 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
         current: result.importedCount + result.errors.length,
         total: selectedJobs.length,
         errors: result.errors.map(err => ({
+          row_index: err.row_index,
           code: err.job_code,
           message: err.message
         }))
@@ -457,35 +459,112 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
 
         {/* STEP 4: Done */}
         {step === STEPS.DONE && (
-          <div className="text-center py-12 px-6 flex flex-col items-center justify-center flex-1">
-            <div className="mb-4">
-              {importProgress.errors.length === 0 ? (
-                <Check size={48} className="text-emerald-600" />
-              ) : (
-                <AlertTriangle size={48} className="text-amber-600" />
-              )}
-            </div>
-            <p className="text-lg font-bold text-slate-900 mb-1">
-              {importProgress.errors.length === 0
-                ? 'Selected Jobs Imported Successfully!'
-                : `Imported with ${importProgress.errors.length} error(s)`}
-            </p>
-            <p className="text-sm text-slate-500 mb-6">
-              {importProgress.current - importProgress.errors.length} of {importProgress.total} jobs imported
-              successfully.
-            </p>
-            {importProgress.errors.length > 0 && (
-              <div className="w-full max-w-lg text-left max-h-[160px] overflow-y-auto bg-red-50 border border-red-200 rounded-lg p-3">
-                {importProgress.errors.map((err, i) => (
-                  <div key={i} className="text-xs text-red-600 py-1">
-                    ❌ <strong>{err.code}</strong>: {err.message}
+          <div className="space-y-4 flex flex-col flex-grow flex-shrink min-h-0 h-full">
+            <div className="flex items-center justify-between flex-shrink-0 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-3">
+                {importProgress.errors.length === 0 ? (
+                  <div className="p-2 bg-emerald-100 rounded-full text-emerald-600">
+                    <Check size={24} />
                   </div>
-                ))}
+                ) : (
+                  <div className="p-2 bg-red-100 rounded-full text-red-600">
+                    <AlertTriangle size={24} />
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {importProgress.errors.length === 0
+                      ? 'Import Completed Successfully!'
+                      : `Import Completed with ${importProgress.errors.length} error(s)`}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {importProgress.total - importProgress.errors.length} of {importProgress.total} jobs imported successfully.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={onClose} icon={<Check size={16} />}>
+                Close
+              </Button>
+            </div>
+
+            {importProgress.errors.length > 0 && (
+              <div className="flex flex-col flex-grow min-h-0 overflow-hidden space-y-2">
+                <p className="text-xs font-semibold text-slate-500 flex-shrink-0">
+                  Failed Jobs Grid View:
+                </p>
+                <ExcelImportTable
+                  minWidth="1800px"
+                  rows={importProgress.errors.map(err => {
+                    const original = typeof err.row_index === 'number'
+                      ? parsedJobs.find(j => j.row_index === err.row_index) || {}
+                      : parsedJobs.find(j => j.jobCode === err.code) || {};
+                    return {
+                      ...original,
+                      _importError: err.message
+                    };
+                  })}
+                  selectedIndices={new Set()}
+                  onSelectRow={() => {}}
+                  onSelectAll={() => {}}
+                  headers={[
+                    { label: 'Import Error', widthClass: 'w-80' },
+                    { label: 'Job Code', widthClass: 'w-32' },
+                    { label: 'Project Name', widthClass: 'w-52' },
+                    { label: 'Dept', widthClass: 'w-40' },
+                    { label: 'HC Req', widthClass: 'w-24 text-center' },
+                    { label: 'Job Title', widthClass: 'w-44' },
+                    { label: 'EE Level', widthClass: 'w-36' },
+                    { label: 'Site', widthClass: 'w-36' },
+                    { label: 'Segment', widthClass: 'w-40' },
+                    { label: 'Manager', widthClass: 'w-44' },
+                    { label: 'Recruiter', widthClass: 'w-44' },
+                    { label: 'HRBP / Partner', widthClass: 'w-44' },
+                    { label: 'Req Date', widthClass: 'w-36' },
+                    { label: 'Note', widthClass: 'w-56' },
+                  ]}
+                  renderRow={(job) => (
+                    <>
+                      <td className="p-2.5 font-bold text-red-600 truncate bg-red-50/50 sticky left-12 z-10 border-r border-red-100" title={job._importError}>
+                        ❌ {job._importError}
+                      </td>
+                      <td className="p-2.5 font-semibold text-slate-800">
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-600">
+                          {job.jobCode || '—'}
+                        </span>
+                      </td>
+                      <td className="p-2.5 font-medium text-slate-800 truncate" title={job.project}>{job.project || '—'}</td>
+                      <td className="p-2.5">
+                        {renderTags(job.departments, 'bg-blue-50 border border-blue-200 text-blue-600')}
+                      </td>
+                      <td className="p-2.5 text-center font-bold text-slate-800">{job.candidateRequired}</td>
+                      <td className="p-2.5">
+                        {renderTags(job.titles, 'bg-purple-50 border border-purple-200 text-purple-600')}
+                      </td>
+                      <td className="p-2.5">
+                        {renderTags(job.employeeLevels, 'bg-purple-50 border border-purple-200 text-purple-600')}
+                      </td>
+                      <td className="p-2.5">
+                        {renderTags(job.sites, 'bg-emerald-50 border border-emerald-200 text-emerald-600')}
+                      </td>
+                      <td className="p-2.5">
+                        {renderTags(job.segments, 'bg-amber-50 border border-amber-200 text-amber-600')}
+                      </td>
+                      <td className="p-2.5">
+                        {renderTags(job.managers, 'bg-red-50 border border-red-200 text-red-600')}
+                      </td>
+                      <td className="p-2.5">
+                        {renderTags(job.recruiter ? [job.recruiter] : [], 'bg-violet-50 border border-violet-200 text-violet-700')}
+                      </td>
+                      <td className="p-2.5">
+                        {renderTags(job.partners, 'bg-red-50 border border-red-200 text-red-600')}
+                      </td>
+                      <td className="p-2.5 text-slate-600">{job.requestDate || '—'}</td>
+                      <td className="p-2.5 text-slate-500 truncate" title={job.note}>{job.note || '—'}</td>
+                    </>
+                  )}
+                />
               </div>
             )}
-            <Button onClick={onClose} icon={<Check size={16} />} className="mt-4">
-              Done
-            </Button>
           </div>
         )}
       </div>

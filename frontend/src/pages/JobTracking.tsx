@@ -327,6 +327,7 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
         }));
 
       return {
+        row_index: typeof parsedJob.row_index === 'number' ? parsedJob.row_index : null,
         job_code: parsedJob.jobCode?.trim() || null,
         project: parsedJob.project,
         note: parsedJob.note || '',

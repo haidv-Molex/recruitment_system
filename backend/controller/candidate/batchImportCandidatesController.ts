@@ -9,6 +9,7 @@ import passport from "@middlewares/passport";
 const batchImportCandidatesController = express.Router();
 
 const candidateItemSchema = Joi.object({
+  row_index: Joi.number().integer().optional(),
   candidate_name: Joi.string().max(255).allow("", null).optional(),
   status: Joi.string().min(1).max(100).required().messages({
     "any.required": "Trạng thái ứng viên là bắt buộc",
@@ -85,7 +86,9 @@ batchImportCandidatesController.post(
 
       if (error) {
         errors.push({
+          row_index: typeof c.row_index === "number" ? c.row_index : null,
           candidate_name: c.candidate_name || `Dòng ${index + 1}`,
+          candidate_email: c.candidate_email || null,
           message: error.details.map((d) => d.message).join(", "),
         });
       } else {

@@ -9,6 +9,7 @@ import passport from "@middlewares/passport";
 const batchImportJobsController = express.Router();
 
 const jobItemSchema = Joi.object({
+  row_index: Joi.number().integer().optional(),
   job_code: Joi.string().min(1).max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Mã công việc không được vượt quá 255 ký tự",
   }),
@@ -77,6 +78,7 @@ batchImportJobsController.post(
 
       if (error) {
         errors.push({
+          row_index: typeof j.row_index === "number" ? j.row_index : null,
           job_code: j.job_code || `Dòng ${index + 1}`,
           message: error.details.map((d) => d.message).join(", "),
         });

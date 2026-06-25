@@ -10,6 +10,7 @@ import normalizeLookupKey from "@utilities/entity/normalizeLookupKey";
 import resolveAndCreateEntities from "@utilities/entity/resolveAndCreateEntities";
 
 export type CandidateImportItem = {
+  row_index?: number | null;
   candidate_name: string;
   status: string;
   candidate_code?: string | null;
@@ -41,7 +42,7 @@ export type CandidateImportItem = {
 export type BatchImportResult = {
   success: boolean;
   importedCount: number;
-  errors: Array<{ candidate_name: string; message: string }>;
+  errors: Array<{ row_index?: number | null; candidate_name: string; candidate_email?: string | null; message: string }>;
 };
 
 export async function batchImport(
@@ -54,11 +55,18 @@ export async function batchImport(
   const levelNames = new Set<string>();
   const jobCodes = new Set<string>();
 
+  const jobCodeToProject = new Map<string, string | null>();
   for (const c of candidates) {
     if (c.reference_name?.trim()) referenceNames.add(c.reference_name.trim());
     if (c.platform_name?.trim()) platformNames.add(c.platform_name.trim());
     if (c.targeted_company_name?.trim()) targetedCompanyNames.add(c.targeted_company_name.trim());
-    if (c.job_code?.trim()) jobCodes.add(c.job_code.trim());
+    if (c.job_code?.trim()) {
+      jobCodes.add(c.job_code.trim());
+      const lowerCode = normalizeLookupKey(c.job_code);
+      if (c.project?.trim() && !jobCodeToProject.has(lowerCode)) {
+        jobCodeToProject.set(lowerCode, c.project.trim());
+      }
+    }
     (c.candidate_levels_name || []).forEach((n) => {
       if (n?.trim()) levelNames.add(n.trim());
     });
@@ -133,8 +141,7 @@ export async function batchImport(
     for (const jc of jobCodes) {
       const lower = normalizeLookupKey(jc);
       if (!jobMap.has(lower)) {
-        const matchingCand = candidates.find(c => normalizeLookupKey(c.job_code) === lower);
-        const projectVal = matchingCand?.project?.trim() || jc.trim();
+        const projectVal = jobCodeToProject.get(lower) || jc.trim();
 
         const newJob = await Job.create({
           job_code: jc.trim(),
@@ -146,7 +153,7 @@ export async function batchImport(
   }
 
   let importedCount = 0;
-  const errors: Array<{ candidate_name: string; message: string }> = [];
+  const errors: BatchImportResult["errors"] = [];
 
   for (const c of candidates) {
     try {
@@ -237,7 +244,9 @@ export async function batchImport(
     } catch (err: any) {
       await pool.query("ROLLBACK TO SAVEPOINT import_candidate_savepoint");
       errors.push({
+        row_index: c.row_index ?? null,
         candidate_name: c.candidate_name || "Unknown Candidate",
+        candidate_email: c.candidate_email || null,
         message: err.message || "Unknown error during candidate creation",
       });
     }
