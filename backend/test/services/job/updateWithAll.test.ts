@@ -116,4 +116,16 @@ describe("update job service with auto-creation names", () => {
     expect(result.note[0].text).to.equal("Updated job note text");
     expect(result.note[1].text).to.equal("New job note text");
   });
+
+  it("should allow updating project to null", async () => {
+    const result = await updateJob(
+      sampleJobId,
+      {
+        project: null,
+      },
+      client
+    );
+
+    expect(result.project).to.be.null;
+  });
 });

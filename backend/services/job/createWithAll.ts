@@ -10,7 +10,7 @@ import create from "@services/job/create";
 type CreateJobWithAllData = {
   // Dữ liệu Job gốc
   job_code?: string | null;
-  project: string;
+  project?: string | null;
   note?: string | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;
@@ -50,7 +50,7 @@ async function createWithAll(
 ): Promise<jobOutputModel> {
   const {
     job_code = null,
-    project,
+    project = null,
     note = null,
     recruiter_id = null,
     file = null,

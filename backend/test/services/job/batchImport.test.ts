@@ -78,7 +78,8 @@ describe("Job batchImport service", () => {
       },
       {
         job_code: "JOB-BATCH-PHASE3-BAD",
-        project: null as any
+        project: "Some project name",
+        segments: [999999]
       }
     ], client);
 
@@ -223,5 +224,24 @@ describe("Job batchImport service", () => {
 
     const expectedCode = `J${String(jobRes.rows[0].job_id).padStart(3, "0")}`;
     expect(jobRes.rows[0].job_code).to.equal(expectedCode);
+  });
+
+  it("should allow batch import with null project", async () => {
+    const result = await batchImport([
+      {
+        job_code: "BATCH-NULL-PROJECT",
+        project: null,
+      }
+    ], client);
+
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+
+    const jobRes = await client.query(
+      `SELECT job_id, project FROM job WHERE job_code = $1`,
+      ["BATCH-NULL-PROJECT"]
+    );
+    expect(jobRes.rows).to.have.lengthOf(1);
+    expect(jobRes.rows[0].project).to.be.null;
   });
 });

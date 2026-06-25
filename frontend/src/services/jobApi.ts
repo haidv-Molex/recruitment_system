@@ -7,7 +7,9 @@ export async function createJobApi(formData: any): Promise<jobOutputModel> {
   if (formData.job_code?.trim()) {
     fd.append('job_code', formData.job_code.trim());
   }
-  fd.append('project', formData.project);
+  if (Object.prototype.hasOwnProperty.call(formData, 'project')) {
+    fd.append('project', formData.project == null || formData.project.trim() === '' ? 'null' : formData.project.trim());
+  }
 
   if (formData.note) {
     fd.append('note', formData.note);
@@ -87,7 +89,9 @@ export async function deleteJobApi(idOrIds: number | number[]): Promise<void> {
 export async function updateJobApi(id: number, formData: any): Promise<jobOutputModel> {
   const fd = new FormData();
   if (formData.job_code?.trim()) fd.append('job_code', formData.job_code.trim());
-  if (formData.project) fd.append('project', formData.project);
+  if (Object.prototype.hasOwnProperty.call(formData, 'project')) {
+    fd.append('project', formData.project == null || formData.project.trim() === '' ? 'null' : formData.project.trim());
+  }
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);
@@ -132,7 +136,9 @@ export async function createJobExtendedApi(formData: any): Promise<jobOutputMode
   if (formData.job_code?.trim()) {
     fd.append('job_code', formData.job_code.trim());
   }
-  fd.append('project', formData.project);
+  if (Object.prototype.hasOwnProperty.call(formData, 'project')) {
+    fd.append('project', formData.project == null || formData.project.trim() === '' ? 'null' : formData.project.trim());
+  }
 
   if (formData.note) fd.append('note', formData.note);
   if (formData.request_date) fd.append('request_date', formData.request_date);

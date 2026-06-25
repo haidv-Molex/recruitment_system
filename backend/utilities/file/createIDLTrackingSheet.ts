@@ -9,7 +9,7 @@ import {
 
 export interface JdRow {
     job_code: string;
-    project: string;
+    project: string | null;
     dept: string;
     hc_requested: number;
     job_title: string;

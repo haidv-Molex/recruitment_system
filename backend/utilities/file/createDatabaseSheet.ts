@@ -50,7 +50,7 @@ export interface JdLookupRow {
     dept: string;
     job_title: string;
     ee_level: string;
-    project: string;
+    project: string | null;
     hiring_manager: string;
     recruiter: string;
     sites: string;

@@ -32,7 +32,7 @@ export default function JobBasicInfoFields({
           disabled={saving}
         />
         <InputField
-          label="Project *"
+          label="Project (optional)"
           name="project"
           value={formData.project}
           onChange={handleChange}

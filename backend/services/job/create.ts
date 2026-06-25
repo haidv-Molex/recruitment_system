@@ -14,7 +14,7 @@ import path from "path";
 
 type CreateJobData = {
   job_code?: string | null;
-  project: string;
+  project?: string | null;
   note?: string | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;
@@ -36,7 +36,7 @@ async function create(
 ): Promise<jobOutputModel> {
   const {
     job_code,
-    project,
+    project = null,
     note = null,
     request_date = null,
     recruiter_id = null,

@@ -12,7 +12,7 @@ import resolveAndCreateEntities from "@utilities/entity/resolveAndCreateEntities
 
 export type JobImportItem = {
   job_code?: string | null;
-  project: string;
+  project?: string | null;
   note?: string | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;

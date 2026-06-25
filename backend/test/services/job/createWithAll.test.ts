@@ -214,4 +214,17 @@ describe("createWithAll job service", () => {
     const expectedCode = `J${String(result.job_id).padStart(3, "0")}`;
     expect(result.job_code).to.equal(expectedCode);
   });
+
+  it("should allow creating a job with null or missing project", async () => {
+    const result = await createWithAll(
+      {
+        job_code: "JOB-NO-PROJECT",
+        project: null,
+      },
+      client
+    );
+
+    expect(result).to.have.property("job_id").that.is.a("number");
+    expect(result.project).to.be.null;
+  });
 });

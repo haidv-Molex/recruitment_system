@@ -55,8 +55,7 @@ const bodySchema = Joi.object({
     "string.empty": "Mã công việc không được để trống",
     "string.max": "Mã công việc không được vượt quá 255 ký tự",
   }),
-  project: Joi.string().min(1).max(255).optional().messages({
-    "string.empty": "Dự án không được để trống",
+  project: Joi.string().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.max": "Dự án không được vượt quá 255 ký tự",
   }),
   note: Joi.string().max(5000).allow("", null).optional(),

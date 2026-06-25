@@ -8,7 +8,7 @@ import type { noteOutputModel } from "@model/note/noteModel";
 export type jobModel = {
   job_id: number;
   job_code: string;
-  project: string;
+  project: string | null;
   note: string | null;
   request_date: Date | null;
   create_at: Date;

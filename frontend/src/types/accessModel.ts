@@ -22,7 +22,7 @@ export type accessOutputModel = {
   job: {
     job_id: number;
     job_code: string;
-    project: string;
+    project: string | null;
   } | null;
   create_at: string | Date;
   update_at: string | Date;

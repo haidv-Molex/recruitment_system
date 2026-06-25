@@ -190,6 +190,41 @@ describe("JobController API", () => {
     expectLocal(args.project).to.equal("Project Auto Code");
   });
 
+  it("POST /job - should allow missing or null project", async () => {
+    const mockJob = {
+      job_id: 8,
+      job_code: "J008",
+      project: null,
+      create_at: new Date(),
+      update_at: new Date(),
+      file: null
+    };
+    createStub.resolves(mockJob);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/job")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        job_code: "J008",
+      })
+      .expectStatus(201)
+      .expectJsonLike({
+        result: true,
+        message: "Tạo công việc thành công",
+        data: {
+          job_code: "J008",
+          project: null,
+        }
+      });
+
+    expectLocal(createStub.calledOnce).to.be.true;
+    const args = createStub.firstCall.args[0];
+    expectLocal(args.job_code).to.equal("J008");
+    expectLocal(args.project).to.be.null;
+  });
+
   it("POST /job - should reject unsupported partners field", async () => {
     const token = generateTestToken(1, "Test User");
 

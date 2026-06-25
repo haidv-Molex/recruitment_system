@@ -15,7 +15,7 @@ import { replaceLinkRows, type LinkRow } from "@utilities/db/linking";
 
 type UpdateJobData = {
   job_code?: string;
-  project?: string;
+  project?: string | null;
   note?: string | null;
   request_date?: string | Date | null;
   recruiter_id?: number | null;

@@ -97,10 +97,7 @@ export default function JobForm({ job, onSubmit, onClose, saving }: JobFormProps
     e.preventDefault();
     setError('');
 
-    if (!formData.project.trim()) {
-      setError('Project is required.');
-      return;
-    }
+
 
     const updatedDepartments = selectedDepts.map((d) => {
       const isExisting = typeof d.department_id === 'number';
