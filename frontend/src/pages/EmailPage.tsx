@@ -150,6 +150,7 @@ export function EmailPage() {
         html: `
           <p>Dear ${offerFields.candidate_name || 'Candidate'},</p>
           <p>Please find your password-protected offer letter attached as a PDF file.</p>
+          <p>For your convenience, please note that the password to open your Offer Letter is your date of birth in the format <strong>YYYYXX</strong>, where <strong>YYYY</strong> is your year of birth and <strong>XX</strong> is your two-digit month of birth. Kindly keep this password confidential and contact the recruitment team if you need any support opening the file.</p>
           <p>Best regards,<br />Molex Recruitment Team</p>
         `,
         offerLetterPdf: {
