@@ -491,7 +491,20 @@ describe("CandidateController API", () => {
           }
         ]
       })
-      .expectStatus(400);
+      .expectStatus(200)
+      .expectJsonLike({
+        result: true,
+        data: {
+          success: false,
+          importedCount: 0,
+          errors: [
+            {
+              candidate_name: "No Email Candidate",
+              message: "Email ứng viên không được để trống"
+            }
+          ]
+        }
+      });
   });
 
   it("POST /candidate/batch - should allow blank name", async () => {
@@ -537,11 +550,19 @@ describe("CandidateController API", () => {
           }
         ]
       })
-      .expectStatus(400)
+      .expectStatus(200)
       .expectJsonLike({
-        result: false,
-        message: "Dữ liệu không hợp lệ",
-        details: ["Email ứng viên không đúng định dạng chuẩn name@example.com"],
+        result: true,
+        data: {
+          success: false,
+          importedCount: 0,
+          errors: [
+            {
+              candidate_name: "Bad Email Candidate",
+              message: "Email ứng viên không đúng định dạng chuẩn name@example.com"
+            }
+          ]
+        }
       });
 
     expectLocal(batchImportStub.notCalled).to.be.true;

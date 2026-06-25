@@ -172,23 +172,23 @@ export async function batchImport(
 
       let existingCandidate: any = null;
 
-      if (candidateCode) {
-        const codeRes = await pool.query(
-          `SELECT candidate_id FROM candidate WHERE LOWER(TRIM(candidate_code)) = $1 LIMIT 1`,
-          [normalizeLookupKey(candidateCode)]
-        );
-        if (codeRes.rows.length > 0) {
-          existingCandidate = codeRes.rows[0];
-        }
-      }
-
-      if (!existingCandidate && candidateEmail) {
+      if (candidateEmail) {
         const emailRes = await pool.query(
           `SELECT candidate_id FROM candidate WHERE LOWER(TRIM(candidate_email)) = $1 LIMIT 1`,
           [normalizeLookupKey(candidateEmail)]
         );
         if (emailRes.rows.length > 0) {
           existingCandidate = emailRes.rows[0];
+        }
+      }
+
+      if (!existingCandidate && candidateCode) {
+        const codeRes = await pool.query(
+          `SELECT candidate_id FROM candidate WHERE LOWER(TRIM(candidate_code)) = $1 LIMIT 1`,
+          [normalizeLookupKey(candidateCode)]
+        );
+        if (codeRes.rows.length > 0) {
+          existingCandidate = codeRes.rows[0];
         }
       }
 

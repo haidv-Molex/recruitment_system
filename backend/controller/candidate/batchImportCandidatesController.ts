@@ -48,7 +48,7 @@ const candidateItemSchema = Joi.object({
 });
 
 const bodySchema = Joi.object({
-  candidates: Joi.array().items(candidateItemSchema).required().messages({
+  candidates: Joi.array().required().messages({
     "any.required": "Danh sách ứng viên là bắt buộc",
     "array.base": "Danh sách ứng viên phải là mảng",
   }),
@@ -57,18 +57,67 @@ const bodySchema = Joi.object({
 batchImportCandidatesController.post(
   "",
   passport.authenticate("jwt", { session: false }),
-  joiValidate(bodySchema, "body"),
   async (req, res) => {
-    const { candidates } = req.body;
+    // Validate request body structure first
+    const { error: bodyError, value: bodyValue } = bodySchema.validate(req.body, { abortEarly: false });
+    if (bodyError) {
+      return res.status(400).json({
+        result: false,
+        message: "Cấu trúc danh sách không hợp lệ",
+        details: bodyError.details.map((d) => d.message),
+      });
+    }
 
-    const result = await withTransaction(async (pool) => {
-       return await Candidate.batchImport(candidates, pool);
-    }, req.user);
+    const { candidates } = bodyValue;
+
+    const validCandidates: any[] = [];
+    const errors: any[] = [];
+
+    candidates.forEach((c: any, index: number) => {
+      const { error, value } = candidateItemSchema.validate(c, {
+        abortEarly: false,
+        convert: true,
+        errors: {
+          label: "key",
+          wrap: { label: false },
+        },
+      });
+
+      if (error) {
+        errors.push({
+          candidate_name: c.candidate_name || `Dòng ${index + 1}`,
+          message: error.details.map((d) => d.message).join(", "),
+        });
+      } else {
+        validCandidates.push(value);
+      }
+    });
+
+    let result = {
+      success: true,
+      importedCount: 0,
+      errors: [] as any[],
+    };
+
+    if (validCandidates.length > 0) {
+      const importRes = await withTransaction(async (pool) => {
+         return await Candidate.batchImport(validCandidates, pool);
+      }, req.user);
+      result = {
+        success: importRes.success,
+        importedCount: importRes.importedCount,
+        errors: importRes.errors,
+      };
+    }
 
     res.status(200).json({
       result: true,
       message: "Thực hiện import loạt ứng viên thành công",
-      data: result,
+      data: {
+        success: result.success && errors.length === 0,
+        importedCount: result.importedCount,
+        errors: [...errors, ...result.errors],
+      },
     });
   }
 );

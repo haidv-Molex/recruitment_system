@@ -50,7 +50,7 @@ describe('candidateImportMapper', () => {
     expect(result.payload?.feedback_date).toBe('2025-08-21');
   });
 
-  it('should allow blank email and map it to null', () => {
+  it('should map blank email to null without error', () => {
     const result = mapParsedCandidateToBatchPayload({
       ...parsedCandidate,
       candidate_email: '',
@@ -60,35 +60,29 @@ describe('candidateImportMapper', () => {
     expect(result.payload?.candidate_email).toBeNull();
   });
 
-  it('should return a row-level error with the expected format for non-empty invalid email', () => {
+  it('should map non-empty invalid email directly to payload without error', () => {
     const result = mapParsedCandidateToBatchPayload({
       ...parsedCandidate,
       candidate_email: 'not-an-email',
     }, 2);
 
-    expect(result.payload).toBeNull();
-    expect(result.error).toMatchObject({
-      candidate_name: 'Nguyen Van A',
-      rowIndex: 2,
-    });
-    expect(result.error?.message).toContain('Email không hợp lệ');
-    expect(result.error?.message).toContain('not-an-email');
-    expect(result.error?.message).toContain('Định dạng email chuẩn: name@example.com');
-    expect(result.error?.message).toContain('không chứa khoảng trắng');
+    expect(result.error).toBeNull();
+    expect(result.payload?.candidate_email).toBe('not-an-email');
   });
 
-  it('should collect payloads and errors for a parsed candidate batch', () => {
+  it('should collect all payloads with no errors for a parsed candidate batch', () => {
     const result = mapParsedCandidatesToBatchPayload([
       parsedCandidate,
       { ...parsedCandidate, candidate_name: 'Bad Email', candidate_email: 'bad-email' },
       { ...parsedCandidate, candidate_name: 'No Email', candidate_email: null },
     ]);
 
-    expect(result.candidatesPayload).toHaveLength(2);
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0].candidate_name).toBe('Bad Email');
-    expect(result.candidatesPayload[1].candidate_name).toBe('No Email');
-    expect(result.candidatesPayload[1].candidate_email).toBeNull();
+    expect(result.candidatesPayload).toHaveLength(3);
+    expect(result.errors).toHaveLength(0);
+    expect(result.candidatesPayload[1].candidate_name).toBe('Bad Email');
+    expect(result.candidatesPayload[1].candidate_email).toBe('bad-email');
+    expect(result.candidatesPayload[2].candidate_name).toBe('No Email');
+    expect(result.candidatesPayload[2].candidate_email).toBeNull();
   });
 
   it('should map parsed candidate to extended form payload for fallback import', () => {

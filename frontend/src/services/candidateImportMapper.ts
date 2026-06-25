@@ -79,29 +79,11 @@ function normalizeEmail(value: unknown, candidateName: string | null, rowIndex: 
   error: CandidateImportError | null;
 } {
   const email = toStringValue(value);
-  if (!email) {
-    return {
-      email: null,
-      error: {
-        candidate_name: candidateName,
-        message: `Email là bắt buộc nhưng bị thiếu ở dòng ${rowIndex + 1}.`,
-        rowIndex,
-      },
-    };
-  }
-
-  if (!emailRegex.test(email)) {
-    return {
-      email: null,
-      error: {
-        candidate_name: candidateName,
-        message: `Email không hợp lệ ở dòng ${rowIndex + 1}: ${email}. ${emailFormatMessage}`,
-        rowIndex,
-      },
-    };
-  }
-
-  return { email, error: null };
+  // Do not block empty or invalid email formatting at frontend mapper.
+  // Instead, pass the value directly to the backend, so that backend validation
+  // or database constraints catch the error, allowing the batch import process
+  // to import all valid candidates and report invalid candidates individually to HR.
+  return { email: email || null, error: null };
 }
 
 function splitList(value: unknown): string[] {
@@ -120,7 +102,7 @@ export function mapParsedCandidateToBatchPayload(
 ): { payload: CandidateBatchImportPayload | null; error: CandidateImportError | null } {
   const candidateName = toNullableString(candidate.candidate_name) || `Dòng ${rowIndex + 1}`;
   const { email, error } = normalizeEmail(candidate.candidate_email, candidateName, rowIndex);
-  if (error || !email) {
+  if (error) {
     return { payload: null, error };
   }
 
