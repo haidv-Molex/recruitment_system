@@ -159,4 +159,31 @@ describe('jobApi contract tests', () => {
     expect(axiosInstance.post).toHaveBeenCalledWith('/job/batch', { jobs });
     expect(result).toEqual(resultPayload);
   });
+
+  it('batchImportJobsApi should chunk jobs payload by 100 and aggregate results', async () => {
+    vi.mocked(axiosInstance.post)
+      .mockResolvedValueOnce({
+        data: { result: true, data: { success: true, importedCount: 100, errors: [] } },
+      })
+      .mockResolvedValueOnce({
+        data: { result: true, data: { success: false, importedCount: 50, errors: [{ job_code: 'J151', message: 'Fail' }] } },
+      });
+
+    const jobs = Array.from({ length: 150 }, (_, i) => ({
+      job_code: `J${i + 1}`,
+      project: `Project ${i + 1}`,
+    }));
+
+    const result = await batchImportJobsApi(jobs);
+
+    expect(axiosInstance.post).toHaveBeenCalledTimes(2);
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(1, '/job/batch', { jobs: jobs.slice(0, 100) });
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(2, '/job/batch', { jobs: jobs.slice(100, 150) });
+
+    expect(result).toEqual({
+      success: false,
+      importedCount: 150,
+      errors: [{ job_code: 'J151', message: 'Fail' }],
+    });
+  });
 });

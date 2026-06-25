@@ -1,11 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import axiosInstance from '@/config/axiosInstance';
-import { updateCandidateApi } from '../candidateApi';
+import { updateCandidateApi, batchImportCandidatesApi } from '../candidateApi';
 
 vi.mock('@/config/axiosInstance', () => {
   return {
     default: {
       put: vi.fn(),
+      post: vi.fn(),
     },
   };
 });
@@ -66,5 +67,32 @@ describe('candidateApi tests', () => {
     expect(entries.targeted_company).toBe('');
     expect(entries.reference).toBe('null');
     expect(result).toEqual(mockCandidate);
+  });
+
+  it('batchImportCandidatesApi should post candidates payload and chunk by 100', async () => {
+    vi.mocked(axiosInstance.post)
+      .mockResolvedValueOnce({
+        data: { result: true, data: { success: true, importedCount: 100, errors: [] } },
+      })
+      .mockResolvedValueOnce({
+        data: { result: true, data: { success: false, importedCount: 50, errors: [{ candidate_name: 'Cand 151', message: 'Fail' }] } },
+      });
+
+    const candidates = Array.from({ length: 150 }, (_, i) => ({
+      candidate_name: `Cand ${i + 1}`,
+      status: 'CV Sent',
+    }));
+
+    const result = await batchImportCandidatesApi(candidates);
+
+    expect(axiosInstance.post).toHaveBeenCalledTimes(2);
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(1, '/candidate/batch', { candidates: candidates.slice(0, 100) });
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(2, '/candidate/batch', { candidates: candidates.slice(100, 150) });
+
+    expect(result).toEqual({
+      success: false,
+      importedCount: 150,
+      errors: [{ candidate_name: 'Cand 151', message: 'Fail' }],
+    });
   });
 });

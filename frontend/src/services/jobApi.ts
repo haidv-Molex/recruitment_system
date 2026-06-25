@@ -173,8 +173,37 @@ export interface BatchImportResult {
 }
 
 export async function batchImportJobsApi(jobs: any[]): Promise<BatchImportResult> {
-  const response = await axiosInstance.post('/job/batch', { jobs });
-  return response.data.data;
+  const chunkSize = 100;
+  let totalImportedCount = 0;
+  let aggregatedErrors: any[] = [];
+  let overallSuccess = true;
+
+  if (jobs.length === 0) {
+    return {
+      success: true,
+      importedCount: 0,
+      errors: [],
+    };
+  }
+
+  for (let i = 0; i < jobs.length; i += chunkSize) {
+    const chunk = jobs.slice(i, i + chunkSize);
+    const response = await axiosInstance.post('/job/batch', { jobs: chunk });
+    const resultData = response.data.data;
+    totalImportedCount += resultData.importedCount;
+    if (resultData.errors && resultData.errors.length > 0) {
+      aggregatedErrors = aggregatedErrors.concat(resultData.errors);
+    }
+    if (!resultData.success) {
+      overallSuccess = false;
+    }
+  }
+
+  return {
+    success: overallSuccess,
+    importedCount: totalImportedCount,
+    errors: aggregatedErrors,
+  };
 }
 
 export async function downloadIdlTrackingSheetApi(): Promise<void> {

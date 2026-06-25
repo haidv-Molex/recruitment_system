@@ -276,8 +276,37 @@ export async function downloadDatabaseSheetApi(): Promise<void> {
 }
 
 export async function batchImportCandidatesApi(candidates: any[]): Promise<any> {
-  const response = await axiosInstance.post('/candidate/batch', { candidates });
-  return response.data.data;
+  const chunkSize = 100;
+  let totalImportedCount = 0;
+  let aggregatedErrors: any[] = [];
+  let overallSuccess = true;
+
+  if (candidates.length === 0) {
+    return {
+      success: true,
+      importedCount: 0,
+      errors: [],
+    };
+  }
+
+  for (let i = 0; i < candidates.length; i += chunkSize) {
+    const chunk = candidates.slice(i, i + chunkSize);
+    const response = await axiosInstance.post('/candidate/batch', { candidates: chunk });
+    const resultData = response.data.data;
+    totalImportedCount += resultData.importedCount;
+    if (resultData.errors && resultData.errors.length > 0) {
+      aggregatedErrors = aggregatedErrors.concat(resultData.errors);
+    }
+    if (!resultData.success) {
+      overallSuccess = false;
+    }
+  }
+
+  return {
+    success: overallSuccess,
+    importedCount: totalImportedCount,
+    errors: aggregatedErrors,
+  };
 }
 
 export async function parseCVApi(file: File): Promise<any> {
