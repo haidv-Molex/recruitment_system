@@ -277,7 +277,8 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
   }, [loadJobsFromApi, currentPage, pageSize, activeSearchParams]);
 
   const handleImportJobsBatch = async (
-    parsedJobs: any[]
+    parsedJobs: any[],
+    onProgress?: (current: number) => void
   ): Promise<{ success: boolean; importedCount: number; errors: any[] }> => {
     const splitByIdExists = (items: any[]) => {
       const ids: number[] = [];
@@ -352,7 +353,9 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
     });
 
     try {
-      const result = await batchImportJobsApi(jobsPayload);
+      const result = await batchImportJobsApi(jobsPayload, (processedCount) => {
+        onProgress?.(Math.min(processedCount, parsedJobs.length));
+      });
       if (result.success) {
         toast.success(`Imported ${result.importedCount} jobs successfully!`);
       } else {

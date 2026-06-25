@@ -68,30 +68,38 @@ describe('candidateApi tests', () => {
     expect(result).toEqual(mockCandidate);
   });
 
-  it('batchImportCandidatesApi should post candidates payload and chunk by 100', async () => {
+  it('batchImportCandidatesApi should post candidates payload, chunk by 10, and report progress', async () => {
     vi.mocked(axiosInstance.post)
       .mockResolvedValueOnce({
-        data: { result: true, data: { success: true, importedCount: 100, errors: [] } },
+        data: { result: true, data: { success: true, importedCount: 10, errors: [] } },
       })
       .mockResolvedValueOnce({
-        data: { result: true, data: { success: false, importedCount: 50, errors: [{ candidate_name: 'Cand 151', message: 'Fail' }] } },
+        data: { result: true, data: { success: true, importedCount: 10, errors: [] } },
+      })
+      .mockResolvedValueOnce({
+        data: { result: true, data: { success: false, importedCount: 4, errors: [{ candidate_name: 'Cand 25', message: 'Fail' }] } },
       });
 
-    const candidates = Array.from({ length: 150 }, (_, i) => ({
+    const candidates = Array.from({ length: 25 }, (_, i) => ({
       candidate_name: `Cand ${i + 1}`,
       status: 'CV Sent',
     }));
+    const onProgress = vi.fn();
 
-    const result = await batchImportCandidatesApi(candidates);
+    const result = await batchImportCandidatesApi(candidates, onProgress);
 
-    expect(axiosInstance.post).toHaveBeenCalledTimes(2);
-    expect(axiosInstance.post).toHaveBeenNthCalledWith(1, '/candidate/batch', { candidates: candidates.slice(0, 100) });
-    expect(axiosInstance.post).toHaveBeenNthCalledWith(2, '/candidate/batch', { candidates: candidates.slice(100, 150) });
+    expect(axiosInstance.post).toHaveBeenCalledTimes(3);
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(1, '/candidate/batch', { candidates: candidates.slice(0, 10) });
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(2, '/candidate/batch', { candidates: candidates.slice(10, 20) });
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(3, '/candidate/batch', { candidates: candidates.slice(20, 25) });
+    expect(onProgress).toHaveBeenNthCalledWith(1, 10);
+    expect(onProgress).toHaveBeenNthCalledWith(2, 20);
+    expect(onProgress).toHaveBeenNthCalledWith(3, 25);
 
     expect(result).toEqual({
       success: false,
-      importedCount: 150,
-      errors: [{ candidate_name: 'Cand 151', message: 'Fail' }],
+      importedCount: 24,
+      errors: [{ candidate_name: 'Cand 25', message: 'Fail' }],
     });
   });
 });

@@ -160,30 +160,38 @@ describe('jobApi contract tests', () => {
     expect(result).toEqual(resultPayload);
   });
 
-  it('batchImportJobsApi should chunk jobs payload by 100 and aggregate results', async () => {
+  it('batchImportJobsApi should chunk jobs payload by 10, aggregate results, and report progress', async () => {
     vi.mocked(axiosInstance.post)
       .mockResolvedValueOnce({
-        data: { result: true, data: { success: true, importedCount: 100, errors: [] } },
+        data: { result: true, data: { success: true, importedCount: 10, errors: [] } },
       })
       .mockResolvedValueOnce({
-        data: { result: true, data: { success: false, importedCount: 50, errors: [{ job_code: 'J151', message: 'Fail' }] } },
+        data: { result: true, data: { success: true, importedCount: 10, errors: [] } },
+      })
+      .mockResolvedValueOnce({
+        data: { result: true, data: { success: false, importedCount: 4, errors: [{ job_code: 'J25', message: 'Fail' }] } },
       });
 
-    const jobs = Array.from({ length: 150 }, (_, i) => ({
+    const jobs = Array.from({ length: 25 }, (_, i) => ({
       job_code: `J${i + 1}`,
       project: `Project ${i + 1}`,
     }));
+    const onProgress = vi.fn();
 
-    const result = await batchImportJobsApi(jobs);
+    const result = await batchImportJobsApi(jobs, onProgress);
 
-    expect(axiosInstance.post).toHaveBeenCalledTimes(2);
-    expect(axiosInstance.post).toHaveBeenNthCalledWith(1, '/job/batch', { jobs: jobs.slice(0, 100) });
-    expect(axiosInstance.post).toHaveBeenNthCalledWith(2, '/job/batch', { jobs: jobs.slice(100, 150) });
+    expect(axiosInstance.post).toHaveBeenCalledTimes(3);
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(1, '/job/batch', { jobs: jobs.slice(0, 10) });
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(2, '/job/batch', { jobs: jobs.slice(10, 20) });
+    expect(axiosInstance.post).toHaveBeenNthCalledWith(3, '/job/batch', { jobs: jobs.slice(20, 25) });
+    expect(onProgress).toHaveBeenNthCalledWith(1, 10);
+    expect(onProgress).toHaveBeenNthCalledWith(2, 20);
+    expect(onProgress).toHaveBeenNthCalledWith(3, 25);
 
     expect(result).toEqual({
       success: false,
-      importedCount: 150,
-      errors: [{ job_code: 'J151', message: 'Fail' }],
+      importedCount: 24,
+      errors: [{ job_code: 'J25', message: 'Fail' }],
     });
   });
 });

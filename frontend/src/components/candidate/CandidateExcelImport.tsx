@@ -15,7 +15,10 @@ const STEPS = {
 };
 
 export interface CandidateExcelImportProps {
-  onImportBatch?: (candidates: any[]) => Promise<{ success: boolean; importedCount: number; errors: any[] }>;
+  onImportBatch?: (
+    candidates: any[],
+    onProgress?: (current: number) => void
+  ) => Promise<{ success: boolean; importedCount: number; errors: any[] }>;
   onClose: () => void;
 }
 
@@ -93,7 +96,14 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
 
     if (onImportBatch) {
       try {
-        const result = await onImportBatch(selectedCandidates);
+        const reportProgress = (current: number) => {
+          setImportProgress((prev) => ({
+            ...prev,
+            current: Math.min(Math.max(current, 0), selectedCandidates.length),
+          }));
+        };
+
+        const result = await onImportBatch(selectedCandidates, reportProgress);
         setImportProgress({
           current: result.importedCount + result.errors.length,
           total: selectedCandidates.length,

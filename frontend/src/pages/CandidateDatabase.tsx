@@ -240,10 +240,16 @@ export const CandidateDatabasePage = ({
   };
 
   const handleImportCandidatesBatch = async (
-    parsedCandidates: any[]
+    parsedCandidates: any[],
+    onProgress?: (current: number) => void
   ): Promise<{ success: boolean; importedCount: number; errors: any[] }> => {
     const { candidatesPayload, errors: validationErrors } = mapParsedCandidatesToBatchPayload(parsedCandidates);
+    if (validationErrors.length > 0) {
+      onProgress?.(validationErrors.length);
+    }
+
     if (candidatesPayload.length === 0) {
+      onProgress?.(parsedCandidates.length);
       toast.error('No candidates imported. Please fix invalid email values in the sheet.');
       return {
         success: false,
@@ -253,7 +259,9 @@ export const CandidateDatabasePage = ({
     }
 
     try {
-      const result = await batchImportCandidatesApi(candidatesPayload);
+      const result = await batchImportCandidatesApi(candidatesPayload, (processedCount) => {
+        onProgress?.(Math.min(validationErrors.length + processedCount, parsedCandidates.length));
+      });
       const combinedErrors = [...validationErrors, ...(result.errors || [])];
 
       if (combinedErrors.length === 0) {

@@ -14,7 +14,10 @@ const STEPS = {
 };
 
 export interface JobExcelImportProps {
-  onImportBatch: (jobs: any[]) => Promise<{ success: boolean; importedCount: number; errors: any[] }>;
+  onImportBatch: (
+    jobs: any[],
+    onProgress?: (current: number) => void
+  ) => Promise<{ success: boolean; importedCount: number; errors: any[] }>;
   onClose: () => void;
 }
 
@@ -94,7 +97,14 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
     const selectedJobs = indicesToImport.map(idx => parsedJobs[idx]);
 
     try {
-      const result = await onImportBatch(selectedJobs);
+      const reportProgress = (current: number) => {
+        setImportProgress((prev) => ({
+          ...prev,
+          current: Math.min(Math.max(current, 0), selectedJobs.length),
+        }));
+      };
+
+      const result = await onImportBatch(selectedJobs, reportProgress);
       setImportProgress({
         current: result.importedCount + result.errors.length,
         total: selectedJobs.length,

@@ -172,8 +172,13 @@ export interface BatchImportResult {
   errors: Array<{ job_code: string; message: string }>;
 }
 
-export async function batchImportJobsApi(jobs: any[]): Promise<BatchImportResult> {
-  const chunkSize = 100;
+const BATCH_IMPORT_CHUNK_SIZE = 10;
+
+export async function batchImportJobsApi(
+  jobs: any[],
+  onProgress?: (processedCount: number) => void
+): Promise<BatchImportResult> {
+  const chunkSize = BATCH_IMPORT_CHUNK_SIZE;
   let totalImportedCount = 0;
   let aggregatedErrors: any[] = [];
   let overallSuccess = true;
@@ -197,6 +202,7 @@ export async function batchImportJobsApi(jobs: any[]): Promise<BatchImportResult
     if (!resultData.success) {
       overallSuccess = false;
     }
+    onProgress?.(Math.min(i + chunk.length, jobs.length));
   }
 
   return {

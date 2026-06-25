@@ -272,8 +272,13 @@ export async function downloadDatabaseSheetApi(): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-export async function batchImportCandidatesApi(candidates: any[]): Promise<any> {
-  const chunkSize = 100;
+const BATCH_IMPORT_CHUNK_SIZE = 10;
+
+export async function batchImportCandidatesApi(
+  candidates: any[],
+  onProgress?: (processedCount: number) => void
+): Promise<any> {
+  const chunkSize = BATCH_IMPORT_CHUNK_SIZE;
   let totalImportedCount = 0;
   let aggregatedErrors: any[] = [];
   let overallSuccess = true;
@@ -297,6 +302,7 @@ export async function batchImportCandidatesApi(candidates: any[]): Promise<any> 
     if (!resultData.success) {
       overallSuccess = false;
     }
+    onProgress?.(Math.min(i + chunk.length, candidates.length));
   }
 
   return {
