@@ -36,12 +36,14 @@ export default function DashboardTable<T>({
                 {columns.map((col, idx) => (
                   <th
                     key={idx}
-                    className={`sticky top-0 bg-slate-50 px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200 z-10 whitespace-nowrap ${
+                    className={`sticky top-0 bg-slate-50 px-2 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200 z-10 whitespace-nowrap overflow-hidden text-ellipsis ${
                       col.headerClassName || 'text-left'
                     }`}
                     style={{ width: col.width, backgroundColor: '#f8fafc' }}
                   >
-                    {col.header}
+                    <div className="min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                      {col.header}
+                    </div>
                   </th>
                 ))}
               </tr>
@@ -55,10 +57,12 @@ export default function DashboardTable<T>({
                 {columns.map((col, cIdx) => (
                   <td
                     key={cIdx}
-                    className={`px-2 py-1.5 align-middle whitespace-nowrap ${col.cellClassName || ''}`}
+                    className={`px-2 py-1.5 align-middle whitespace-nowrap overflow-hidden text-ellipsis ${col.cellClassName || ''}`}
                     style={{ width: col.width }}
                   >
-                    {col.renderCell(item, idx)}
+                    <div className="min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                      {col.renderCell(item, idx)}
+                    </div>
                   </td>
                 ))}
               </tr>
@@ -78,10 +82,12 @@ export default function DashboardTable<T>({
               {columns.map((col, idx) => (
                 <td
                   key={idx}
-                  className={`sticky bottom-0 bg-slate-50 px-2 py-1.5 align-middle border-t border-slate-200 z-10 ${col.cellClassName || ''}`}
+                  className={`sticky bottom-0 bg-slate-50 px-2 py-1.5 align-middle border-t border-slate-200 z-10 overflow-hidden text-ellipsis ${col.cellClassName || ''}`}
                   style={{ width: col.width }}
                 >
-                  {col.renderFooter ? col.renderFooter(data) : null}
+                  <div className="min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                    {col.renderFooter ? col.renderFooter(data) : null}
+                  </div>
                 </td>
               ))}
             </tr>
