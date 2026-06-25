@@ -6,8 +6,8 @@
  * Request Fields:
  * - candidate_code (string, optional): Mã ứng viên
  * - candidate_name (string, required): Tên ứng viên
- * - candidate_email (string, optional): Email ứng viên
- * - candidate_phone (string, optional): Số điện thoại ứng viên
+ * - candidate_email (string, optional): Email ứng viên (ít nhất một trong email hoặc phone phải có)
+ * - candidate_phone (string, optional): Số điện thoại ứng viên (ít nhất một trong email hoặc phone phải có)
  * - agency (string, optional): Agency tuyển dụng
  * - offer_date (string/date, optional): Ngày gửi offer (định dạng YYYY-MM-DD hoặc ISO)
  * - onboard_date (string/date, optional): Ngày nhận việc thực tế
@@ -47,10 +47,8 @@ const bodySchema = Joi.object({
     "string.base": "Tên ứng viên phải là chuỗi",
     "string.max": "Tên ứng viên không được vượt quá 255 ký tự"
   }),
-  candidate_email: Joi.string().email().max(255).required().messages({
-    "any.required": "Email ứng viên là bắt buộc",
+  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.base": "Email ứng viên phải là chuỗi",
-    "string.empty": "Email ứng viên là bắt buộc",
     "string.email": "Email không hợp lệ",
     "string.max": "Email không được vượt quá 255 ký tự"
   }),
@@ -107,6 +105,13 @@ const bodySchema = Joi.object({
     "number.integer": "Reference ID phải là số nguyên"
   }),
   candidate_levels: numberArray().optional()
+}).custom((value, helpers) => {
+  if (!value.candidate_email && !value.candidate_phone) {
+    return helpers.error('any.custom', { message: 'Phải cung cấp ít nhất Email hoặc Số điện thoại ứng viên' });
+  }
+  return value;
+}).messages({
+  "any.custom": "{{#message}}"
 });
 
 createCandidateController.post("",
@@ -117,7 +122,7 @@ createCandidateController.post("",
     const candidateData = {
       candidate_code: req.body.candidate_code,
       candidate_name: req.body.candidate_name ? req.body.candidate_name.trim() : null,
-      candidate_email: req.body.candidate_email.trim(),
+      candidate_email: req.body.candidate_email ? req.body.candidate_email.trim() : null,
       candidate_phone: req.body.candidate_phone,
       agency: req.body.agency,
       offer_date: req.body.offer_date,

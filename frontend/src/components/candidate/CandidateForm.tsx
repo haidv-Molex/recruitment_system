@@ -185,11 +185,11 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
     e.preventDefault();
     setError('');
 
-    if (!formData.candidateEmail.trim()) {
-      setError('Email is required.');
+    if (!formData.candidateEmail.trim() && !formData.candidatePhone.trim()) {
+      setError('Phải cung cấp ít nhất Email hoặc Số điện thoại ứng viên.');
       return;
     }
-    if (!emailRegex.test(formData.candidateEmail)) {
+    if (formData.candidateEmail.trim() && !emailRegex.test(formData.candidateEmail)) {
       setError('Email format is invalid.');
       return;
     }

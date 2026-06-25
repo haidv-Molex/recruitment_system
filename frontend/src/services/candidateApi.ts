@@ -6,7 +6,7 @@ export async function createCandidateApi(formData: any): Promise<candidateModel>
   const fd = new FormData();
 
   // Required fields
-  fd.append('candidate_email', formData.candidateEmail);
+  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
   fd.append('candidate_code', formData.candidateCode);
 
   // Optional text fields
@@ -139,7 +139,7 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
   const fd = new FormData();
 
   // Required fields
-  fd.append('candidate_email', formData.candidateEmail);
+  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
   fd.append('candidate_code', formData.candidateCode);
 
   // Optional text fields

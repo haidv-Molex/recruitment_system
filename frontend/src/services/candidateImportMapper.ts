@@ -12,7 +12,7 @@ export interface CandidateBatchImportPayload {
   candidate_name: string | null;
   status: string;
   candidate_code: string | null;
-  candidate_email: string;
+  candidate_email: string | null;
   candidate_phone: string | null;
   agency: string | null;
   offer_date: string | null;

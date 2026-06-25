@@ -29,7 +29,7 @@ const updateBodySchema = Joi.object({
   candidate_name: Joi.string().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.base": "Tên ứng viên phải là chuỗi"
   }),
-  candidate_email: Joi.string().email().max(255).optional().messages({
+  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.email": "Email không hợp lệ"
   }),
   candidate_phone: Joi.string().trim().max(50).pattern(phoneNumberPattern).empty(["", "null"]).allow(null).optional().messages({

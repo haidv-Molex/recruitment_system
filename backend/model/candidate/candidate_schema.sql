@@ -2,7 +2,7 @@ CREATE TABLE candidate (
     candidate_id SERIAL PRIMARY KEY,
     candidate_code VARCHAR(255),
     candidate_name VARCHAR(255),
-    candidate_email VARCHAR(255) NOT NULL,
+    candidate_email VARCHAR(255),
     candidate_phone VARCHAR(50),
     agency VARCHAR(255),
     offer_date DATE,
@@ -24,7 +24,8 @@ CREATE TABLE candidate (
     FOREIGN KEY (job_id) REFERENCES job(job_id) ON DELETE SET NULL,
     FOREIGN KEY (targeted_company) REFERENCES company(company_id) ON DELETE SET NULL,
     FOREIGN KEY (reference) REFERENCES "user"(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (file_id) REFERENCES file(file_id) ON DELETE SET NULL
+    FOREIGN KEY (file_id) REFERENCES file(file_id) ON DELETE SET NULL,
+    CONSTRAINT candidate_email_or_phone_required CHECK (candidate_email IS NOT NULL OR candidate_phone IS NOT NULL)
 );
 
 CREATE TRIGGER set_updated_at_candidate
@@ -54,7 +55,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE UNIQUE INDEX candidate_candidate_code_unique_idx ON candidate (LOWER(TRIM(candidate_code)));
 
-CREATE UNIQUE INDEX candidate_candidate_email_unique_idx ON candidate (LOWER(TRIM(candidate_email)));
+CREATE UNIQUE INDEX candidate_candidate_email_unique_idx ON candidate (LOWER(TRIM(candidate_email))) WHERE candidate_email IS NOT NULL;
 
 CREATE TRIGGER set_default_candidate_code_before_insert
 BEFORE INSERT ON candidate

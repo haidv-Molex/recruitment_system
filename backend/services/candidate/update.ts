@@ -8,7 +8,7 @@ import { replaceLinkRows } from "@utilities/db/linking";
 export interface UpdateCandidateInput {
   candidate_code?: string | null;
   candidate_name?: string | null;
-  candidate_email?: string;
+  candidate_email?: string | null;
   candidate_phone?: string | null;
   agency?: string | null;
   offer_date?: string | Date | null;

@@ -476,7 +476,7 @@ describe("CandidateController API", () => {
     ]);
   });
 
-  it("POST /candidate/batch - should reject blank email", async () => {
+  it("POST /candidate/batch - should reject when both email and phone are blank", async () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
@@ -500,7 +500,7 @@ describe("CandidateController API", () => {
           errors: [
             {
               candidate_name: "No Email Candidate",
-              message: "Email ứng viên không được để trống"
+              message: "Phải cung cấp ít nhất Email hoặc Số điện thoại ứng viên"
             }
           ]
         }
@@ -566,5 +566,81 @@ describe("CandidateController API", () => {
       });
 
     expectLocal(batchImportStub.notCalled).to.be.true;
+  });
+
+  it("POST /candidate/batch - should allow null email when phone is provided", async () => {
+    const mockResult = { success: true, importedCount: 1, errors: [] };
+    batchImportStub.resolves(mockResult);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "Phone Only Candidate",
+            status: "CV Sent",
+            candidate_phone: "0123456789",
+          }
+        ]
+      })
+      .expectStatus(200)
+      .expectJsonLike({
+        result: true,
+        data: {
+          success: true,
+          importedCount: 1,
+        }
+      });
+
+    expectLocal(batchImportStub.calledOnce).to.be.true;
+  });
+
+  it("POST /candidate - should allow null email when phone is provided", async () => {
+    const mockCandidate = {
+      candidate_id: 2,
+      candidate_name: "Phone Only",
+      candidate_phone: "+084.123.456",
+      status: "CV Sent",
+      create_at: new Date(),
+      update_at: new Date()
+    };
+    createStub.resolves(mockCandidate);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        candidate_name: "Phone Only",
+        candidate_phone: "+084.123.456",
+        status: "CV Sent"
+      })
+      .expectStatus(201);
+
+    expectLocal(createStub.calledOnce).to.be.true;
+    const args = createStub.firstCall.args[0];
+    expectLocal(args.candidate_email).to.be.null;
+    expectLocal(args.candidate_phone).to.equal("+084.123.456");
+  });
+
+  it("POST /candidate - should reject when both email and phone are missing", async () => {
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withMultiPartFormData({
+        candidate_name: "No Contact",
+        status: "CV Sent"
+      })
+      .expectStatus(400)
+      .expectJsonLike({
+        result: false,
+        details: ["Phải cung cấp ít nhất Email hoặc Số điện thoại ứng viên"]
+      });
   });
 });

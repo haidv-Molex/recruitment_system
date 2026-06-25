@@ -20,7 +20,7 @@ import { create, CreateCandidateInput } from "@services/candidate/create";
  */
 export interface CreateCandidateWithAllInput {
   // Trường bắt buộc
-  candidate_email: string;
+  candidate_email: string | null;
   status: string;
 
   // Trường tùy chọn – scalar

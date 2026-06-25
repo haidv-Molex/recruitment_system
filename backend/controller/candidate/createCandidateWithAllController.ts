@@ -43,10 +43,8 @@ const bodySchema = Joi.object({
   candidate_code: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Mã ứng viên không được vượt quá 255 ký tự",
   }),
-  candidate_email: Joi.string().email().max(255).required().messages({
-    "any.required": "Email ứng viên là bắt buộc",
+  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.base": "Email ứng viên phải là chuỗi",
-    "string.empty": "Email ứng viên là bắt buộc",
     "string.email": "Email không hợp lệ",
     "string.max": "Email không được vượt quá 255 ký tự",
   }),
@@ -117,6 +115,13 @@ const bodySchema = Joi.object({
     "string.max": "Tên công ty đích không được vượt quá 255 ký tự",
   }),
   candidate_levels_name: stringArray().optional(),
+}).custom((value, helpers) => {
+  if (!value.candidate_email && !value.candidate_phone) {
+    return helpers.error('any.custom', { message: 'Phải cung cấp ít nhất Email hoặc Số điện thoại ứng viên' });
+  }
+  return value;
+}).messages({
+  "any.custom": "{{#message}}"
 });
 
 createCandidateWithAllController.post(
@@ -137,7 +142,7 @@ createCandidateWithAllController.post(
           candidate_name: body.candidate_name ? body.candidate_name.trim() : null,
           status: body.status.trim(),
           candidate_code: body.candidate_code,
-          candidate_email: body.candidate_email.trim(),
+          candidate_email: body.candidate_email ? body.candidate_email.trim() : null,
           candidate_phone: body.candidate_phone,
           agency: body.agency,
           offer_date: body.offer_date,

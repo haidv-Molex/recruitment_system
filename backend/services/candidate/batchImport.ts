@@ -233,7 +233,7 @@ export async function batchImport(
           {
             ...candidateData,
             candidate_code: candidateCode,
-            candidate_email: candidateEmail!,
+            candidate_email: candidateEmail,
           },
           pool
         );

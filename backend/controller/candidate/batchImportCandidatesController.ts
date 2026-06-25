@@ -16,13 +16,11 @@ const candidateItemSchema = Joi.object({
     "string.empty": "Trạng thái ứng viên không được để trống",
   }),
   candidate_code: Joi.string().max(255).allow("", null).optional(),
-  candidate_email: Joi.string().email().max(255).required().messages({
-    "any.required": "Email ứng viên là bắt buộc",
-    "string.empty": "Email ứng viên không được để trống",
+  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.email": "Email ứng viên không đúng định dạng chuẩn name@example.com",
     "string.max": "Email không được vượt quá 255 ký tự",
   }),
-  candidate_phone: Joi.string().max(50).allow("", null).optional(),
+  candidate_phone: Joi.string().max(50).empty(["", "null"]).allow(null).optional(),
   agency: Joi.string().max(255).allow("", null).optional(),
   offer_date: Joi.date().iso().empty(["", "null"]).allow(null).optional(),
   onboard_date: Joi.date().iso().empty(["", "null"]).allow(null).optional(),
@@ -46,6 +44,13 @@ const candidateItemSchema = Joi.object({
   candidate_levels_name: stringArray().optional(),
   job_code: Joi.string().max(255).allow("", null).optional(),
   project: Joi.string().max(255).allow("", null).optional(),
+}).custom((value, helpers) => {
+  if (!value.candidate_email && !value.candidate_phone) {
+    return helpers.error('any.custom', { message: 'Phải cung cấp ít nhất Email hoặc Số điện thoại ứng viên' });
+  }
+  return value;
+}).messages({
+  "any.custom": "{{#message}}"
 });
 
 const bodySchema = Joi.object({
