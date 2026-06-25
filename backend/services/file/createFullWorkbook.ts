@@ -246,6 +246,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         job_code: string | null;
         platform_name: string | null;
         recruiter_name: string | null;
+        reference_code: string | null;
         reference_name: string | null;
         reference_department: string | null;
         targeted_company_is_set: boolean;
@@ -261,6 +262,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
       j.job_code,
       p.platform_name,
       u.user_name  AS recruiter_name,
+    ref.user_code AS reference_code,
       ref.user_name AS reference_name,
       ref_dept.department_names AS reference_department,
       (c.targeted_company IS NOT NULL) AS targeted_company_is_set,
@@ -374,7 +376,7 @@ async function createFullWorkbook(pool: PoolClient): Promise<ExcelJS.Workbook> {
         expected_onboard_date: row.expected_onboard_date ?? null,
         onboarding_date: row.onboard_date ?? null,
         offer_sent_date: row.offer_date ?? null,
-        employee_code: row.candidate_code ?? null,
+        employee_code: row.reference_code ?? null,
         referrer: row.reference_name ?? null,
         referrer_department: row.reference_department ?? null,
         note: row.note ?? null,
