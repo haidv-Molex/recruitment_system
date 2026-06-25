@@ -79,8 +79,9 @@ export default function JobRelationFields({
               const name = dept.department_name || dept.department_code || 'Unnamed Department';
               const count = dept.candidate_required !== undefined ? dept.candidate_required : 1;
               const user_name = dept.user_name || (dept.user && dept.user.user_name);
+              const user_code = dept.user_code || (dept.user && dept.user.user_code);
               const hrbpLabel = user_name
-                ? `${dept.department_code || ''} - ${user_name}`
+                ? `${dept.department_code || ''} - ${user_code ? `${user_code} - ` : ''}${user_name}`
                 : `${dept.department_code || ''} - Unassigned`;
               return (
                 <div key={key} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm gap-2">
@@ -230,8 +231,8 @@ export default function JobRelationFields({
         placeholder="Search or type a new manager..."
         initialItems={selectedManagers}
         searchApi={(search) => fetchUsersApi({ search })}
-        displayFn={(u: any) => u.user_name || ''}
-        chipDisplayFn={(u: any) => u.user_name || ''}
+        displayFn={(u: any) => u.user_code ? `${u.user_code} - ${u.user_name || ''}` : u.user_name || ''}
+        chipDisplayFn={(u: any) => u.user_code ? `${u.user_code} - ${u.user_name || ''}` : u.user_name || ''}
         keyProp="user_id"
         onChange={(ids, items) => {
           setFormData((prev: any) => ({ ...prev, managers: ids }));
@@ -247,7 +248,7 @@ export default function JobRelationFields({
         placeholder="Search or type a new recruiter..."
         initialItem={selectedRecruiter}
         searchApi={(search) => fetchUsersApi({ search })}
-        displayFn={(u: any) => u.user_name || ''}
+        displayFn={(u: any) => u.user_code ? `${u.user_code} - ${u.user_name || ''}` : u.user_name || ''}
         keyProp="user_id"
         onChange={(id, item) => {
           const numericId = id !== null && id !== undefined && !isNaN(Number(id)) ? Number(id) : null;

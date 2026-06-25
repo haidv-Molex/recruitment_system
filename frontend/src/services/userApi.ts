@@ -3,6 +3,7 @@ import type { userOutputModel } from '@/types/userModel';
 import type { PaginationMetadata } from '@/types/pagination';
 
 export async function createHRApi(body: {
+  code?: string;
   username: string;
   account: string;
   password: string;
@@ -49,6 +50,7 @@ export async function getUserApi(id: number): Promise<userOutputModel> {
 }
 
 export async function createUserApi(body: {
+  code?: string;
   username: string;
   description?: string;
 }): Promise<userOutputModel> {
@@ -59,6 +61,7 @@ export async function createUserApi(body: {
 export async function updateUserApi(
   id: number,
   body: {
+    code?: string | null;
     username?: string;
     description?: string;
   }

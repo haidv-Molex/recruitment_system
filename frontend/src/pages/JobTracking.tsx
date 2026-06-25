@@ -294,7 +294,7 @@ export const JobTrackingPage = ({ jobs, setJobs }: JobTrackingPageProps) => {
         if (idVal !== null && idVal !== undefined) {
           ids.push(idVal);
         } else if (item.name || item.department_name || item.site_name || item.segment_name || item.level_name || item.user_name) {
-          names.push(item.name || item.department_name || item.site_name || item.segment_name || item.level_name || item.user_name);
+          names.push(item.name || item.department_name || item.site_name || item.segment_name || item.level_name || (item.user_code ? `${item.user_code} - ${item.user_name}` : item.user_name));
         }
       });
       return { ids, names };

@@ -111,6 +111,7 @@ export const AdminPage = () => {
     try {
       if (editingUser) {
         await updateUserApi(editingUser.user_id, {
+          code: formData.code.trim() || null,
           username: formData.username.trim(),
           description: formData.description || undefined,
         });
@@ -120,6 +121,7 @@ export const AdminPage = () => {
       } else {
         if (createMode === 'hr') {
           await createHRApi({
+            code: formData.code.trim() || undefined,
             username: formData.username.trim(),
             account: formData.account.trim(),
             password: formData.password,
@@ -128,6 +130,7 @@ export const AdminPage = () => {
           toast.success(`HR account "${formData.account}" created successfully.`);
         } else {
           await createUserApi({
+            code: formData.code.trim() || undefined,
             username: formData.username.trim(),
             description: formData.description || undefined,
           });
@@ -213,6 +216,13 @@ export const AdminPage = () => {
   const columns = useMemo<ExcelColumn<any>[]>(
     () => [
       {
+        key: 'user_code',
+        label: 'Code',
+        width: 120,
+        disableFilter: true,
+        render: (_row: any, val: any) => val || '—',
+      },
+      {
         key: 'user_name',
         label: 'Name',
         width: 220,
@@ -295,6 +305,7 @@ export const AdminPage = () => {
     return users.map((u) => ({
       id: u.user_id,
       user_id: u.user_id,
+      user_code: u.user_code,
       user_name: u.user_name,
       user_description: u.user_description,
       user_role: u.user_role,

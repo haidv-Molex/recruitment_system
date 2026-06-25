@@ -4,17 +4,19 @@ import Button from '../common/Button';
 
 export interface ProfileFormProps {
   user: any;
-  onSubmit: (data: { username: string; description: string }) => void;
+  onSubmit: (data: { code: string; username: string; description: string }) => void;
   message: { text: string; type: string };
   isLoading: boolean;
 }
 
 export default function ProfileForm({ user, onSubmit, message, isLoading }: ProfileFormProps) {
   const [username, setUsername] = useState('');
+  const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
 
   useEffect(() => {
     if (user) {
+      setCode(user.user_code || '');
       setUsername(user.user_name || '');
       setDescription(user.user_description || '');
     }
@@ -22,7 +24,7 @@ export default function ProfileForm({ user, onSubmit, message, isLoading }: Prof
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ username, description });
+    onSubmit({ code, username, description });
   };
 
   return (
@@ -58,6 +60,15 @@ export default function ProfileForm({ user, onSubmit, message, isLoading }: Prof
           </span>
         </div>
       </div>
+
+      <InputField
+        label="Code"
+        type="text"
+        placeholder="Enter optional user code..."
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        disabled={isLoading}
+      />
 
       <InputField
         label="Display Name"

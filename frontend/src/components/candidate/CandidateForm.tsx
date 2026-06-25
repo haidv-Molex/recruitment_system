@@ -230,7 +230,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
 
   const referenceOptions = [
     { value: '', label: 'None' },
-    ...options.users.map((u) => ({ value: u.user_id, label: u.user_name })),
+    ...options.users.map((u) => ({ value: u.user_id, label: u.user_code ? `${u.user_code} - ${u.user_name}` : u.user_name })),
   ];
 
   const agencyOptions = [
@@ -385,7 +385,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
               placeholder="Search reference user..."
               initialItem={selectedReference}
               searchApi={(search) => fetchUsersApi({ search })}
-              displayFn={(u: any) => u.user_name || ''}
+              displayFn={(u: any) => u.user_code ? `${u.user_code} - ${u.user_name || ''}` : u.user_name || ''}
               keyProp="user_id"
               onChange={(id, item) => {
                 setFormData((prev) => ({ ...prev, referenceId: id || '' }));

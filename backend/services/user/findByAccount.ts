@@ -7,7 +7,7 @@ import assertFirstRow from "@utilities/db/assertFirstRow";
  */
 async function findByAccount(account: string, pool: PoolClient): Promise<userModel> {
   const query = `
-    SELECT user_id, user_name, user_account, user_password, user_description, user_role, create_at, update_at
+    SELECT user_id, user_code, user_name, user_account, user_password, user_description, user_role, create_at, update_at
     FROM "user"
     WHERE user_account = $1
   `;
@@ -15,6 +15,7 @@ async function findByAccount(account: string, pool: PoolClient): Promise<userMod
   const row = assertFirstRow(result.rows, "Tài khoản hoặc mật khẩu không chính xác", 401);
   return {
     user_id: row.user_id,
+    user_code: row.user_code,
     user_name: row.user_name,
     user_account: row.user_account,
     user_password: row.user_password,

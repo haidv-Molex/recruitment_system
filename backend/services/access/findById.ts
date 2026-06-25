@@ -9,6 +9,7 @@ async function findById(accessId: number, pool: PoolClient): Promise<accessOutpu
       a.create_at,
       a.update_at,
       u.user_id,
+      u.user_code,
       u.user_name,
       u.user_description,
       u.user_role,
@@ -35,6 +36,7 @@ async function findById(accessId: number, pool: PoolClient): Promise<accessOutpu
     access_id: row.access_id,
     user: {
       user_id: row.user_id,
+      user_code: row.user_code,
       user_name: row.user_name,
       user_description: row.user_description,
       user_role: row.user_role,

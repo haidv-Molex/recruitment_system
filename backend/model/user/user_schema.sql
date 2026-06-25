@@ -1,5 +1,6 @@
 CREATE TABLE "user" (
     user_id SERIAL PRIMARY KEY,
+    user_code VARCHAR(255),
     user_name VARCHAR(255) NOT NULL,
     user_account VARCHAR(255),
     user_password VARCHAR(255),

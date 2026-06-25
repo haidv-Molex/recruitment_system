@@ -59,8 +59,8 @@ describe('authApi tests', () => {
       data: { result: true, data: mockUser },
     });
 
-    const result = await updateProfileApi('New Name', 'New Description');
-    expect(axiosInstance.put).toHaveBeenCalledWith('/user/profile', { username: 'New Name', description: 'New Description' });
+    const result = await updateProfileApi('U001', 'New Name', 'New Description');
+    expect(axiosInstance.put).toHaveBeenCalledWith('/user/profile', { code: 'U001', username: 'New Name', description: 'New Description' });
     expect(result).toEqual(mockUser);
   });
 

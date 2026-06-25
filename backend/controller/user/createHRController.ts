@@ -10,6 +10,9 @@ import type { userModel } from "@model/user/userModel";
 const createHRController = express.Router();
 
 const bodySchema = Joi.object({
+  code: Joi.string().max(255).optional().allow("", null).messages({
+    "string.max": "Mã người dùng tối đa 255 ký tự"
+  }),
   username: Joi.string().max(255).required().messages({
     "any.required": "Tên người dùng là bắt buộc",
     "string.empty": "Tên người dùng không được để trống",
@@ -44,6 +47,7 @@ createHRController.post("",
 
     const result = await withTransaction(async (pool) => {
       return await User.createHR({
+        code: req.body.code || null,
         username: req.body.username,
         account: req.body.account,
         password: req.body.password,

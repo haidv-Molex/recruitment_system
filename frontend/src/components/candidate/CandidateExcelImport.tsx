@@ -195,7 +195,7 @@ export default function CandidateExcelImport({ onImportBatch, onClose }: Candida
     const isNew = user.user_id === null;
     return (
       <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${colorClass}`}>
-        {user.user_name}
+        {user.user_code ? `${user.user_code} - ${user.user_name}` : user.user_name}
         {isNew && <span className="bg-amber-100 text-amber-700 text-[8px] font-bold px-0.5 rounded ml-0.5">NEW</span>}
       </span>
     );

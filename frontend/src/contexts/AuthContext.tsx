@@ -3,6 +3,7 @@ import { loginApi, logoutApi, changePasswordApi, updateProfileApi, refreshTokenA
 
 export interface AuthUser {
   user_id: number;
+  user_code?: string | null;
   user_name: string;
   user_role: string;
   user_description?: string;
@@ -17,7 +18,7 @@ export interface AuthContextType {
   login: (account: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string }>;
-  updateProfile: (username: string, description: string) => Promise<{ success: boolean; message?: string }>;
+  updateProfile: (code: string, username: string, description: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -121,11 +122,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateProfile = async (username: string, description: string) => {
+  const updateProfile = async (code: string, username: string, description: string) => {
     try {
-      const updatedUser = await updateProfileApi(username, description);
+      const updatedUser = await updateProfileApi(code, username, description);
       const newUserData = {
         ...user,
+        user_code: updatedUser.user_code,
         user_name: updatedUser.user_name,
         user_description: updatedUser.user_description,
         department_id: updatedUser.department?.department_id,

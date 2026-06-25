@@ -251,7 +251,7 @@ export const DepartmentPage = () => {
       department_name: d.department_name,
       department_description: d.department_description,
       user_id: d.user?.user_id || null,
-      hrbp: d.user ? d.user.user_name : null,
+      hrbp: d.user ? (d.user.user_code ? `${d.user.user_code} - ${d.user.user_name}` : d.user.user_name) : null,
     }));
   }, [departments]);
 
@@ -317,7 +317,7 @@ export const DepartmentPage = () => {
               placeholder="Search or enter HRBP..."
               initialItem={selectedUser}
               searchApi={(search) => fetchUsersApi({ search })}
-              displayFn={(u: any) => u.user_name || ''}
+              displayFn={(u: any) => u.user_code ? `${u.user_code} - ${u.user_name || ''}` : u.user_name || ''}
               keyProp="user_id"
               onChange={(_id, item) => {
                 const userId = item ? (item as any).user_id : null;

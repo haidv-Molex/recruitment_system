@@ -8,6 +8,9 @@ import passport from "@middlewares/passport";
 const createUserController = express.Router();
 
 const bodySchema = Joi.object({
+  code: Joi.string().max(255).optional().allow("", null).messages({
+    "string.max": "Mã người dùng tối đa 255 ký tự"
+  }),
   username: Joi.string().max(255).required().messages({
     "any.required": "Tên người dùng là bắt buộc",
     "string.empty": "Tên người dùng không được để trống",
@@ -24,6 +27,7 @@ createUserController.post("",
   async (req, res) => {
     const result = await withTransaction(async (pool) => {
       return await User.create({
+        code: req.body.code || null,
         username: req.body.username,
         description: req.body.description
       }, pool);

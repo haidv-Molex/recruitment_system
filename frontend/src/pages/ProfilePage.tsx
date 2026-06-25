@@ -29,14 +29,14 @@ export const ProfilePage = () => {
     }
   }, [passwordMessage]);
 
-  const handleProfileSubmit = async (data: { username: string; description: string }) => {
+  const handleProfileSubmit = async (data: { code: string; username: string; description: string }) => {
     if (!data.username.trim()) {
       setProfileMessage({ text: 'Display name is required.', type: 'error' });
       return;
     }
 
     setSavingProfile(true);
-    const result = await updateProfile(data.username.trim(), data.description.trim());
+    const result = await updateProfile(data.code.trim(), data.username.trim(), data.description.trim());
 
     if (result.success) {
       setProfileMessage({ text: result.message || 'Profile updated successfully.', type: 'success' });

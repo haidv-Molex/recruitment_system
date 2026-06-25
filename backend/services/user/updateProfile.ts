@@ -10,10 +10,11 @@ import buildUpdateSet from "@utilities/db/buildUpdateSet";
  */
 async function updateProfile(
   userId: number,
-  data: { username?: string; description?: string },
+  data: { code?: string | null; username?: string; description?: string },
   pool: PoolClient
 ): Promise<userOutputModel> {
   const { setClauses, values, nextIndex } = buildUpdateSet([
+    { column: "user_code", value: data.code },
     { column: "user_name", value: data.username },
     { column: "user_description", value: data.description }
   ]);

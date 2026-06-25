@@ -34,7 +34,7 @@ async function getAll(
 
   if (search) {
     values.push(`%${search}%`);
-    conditions.push(`u.user_name ILIKE $${values.length}`);
+    conditions.push(`(u.user_name ILIKE $${values.length} OR u.user_code ILIKE $${values.length})`);
   }
 
   if (role) {

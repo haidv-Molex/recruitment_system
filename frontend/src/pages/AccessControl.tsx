@@ -146,6 +146,13 @@ export const AccessControlPage = () => {
   const columns = useMemo<ExcelColumn<any>[]>(
     () => [
       {
+        key: 'user_code',
+        label: 'Code',
+        width: 120,
+        disableFilter: true,
+        render: (_row: any, val: any) => val || '—',
+      },
+      {
         key: 'user_name',
         label: 'Username',
         width: 180,
@@ -254,6 +261,7 @@ export const AccessControlPage = () => {
       return {
         id: r.access_id,
         access_id: r.access_id,
+        user_code: r.user.user_code,
         user_name: r.user.user_name,
         user_role: r.user.user_role,
         type: isJob ? 'Job' : 'Candidate',
@@ -317,7 +325,7 @@ export const AccessControlPage = () => {
           <div className="space-y-1.5">
             <SingleSearchSelect<any>
               label="Select User"
-              placeholder="Search user by username..."
+              placeholder="Search user by code or username..."
               initialItem={selectedUser}
               searchApi={async (search) => {
                 const res = await fetchUsersApi({ search, limit: 20 });
@@ -325,7 +333,7 @@ export const AccessControlPage = () => {
                 const nonAdmins = (res.data || []).filter((u) => u.user_role !== 'admin');
                 return { data: nonAdmins };
               }}
-              displayFn={(item) => `${item.user_name} (${item.user_role})`}
+              displayFn={(item) => `${item.user_code ? `${item.user_code} - ` : ''}${item.user_name} (${item.user_role})`}
               keyProp="user_id"
               onChange={(_, item) => setSelectedUser(item)}
               required

@@ -6,6 +6,7 @@ import findById from "@services/user/findById";
 import assertFirstRow from "@utilities/db/assertFirstRow";
 
 type CreateHRProps = {
+  code?: string;
   username: string;
   account: string;
   password?: string;
@@ -16,7 +17,7 @@ type CreateHRProps = {
  * Tạo tài khoản mới có vai trò HR.
  */
 async function createHR(props: CreateHRProps, pool: PoolClient): Promise<userOutputModel> {
-  const { username, account, password, description } = props;
+  const { code, username, account, password, description } = props;
 
   if (!username || !account) {
     throw new AppError("Tên người dùng và tài khoản là bắt buộc", 400);
@@ -37,11 +38,12 @@ async function createHR(props: CreateHRProps, pool: PoolClient): Promise<userOut
 
   // Thêm người dùng với vai trò 'hr'
   const insertQuery = `
-    INSERT INTO "user" (user_name, user_account, user_password, user_description, user_role)
-    VALUES ($1, $2, $3, $4, 'hr')
+    INSERT INTO "user" (user_code, user_name, user_account, user_password, user_description, user_role)
+    VALUES ($1, $2, $3, $4, $5, 'hr')
     RETURNING user_id
   `;
   const result = await pool.query(insertQuery, [
+    code || null,
     username,
     account,
     hashedPassword,

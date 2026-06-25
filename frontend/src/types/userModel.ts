@@ -9,6 +9,7 @@ export type departmentModel = {
 
 export type userModel = {
   user_id: number;
+  user_code: string | null;
   user_name: string;
   user_account: string | null;
   user_password: string | null;

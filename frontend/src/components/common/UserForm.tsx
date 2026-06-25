@@ -4,6 +4,7 @@ import InputField from '@/components/common/InputField';
 import Button from '@/components/common/Button';
 
 const emptyUser = {
+  code: '',
   username: '',
   account: '',
   password: '',
@@ -28,6 +29,7 @@ export default function UserForm({ user, accountType = 'hr', onSubmit, onClose, 
   useEffect(() => {
     if (user) {
       setFormData({
+        code: user.user_code || '',
         username: user.user_name || '',
         account: user.user_account || user.user_name || '',
         password: '',
@@ -107,6 +109,16 @@ export default function UserForm({ user, accountType = 'hr', onSubmit, onClose, 
             {error}
           </div>
         )}
+
+        <InputField
+          label="Code"
+          name="code"
+          value={formData.code}
+          onChange={handleChange}
+          placeholder="e.g. U001"
+          disabled={saving}
+          hint="Optional employee or internal user code."
+        />
 
         <InputField
           label="Display Name *"

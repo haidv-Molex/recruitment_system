@@ -35,6 +35,7 @@ export default function AdminTable({ users, currentUser, onEdit, onDelete }: Adm
         <thead className="bg-slate-50 border-b border-slate-200">
           <tr>
             <th className="px-6 py-4 font-semibold text-slate-800">User Name</th>
+            <th className="px-6 py-4 font-semibold text-slate-800">Code</th>
             <th className="px-6 py-4 font-semibold text-slate-800">Account</th>
             <th className="px-6 py-4 font-semibold text-slate-800">Role</th>
             <th className="px-6 py-4 font-semibold text-slate-800">Status</th>
@@ -56,6 +57,7 @@ export default function AdminTable({ users, currentUser, onEdit, onDelete }: Adm
                     )}
                   </div>
                 </td>
+                <td className="px-6 py-4 text-slate-600">{u.user_code || '—'}</td>
                 <td className="px-6 py-4 text-slate-600">{u.user_account}</td>
                 <td className="px-6 py-4">
                   <span

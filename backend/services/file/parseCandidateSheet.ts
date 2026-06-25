@@ -11,6 +11,7 @@ import getRowString from "@utilities/file/getRowString";
 function createUserPlaceholder(name: string): userOutputModel {
   return {
     user_id: null,
+    user_code: null,
     user_name: name,
     user_description: null,
     user_role: null,

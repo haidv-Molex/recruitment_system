@@ -37,6 +37,7 @@ loginController.post("",
         message: info?.message || "Đăng nhập thành công",
         data: {
           user_id: user.user_id,
+          user_code: user.user_code,
           user_name: user.user_name,
           user_account: user.user_account,
           user_role: user.user_role,

@@ -9,6 +9,9 @@ import type { userModel } from "@model/user/userModel";
 const updateProfileController = express.Router();
 
 const bodySchema = Joi.object({
+  code: Joi.string().max(255).optional().allow("", null).messages({
+    "string.max": "Mã người dùng tối đa 255 ký tự"
+  }),
   username: Joi.string().min(1).max(255).optional().messages({
     "string.empty": "Tên người dùng không được để trống",
     "string.min": "Tên người dùng phải từ 1 ký tự trở lên",
@@ -17,8 +20,8 @@ const bodySchema = Joi.object({
   description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả tối đa 255 ký tự"
   })
-}).or("username", "description").messages({
-  "object.missing": "Phải cung cấp ít nhất tên người dùng hoặc mô tả để cập nhật"
+}).or("code", "username", "description").messages({
+  "object.missing": "Phải cung cấp ít nhất mã, tên người dùng hoặc mô tả để cập nhật"
 });
 
 updateProfileController.put("",
@@ -26,10 +29,11 @@ updateProfileController.put("",
   joiValidate(bodySchema, "body"),
   async (req, res) => {
     const user = req.user as userModel;
-    const { username, description } = req.body;
+    const { code, username, description } = req.body;
+    const normalizedCode = code === undefined ? undefined : code || null;
 
     const updatedUser = await withTransaction(async (pool) => {
-      return await User.updateProfile(user.user_id, { username, description }, pool);
+      return await User.updateProfile(user.user_id, { code: normalizedCode, username, description }, pool);
     });
 
     res.status(200).json({

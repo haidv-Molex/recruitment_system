@@ -19,8 +19,9 @@ export async function changePasswordApi(oldPassword: string, newPassword: string
   });
 }
 
-export async function updateProfileApi(username: string, description: string): Promise<userOutputModel> {
+export async function updateProfileApi(code: string, username: string, description: string): Promise<userOutputModel> {
   const response = await axiosInstance.put('/user/profile', {
+    code,
     username,
     description,
   });

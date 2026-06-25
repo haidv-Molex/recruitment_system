@@ -8,7 +8,7 @@ import assertFirstRow from "@utilities/db/assertFirstRow";
 async function findById(userId: number, pool: PoolClient): Promise<userOutputModel> {
   const query = `
     SELECT
-      u.user_id, u.user_name, u.user_description, u.user_role,
+      u.user_id, u.user_code, u.user_name, u.user_description, u.user_role,
       u.create_at, u.update_at
     FROM "user" u
     WHERE u.user_id = $1
@@ -17,6 +17,7 @@ async function findById(userId: number, pool: PoolClient): Promise<userOutputMod
   const row = assertFirstRow(result.rows, "Không tìm thấy người dùng", 404);
   return {
     user_id: row.user_id,
+    user_code: row.user_code,
     user_name: row.user_name,
     user_description: row.user_description,
     user_role: row.user_role,

@@ -20,6 +20,9 @@ const querySchema = Joi.object({
 });
 
 const bodySchema = Joi.object({
+  code: Joi.string().max(255).optional().allow("", null).messages({
+    "string.max": "Mã người dùng tối đa 255 ký tự"
+  }),
   username: Joi.string().min(1).max(255).optional().messages({
     "string.empty": "Tên người dùng không được để trống",
     "string.min": "Tên người dùng phải từ 1 ký tự trở lên",
@@ -28,8 +31,8 @@ const bodySchema = Joi.object({
   description: Joi.string().max(255).optional().allow("").messages({
     "string.max": "Mô tả tối đa 255 ký tự"
   })
-}).or("username", "description").messages({
-  "object.missing": "Phải cung cấp ít nhất tên người dùng hoặc mô tả để cập nhật"
+}).or("code", "username", "description").messages({
+  "object.missing": "Phải cung cấp ít nhất mã, tên người dùng hoặc mô tả để cập nhật"
 });
 
 updateUserController.put("",
@@ -39,7 +42,8 @@ updateUserController.put("",
   async (req, res) => {
     const requestor = req.user as userOutputModel;
     const targetUserId = parseInt(req.query.id as string, 10);
-    const { username, description } = req.body;
+    const { code, username, description } = req.body;
+    const normalizedCode = code === undefined ? undefined : code || null;
 
     const updatedUser = await withTransaction(async (pool) => {
       // 1. Tìm thông tin user cần cập nhật và kiểm tra role
@@ -50,7 +54,7 @@ updateUserController.put("",
       }
 
       // 2. Tiến hành cập nhật
-      return await User.updateProfile(targetUserId, { username, description }, pool);
+      return await User.updateProfile(targetUserId, { code: normalizedCode, username, description }, pool);
     });
 
     res.status(200).json({

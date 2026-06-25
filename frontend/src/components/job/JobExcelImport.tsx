@@ -232,7 +232,7 @@ export default function JobExcelImport({ onImportBatch, onClose }: JobExcelImpor
           const isNew = item.id === null || item.department_id === null || item.site_id === null || item.segment_id === null || item.level_id === null || item.user_id === null;
           return (
             <span key={i} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles}`}>
-              {item.department_code || item.site_code || item.level_code || item.segment_code || item.code || item.department_name || item.site_name || item.level_name || item.segment_name || item.user_name || item.name}
+              {item.department_code || item.site_code || item.level_code || item.segment_code || item.code || item.department_name || item.site_name || item.level_name || item.segment_name || (item.user_code ? `${item.user_code} - ${item.user_name}` : item.user_name) || item.name}
               {isNew && <span className="bg-amber-100 text-amber-700 text-[8px] font-bold px-0.5 rounded ml-0.5">NEW</span>}
             </span>
           );
