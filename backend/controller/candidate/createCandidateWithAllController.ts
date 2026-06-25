@@ -40,9 +40,6 @@ const bodySchema = Joi.object({
   }),
 
   // --- Trường scalar tùy chọn (giống createCandidateController) ---
-  candidate_code: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
-    "string.max": "Mã ứng viên không được vượt quá 255 ký tự",
-  }),
   candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.base": "Email ứng viên phải là chuỗi",
     "string.email": "Email không hợp lệ",
@@ -141,7 +138,6 @@ createCandidateWithAllController.post(
         {
           candidate_name: body.candidate_name ? body.candidate_name.trim() : null,
           status: body.status.trim(),
-          candidate_code: body.candidate_code,
           candidate_email: body.candidate_email ? body.candidate_email.trim() : null,
           candidate_phone: body.candidate_phone,
           agency: body.agency,

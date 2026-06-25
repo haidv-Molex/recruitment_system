@@ -77,9 +77,8 @@ describe("Candidate create service", () => {
     const feedbackDate = new Date("2026-05-28T00:00:00.000Z");
 
     const candidateData = {
-      candidate_code: "V14073",
       candidate_name: "Hải",
-      candidate_email: "haidv28062004@gmail.com",
+      candidate_email: "candidate.create.full@example.com",
       candidate_phone: "0868177137",
       agency: "AsiaHr",
       offer_date: offerDate,
@@ -102,9 +101,9 @@ describe("Candidate create service", () => {
 
     expect(result).to.not.be.null;
     expect(result.candidate_id).to.be.a("number");
-    expect(result.candidate_code).to.equal("V14073");
+    expect(result.candidate_code).to.equal("C" + String(result.candidate_id).padStart(5, "0"));
     expect(result.candidate_name).to.equal("Hải");
-    expect(result.candidate_email).to.equal("haidv28062004@gmail.com");
+    expect(result.candidate_email).to.equal("candidate.create.full@example.com");
     expect(result.candidate_phone).to.equal("0868177137");
     expect(result.agency).to.equal("AsiaHr");
     

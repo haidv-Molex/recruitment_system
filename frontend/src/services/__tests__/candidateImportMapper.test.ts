@@ -36,7 +36,6 @@ describe('candidateImportMapper', () => {
       candidate_name: 'Nguyen Van A',
       candidate_email: 'candidate@example.com',
       candidate_phone: '0903442885',
-      candidate_code: 'V6222',
       status: 'CV Sent',
       platform_name: 'Vietnamworks Job Post',
       candidate_levels_name: ['Engineer', 'Professional'],
@@ -45,6 +44,7 @@ describe('candidateImportMapper', () => {
       job_code: 'J001',
       project: 'DSS Talent Connector',
     });
+    expect(result.payload).not.toHaveProperty('candidate_code');
     expect(result.payload?.offer_date).toBe('2025-08-22');
     expect(result.payload?.onboard_date).toBe('2025-09-15');
     expect(result.payload?.feedback_date).toBe('2025-08-21');
@@ -90,7 +90,6 @@ describe('candidateImportMapper', () => {
 
     expect(result.error).toBeNull();
     expect(result.payload).toMatchObject({
-      candidateCode: 'V6222',
       candidateName: 'Nguyen Van A',
       candidateEmail: 'candidate@example.com',
       platformName: 'Vietnamworks Job Post',
@@ -100,5 +99,6 @@ describe('candidateImportMapper', () => {
       jobCode: 'J001',
       project: 'DSS Talent Connector',
     });
+    expect(result.payload).not.toHaveProperty('candidateCode');
   });
 });

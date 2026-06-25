@@ -1,6 +1,6 @@
 CREATE TABLE candidate (
     candidate_id SERIAL PRIMARY KEY,
-    candidate_code VARCHAR(255),
+    candidate_code VARCHAR(255) NOT NULL,
     candidate_name VARCHAR(255),
     candidate_email VARCHAR(255),
     candidate_phone VARCHAR(50),
@@ -40,14 +40,11 @@ FOR EACH ROW EXECUTE FUNCTION process_audit_log();
 CREATE OR REPLACE FUNCTION set_default_candidate_code()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.candidate_code IS NULL OR TRIM(NEW.candidate_code) = '' THEN
-        IF NEW.candidate_id IS NULL THEN
-            NEW.candidate_id = nextval(pg_get_serial_sequence('candidate', 'candidate_id'));
-        END IF;
-        NEW.candidate_code = 'V' || LPAD(NEW.candidate_id::TEXT, GREATEST(5, LENGTH(NEW.candidate_id::TEXT)), '0');
-    ELSE
-        NEW.candidate_code = TRIM(NEW.candidate_code);
+    IF NEW.candidate_id IS NULL THEN
+        NEW.candidate_id = nextval(pg_get_serial_sequence('candidate', 'candidate_id'));
     END IF;
+
+    NEW.candidate_code = 'C' || LPAD(NEW.candidate_id::TEXT, GREATEST(5, LENGTH(NEW.candidate_id::TEXT)), '0');
 
     RETURN NEW;
 END;
@@ -58,7 +55,7 @@ CREATE UNIQUE INDEX candidate_candidate_code_unique_idx ON candidate (LOWER(TRIM
 CREATE UNIQUE INDEX candidate_candidate_email_unique_idx ON candidate (LOWER(TRIM(candidate_email))) WHERE candidate_email IS NOT NULL;
 
 CREATE TRIGGER set_default_candidate_code_before_insert
-BEFORE INSERT ON candidate
+BEFORE INSERT OR UPDATE ON candidate
 FOR EACH ROW
 EXECUTE FUNCTION set_default_candidate_code();
 

@@ -80,7 +80,6 @@ describe("Candidate update service", () => {
     const feedbackDate = new Date("2026-05-28T00:00:00.000Z");
 
     const updateData = {
-      candidate_code: "V14073",
       candidate_name: "Jane Doe Updated",
       candidate_email: "jane.updated@example.com",
       candidate_phone: "0868177137",
@@ -105,6 +104,7 @@ describe("Candidate update service", () => {
 
     expect(result).to.not.be.null;
     expect(result.candidate_id).to.equal(candidateId);
+    expect(result.candidate_code).to.equal("C" + String(candidateId).padStart(5, "0"));
     expect(result.candidate_name).to.equal("Jane Doe Updated");
     expect(result.candidate_email).to.equal("jane.updated@example.com");
     expect(result.onboard_date).to.not.be.null;

@@ -6,7 +6,6 @@ import { populateCandidateRelations } from "./populate";
 import { insertLinkRows } from "@utilities/db/linking";
 
 export interface CreateCandidateInput {
-  candidate_code?: string | null;
   candidate_name?: string | null;
   candidate_email: string | null;
   candidate_phone?: string | null;
@@ -47,7 +46,6 @@ export async function create(
   try {
     const query = `
       INSERT INTO candidate (
-        candidate_code,
         candidate_name,
         candidate_email,
         candidate_phone,
@@ -66,12 +64,11 @@ export async function create(
         reference,
         file_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *
     `;
 
     const values = [
-      data.candidate_code || null,
       data.candidate_name || null,
       data.candidate_email,
       data.candidate_phone || null,

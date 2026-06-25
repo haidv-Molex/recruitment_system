@@ -25,7 +25,6 @@ export interface CreateCandidateWithAllInput {
 
   // Trường tùy chọn – scalar
   candidate_name?: string | null;
-  candidate_code?: string | null;
   candidate_phone?: string | null;
   agency?: string | null;
   offer_date?: string | Date | null;
@@ -116,7 +115,6 @@ export async function createWithAll(
 
   // 6. Gọi service create gốc với dữ liệu đã được resolve
   const input: CreateCandidateInput = {
-    candidate_code: data.candidate_code ?? null,
     candidate_name: data.candidate_name ?? null,
     candidate_email: data.candidate_email,
     candidate_phone: data.candidate_phone ?? null,

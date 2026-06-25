@@ -13,7 +13,6 @@ export type CandidateImportItem = {
   row_index?: number | null;
   candidate_name: string;
   status: string;
-  candidate_code?: string | null;
   candidate_email?: string | null;
   candidate_phone?: string | null;
   agency?: string | null;
@@ -165,7 +164,7 @@ export async function batchImport(
         resolvedJobId = jobMap.get(normalizeLookupKey(c.job_code)) ?? null;
       }
 
-            const resolvedReferenceId = c.reference || (c.reference_name?.trim() ? referenceMap.get(normalizeLookupKey(c.reference_name)) : null) || null;
+          const resolvedReferenceId = c.reference || (c.reference_name?.trim() ? referenceMap.get(normalizeLookupKey(c.reference_name)) : null) || null;
       const resolvedPlatformId = c.platform_id || (c.platform_name?.trim() ? platformMap.get(normalizeLookupKey(c.platform_name)) : null) || null;
       const resolvedCompanyId = c.targeted_company || (c.targeted_company_name?.trim() ? companyMap.get(normalizeLookupKey(c.targeted_company_name)) : null) || null;
 
@@ -174,7 +173,6 @@ export async function batchImport(
         ...(c.candidate_levels_name || []).map((n) => levelMap.get(normalizeLookupKey(n))).filter(Boolean) as number[],
       ];
 
-      const candidateCode = c.candidate_code?.trim() || null;
       const candidateEmail = c.candidate_email?.trim() || null;
 
       let existingCandidate: any = null;
@@ -186,16 +184,6 @@ export async function batchImport(
         );
         if (emailRes.rows.length > 0) {
           existingCandidate = emailRes.rows[0];
-        }
-      }
-
-      if (!existingCandidate && candidateCode) {
-        const codeRes = await pool.query(
-          `SELECT candidate_id FROM candidate WHERE LOWER(TRIM(candidate_code)) = $1 LIMIT 1`,
-          [normalizeLookupKey(candidateCode)]
-        );
-        if (codeRes.rows.length > 0) {
-          existingCandidate = codeRes.rows[0];
         }
       }
 
@@ -223,7 +211,6 @@ export async function batchImport(
           Number(existingCandidate.candidate_id),
           {
             ...candidateData,
-            candidate_code: candidateCode,
             candidate_email: candidateEmail || undefined,
           },
           pool
@@ -232,7 +219,6 @@ export async function batchImport(
         await create(
           {
             ...candidateData,
-            candidate_code: candidateCode,
             candidate_email: candidateEmail,
           },
           pool

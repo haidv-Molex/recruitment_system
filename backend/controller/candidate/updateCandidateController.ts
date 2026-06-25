@@ -25,7 +25,6 @@ const paramsSchema = Joi.object({
 });
 
 const updateBodySchema = Joi.object({
-  candidate_code: Joi.string().max(255).empty(["", "null"]).allow(null).optional(),
   candidate_name: Joi.string().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.base": "Tên ứng viên phải là chuỗi"
   }),
@@ -93,7 +92,6 @@ updateCandidateController.put("",
     const updateData: any = {};
     const hasProp = (o: any, p: string) => Object.prototype.hasOwnProperty.call(o, p);
 
-    if (hasProp(body, "candidate_code")) updateData.candidate_code = body.candidate_code;
     if (hasProp(body, "candidate_name")) updateData.candidate_name = body.candidate_name ? body.candidate_name.trim() : null;
     if (hasProp(body, "candidate_email")) updateData.candidate_email = body.candidate_email ? body.candidate_email.trim() : body.candidate_email;
     if (hasProp(body, "candidate_phone")) updateData.candidate_phone = body.candidate_phone;

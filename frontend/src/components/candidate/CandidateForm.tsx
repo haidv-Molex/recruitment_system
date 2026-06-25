@@ -14,7 +14,6 @@ import FileUploadField from '@/components/common/FileUploadField';
 import NotesManager from '@/components/common/NotesManager';
 
 const emptyCandidate = {
-  candidateCode: '',
   candidateName: '',
   candidateEmail: '',
   candidatePhone: '',
@@ -72,7 +71,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
   useEffect(() => {
     if (candidate) {
       setFormData({
-        candidateCode: candidate.candidate_code || '',
         candidateName: candidate.candidate_name || '',
         candidateEmail: candidate.candidate_email || '',
         candidatePhone: candidate.candidate_phone || '',
@@ -336,7 +334,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
               />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <SingleSearchSelect
               label="Job (Requisition)"
               placeholder="Type job code or project to search..."
@@ -348,14 +346,6 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
                 setFormData((prev) => ({ ...prev, jobId: id || '' }));
                 setSelectedJob(item);
               }}
-              disabled={saving}
-            />
-            <InputField
-              label="Candidate Code"
-              name="candidateCode"
-              value={formData.candidateCode}
-              onChange={handleChange}
-              placeholder="e.g. CAND-001 (Optional)"
               disabled={saving}
             />
           </div>

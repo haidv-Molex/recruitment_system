@@ -6,7 +6,6 @@ import { populateCandidateRelations } from "./populate";
 import { replaceLinkRows } from "@utilities/db/linking";
 
 export interface UpdateCandidateInput {
-  candidate_code?: string | null;
   candidate_name?: string | null;
   candidate_email?: string | null;
   candidate_phone?: string | null;
@@ -74,7 +73,6 @@ export async function update(
       placeholderIndex++;
     };
 
-    if (data.candidate_code !== undefined) addParam(data.candidate_code, "candidate_code");
     if (data.candidate_name !== undefined) addParam(data.candidate_name, "candidate_name");
     if (data.candidate_email !== undefined) addParam(data.candidate_email, "candidate_email");
     if (data.candidate_phone !== undefined) addParam(data.candidate_phone, "candidate_phone");

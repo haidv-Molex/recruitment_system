@@ -99,7 +99,7 @@ describe("CandidateController API", () => {
   it("POST /candidate - should create candidate successfully with multipart", async () => {
     const mockCandidate = {
       candidate_id: 1,
-      candidate_code: "CAND001",
+      candidate_code: "C00001",
       candidate_name: "John Doe",
       candidate_email: "john@example.com",
       status: "Applied",
@@ -119,7 +119,6 @@ describe("CandidateController API", () => {
       .post("/candidate")
       .withHeaders("Authorization", `Bearer ${token}`)
       .withMultiPartFormData({
-        candidate_code: "CAND001",
         candidate_name: "John Doe",
         candidate_email: "john@example.com",
         status: "Applied",
@@ -144,6 +143,7 @@ describe("CandidateController API", () => {
     const args = createStub.firstCall.args[0];
     expectLocal(args.candidate_name).to.equal("John Doe");
     expectLocal(args.candidate_email).to.equal("john@example.com");
+    expectLocal(args).to.not.have.property("candidate_code");
     expectLocal(args.status).to.equal("Applied");
     expectLocal(args.platform_id).to.equal(1);
     expectLocal(args.file).to.not.be.null;
@@ -399,7 +399,7 @@ describe("CandidateController API", () => {
       });
   });
 
-  it("POST /candidate - should return 400 validation error for unknown fields", async () => {
+  it("POST /candidate - should return 400 validation error for manual candidate_code", async () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
@@ -409,13 +409,13 @@ describe("CandidateController API", () => {
         candidate_name: "John Doe",
         candidate_email: "john@example.com",
         status: "Applied",
-        candidate_name_invalid: "Tran Minh Khoa Updated"
+        candidate_code: "MANUAL-001"
       })
       .expectStatus(400)
       .expectJson({
         result: false,
         message: "Dữ liệu không hợp lệ",
-        details: ["candidate_name_invalid không được phép"]
+        details: ["candidate_code không được phép"]
       });
   });
 

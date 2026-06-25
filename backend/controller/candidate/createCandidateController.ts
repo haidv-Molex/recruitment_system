@@ -4,7 +4,6 @@
  * Content-Type: multipart/form-data
  *
  * Request Fields:
- * - candidate_code (string, optional): Mã ứng viên
  * - candidate_name (string, required): Tên ứng viên
  * - candidate_email (string, optional): Email ứng viên (ít nhất một trong email hoặc phone phải có)
  * - candidate_phone (string, optional): Số điện thoại ứng viên (ít nhất một trong email hoặc phone phải có)
@@ -40,9 +39,6 @@ const upload = multer({
 const phoneNumberPattern = /^\+?\d+(?:\.\d+)*$/;
 
 const bodySchema = Joi.object({
-  candidate_code: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
-    "string.max": "Mã ứng viên không được vượt quá 255 ký tự"
-  }),
   candidate_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.base": "Tên ứng viên phải là chuỗi",
     "string.max": "Tên ứng viên không được vượt quá 255 ký tự"
@@ -120,7 +116,6 @@ createCandidateController.post("",
   joiValidate(bodySchema, "body"),
   async (req, res) => {
     const candidateData = {
-      candidate_code: req.body.candidate_code,
       candidate_name: req.body.candidate_name ? req.body.candidate_name.trim() : null,
       candidate_email: req.body.candidate_email ? req.body.candidate_email.trim() : null,
       candidate_phone: req.body.candidate_phone,

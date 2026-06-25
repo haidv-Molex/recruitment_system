@@ -11,7 +11,6 @@ export interface CandidateBatchImportPayload {
   row_index?: number;
   candidate_name: string | null;
   status: string;
-  candidate_code: string | null;
   candidate_email: string | null;
   candidate_phone: string | null;
   agency: string | null;
@@ -31,7 +30,6 @@ export interface CandidateBatchImportPayload {
 }
 
 export interface CandidateExtendedFormPayload {
-  candidateCode: string;
   candidateName: string;
   candidateEmail: string;
   candidatePhone: string;
@@ -116,7 +114,6 @@ export function mapParsedCandidateToBatchPayload(
       row_index: typeof candidate.row_index === 'number' ? candidate.row_index : rowIndex,
       candidate_name: toNullableString(candidate.candidate_name),
       status: toStringValue(candidate.status),
-      candidate_code: toNullableString(candidate.employee_code),
       candidate_email: email,
       candidate_phone: toNullableString(candidate.candidate_phone),
       agency: toNullableString(candidate.agency),
@@ -171,7 +168,6 @@ export function mapParsedCandidateToExtendedFormPayload(
   const payload = mapped.payload;
   return {
     payload: {
-      candidateCode: payload.candidate_code || '',
       candidateName: payload.candidate_name || '',
       candidateEmail: payload.candidate_email || '',
       candidatePhone: payload.candidate_phone || '',

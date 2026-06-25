@@ -28,7 +28,6 @@ describe('candidateApi tests', () => {
 
     const result = await updateCandidateApi(1, {
       candidateName: 'Candidate A',
-      candidateCode: 'C001',
       candidateEmail: '',
       candidatePhone: '',
       agency: '',
@@ -51,7 +50,7 @@ describe('candidateApi tests', () => {
     const entries = formDataEntries(formData);
 
     expect(entries.candidate_name).toBe('Candidate A');
-    expect(entries.candidate_code).toBe('C001');
+    expect(entries.candidate_code).toBeUndefined();
     expect(entries.candidate_email).toBe('');
     expect(entries.candidate_phone).toBe('');
     expect(entries.agency).toBe('');

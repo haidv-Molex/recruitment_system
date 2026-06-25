@@ -220,7 +220,7 @@ describe("Candidate batchImport service", () => {
     expect(result.errors[0].candidate_name).to.equal("Candidate Blank Email");
   });
 
-  it("should auto-generate candidate_code in V00001 format when candidate_code is not provided", async () => {
+  it("should auto-generate candidate_code in C00001 format from candidate_id", async () => {
     const importItems = [
       {
         candidate_name: "Candidate Without Code",
@@ -238,7 +238,7 @@ describe("Candidate batchImport service", () => {
     );
     expect(candidateRes.rows).to.have.lengthOf(1);
     const candidate = candidateRes.rows[0];
-    const expectedCode = "V" + String(candidate.candidate_id).padStart(5, "0");
+    const expectedCode = "C" + String(candidate.candidate_id).padStart(5, "0");
     expect(candidate.candidate_code).to.equal(expectedCode);
   });
 
@@ -281,53 +281,64 @@ describe("Candidate batchImport service", () => {
     expect(candRes.rows[0].candidate_phone).to.equal("222222");
   });
 
-  it("should prioritize candidate_code match and fallback to candidate_email match", async () => {
-    // Insert Candidate 1: code='V99999', email='first@example.com', name='Original One'
-    await client.query(
-      `INSERT INTO candidate (candidate_code, candidate_name, candidate_email, status)
-       VALUES ($1, $2, $3, $4)`,
-      ["V99999", "Original One", "first@example.com", "CV Sent"]
+  it("should match existing candidates by email and ignore imported candidate_code", async () => {
+    const emailOwnerRes = await client.query(
+      `INSERT INTO candidate (candidate_name, candidate_email, status)
+       VALUES ($1, $2, $3) RETURNING candidate_id, candidate_code`,
+      ["Original Email Owner", "second@example.com", "CV Sent"]
     );
+    const emailOwnerId = Number(emailOwnerRes.rows[0].candidate_id);
+    const originalCode = emailOwnerRes.rows[0].candidate_code;
 
-    // Insert Candidate 2: code='V88888', email='second@example.com', name='Original Two'
-    await client.query(
-      `INSERT INTO candidate (candidate_code, candidate_name, candidate_email, status)
-       VALUES ($1, $2, $3, $4)`,
-      ["V88888", "Original Two", "second@example.com", "CV Sent"]
-    );
-
-    // Import Item 1: candidate_code='V99999', email='third@example.com'
-    // This should match Candidate 1 by code, and update email/name.
-    const importItems1 = [
+    const importItems = [
       {
         candidate_code: "V99999",
-        candidate_name: "Updated One",
-        candidate_email: "third@example.com",
-        status: "Interview",
-      }
-    ];
-    const result1 = await batchImport(importItems1, client);
-    expect(result1.success).to.be.true;
-
-    const cand1 = await client.query(`SELECT * FROM candidate WHERE candidate_code = $1`, ["V99999"]);
-    expect(cand1.rows[0].candidate_name).to.equal("Updated One");
-    expect(cand1.rows[0].candidate_email).to.equal("third@example.com");
-
-    // Import Item 2: candidate_code='V77777', email='second@example.com'
-    // Code doesn't match, but email matches Candidate 2. Should update Candidate 2.
-    const importItems2 = [
-      {
-        candidate_code: "V77777",
-        candidate_name: "Updated Two",
+        candidate_name: "Updated Email Owner",
         candidate_email: "second@example.com",
         status: "Interview",
       }
     ];
-    const result2 = await batchImport(importItems2, client);
-    expect(result2.success).to.be.true;
 
-    const cand2 = await client.query(`SELECT * FROM candidate WHERE candidate_email = $1`, ["second@example.com"]);
-    expect(cand2.rows[0].candidate_code).to.equal("V77777");
-    expect(cand2.rows[0].candidate_name).to.equal("Updated Two");
+    const result = await batchImport(importItems, client);
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+
+    const emailOwner = await client.query(`SELECT * FROM candidate WHERE candidate_id = $1`, [emailOwnerId]);
+    expect(emailOwner.rows[0].candidate_code).to.equal(originalCode);
+    expect(emailOwner.rows[0].candidate_name).to.equal("Updated Email Owner");
+    expect(emailOwner.rows[0].status).to.equal("Interview");
+  });
+
+  it("should create a new candidate and ignore candidate_code when email does not match", async () => {
+    const existingRes = await client.query(
+      `INSERT INTO candidate (candidate_name, candidate_email, status)
+       VALUES ($1, $2, $3) RETURNING candidate_id, candidate_code`,
+      ["Existing Different Email", "different.email@example.com", "CV Sent"]
+    );
+    const existingId = Number(existingRes.rows[0].candidate_id);
+    const existingCode = existingRes.rows[0].candidate_code;
+
+    const importItems = [
+      {
+        candidate_code: "V77777",
+        candidate_name: "Imported New Email",
+        candidate_email: "new.email@example.com",
+        status: "Interview",
+      }
+    ];
+
+    const result = await batchImport(importItems, client);
+    expect(result.success).to.be.true;
+    expect(result.importedCount).to.equal(1);
+
+    const existingCandidate = await client.query(`SELECT * FROM candidate WHERE candidate_id = $1`, [existingId]);
+    expect(existingCandidate.rows[0].candidate_name).to.equal("Existing Different Email");
+    expect(existingCandidate.rows[0].candidate_email).to.equal("different.email@example.com");
+    expect(existingCandidate.rows[0].candidate_code).to.equal(existingCode);
+
+    const importedCandidate = await client.query(`SELECT * FROM candidate WHERE candidate_email = $1`, ["new.email@example.com"]);
+    expect(importedCandidate.rows).to.have.lengthOf(1);
+    expect(importedCandidate.rows[0].candidate_code).to.equal("C" + String(importedCandidate.rows[0].candidate_id).padStart(5, "0"));
+    expect(importedCandidate.rows[0].candidate_name).to.equal("Imported New Email");
   });
 });

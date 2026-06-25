@@ -15,7 +15,6 @@ const candidateItemSchema = Joi.object({
     "any.required": "Trạng thái ứng viên là bắt buộc",
     "string.empty": "Trạng thái ứng viên không được để trống",
   }),
-  candidate_code: Joi.string().max(255).allow("", null).optional(),
   candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.email": "Email ứng viên không đúng định dạng chuẩn name@example.com",
     "string.max": "Email không được vượt quá 255 ký tự",
