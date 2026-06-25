@@ -1,8 +1,8 @@
 CREATE TABLE candidate (
     candidate_id SERIAL PRIMARY KEY,
     candidate_code VARCHAR(255),
-    candidate_name VARCHAR(255) NOT NULL,
-    candidate_email VARCHAR(255),
+    candidate_name VARCHAR(255),
+    candidate_email VARCHAR(255) NOT NULL,
     candidate_phone VARCHAR(50),
     agency VARCHAR(255),
     offer_date DATE,
@@ -54,7 +54,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE UNIQUE INDEX candidate_candidate_code_unique_idx ON candidate (LOWER(TRIM(candidate_code)));
 
-CREATE UNIQUE INDEX candidate_candidate_email_unique_idx ON candidate (LOWER(TRIM(candidate_email))) WHERE candidate_email IS NOT NULL AND TRIM(candidate_email) <> '';
+CREATE UNIQUE INDEX candidate_candidate_email_unique_idx ON candidate (LOWER(TRIM(candidate_email)));
 
 CREATE TRIGGER set_default_candidate_code_before_insert
 BEFORE INSERT ON candidate

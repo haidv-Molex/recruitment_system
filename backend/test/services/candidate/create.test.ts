@@ -152,6 +152,7 @@ describe("Candidate create service", () => {
   it("should successfully create candidate with onboard_date as null", async () => {
     const candidateData = {
       candidate_name: "Jane Doe",
+      candidate_email: "jane.doe@example.com",
       status: "Applied",
       onboard_date: null
     };
@@ -161,5 +162,19 @@ describe("Candidate create service", () => {
     expect(result).to.not.be.null;
     expect(result.candidate_name).to.equal("Jane Doe");
     expect(result.onboard_date).to.be.null;
+  });
+
+  it("should successfully create candidate with candidate_name as null", async () => {
+    const candidateData = {
+      candidate_email: "nullname@example.com",
+      status: "Applied",
+      candidate_name: null
+    };
+
+    const result = await create(candidateData, client);
+
+    expect(result).to.not.be.null;
+    expect(result.candidate_name).to.be.null;
+    expect(result.candidate_email).to.equal("nullname@example.com");
   });
 });

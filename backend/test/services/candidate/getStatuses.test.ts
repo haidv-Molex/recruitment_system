@@ -38,8 +38,8 @@ describe("getStatuses", () => {
 
   it("should include extra status values from DB that are not in defaults", async () => {
     await client.query(
-      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2)`,
-      ["Test Candidate", "CustomStatus"]
+      `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, $2, $3)`,
+      ["Test Candidate", "test1@example.com", "CustomStatus"]
     );
 
     const result = await getStatuses(client);
@@ -50,8 +50,8 @@ describe("getStatuses", () => {
   it("should not have duplicate values", async () => {
     // Insert status trùng với default
     await client.query(
-      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2)`,
-      ["Test Candidate 2", "Searching"]
+      `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, $2, $3)`,
+      ["Test Candidate 2", "test2@example.com", "Searching"]
     );
 
     const result = await getStatuses(client);

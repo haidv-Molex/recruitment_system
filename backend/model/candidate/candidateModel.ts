@@ -34,8 +34,8 @@ export type candidateStatus =
 export type candidateModel = {
   candidate_id: number;
   candidate_code: string | null;
-  candidate_name: string;
-  candidate_email: string | null;
+  candidate_name: string | null;
+  candidate_email: string;
   candidate_phone: string | null;
   agency: HeadhuntAgency | string | null;
   offer_date: Date | null;

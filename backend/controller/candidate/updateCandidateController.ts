@@ -26,11 +26,10 @@ const paramsSchema = Joi.object({
 
 const updateBodySchema = Joi.object({
   candidate_code: Joi.string().max(255).empty(["", "null"]).allow(null).optional(),
-  candidate_name: Joi.string().max(255).min(1).optional().messages({
-    "string.empty": "Tên ứng viên không được để trống",
+  candidate_name: Joi.string().max(255).empty(["", "null"]).allow(null).optional().messages({
     "string.base": "Tên ứng viên phải là chuỗi"
   }),
-  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).optional().messages({
+  candidate_email: Joi.string().email().max(255).optional().messages({
     "string.email": "Email không hợp lệ"
   }),
   candidate_phone: Joi.string().trim().max(50).pattern(phoneNumberPattern).empty(["", "null"]).allow(null).optional().messages({
@@ -95,8 +94,8 @@ updateCandidateController.put("",
     const hasProp = (o: any, p: string) => Object.prototype.hasOwnProperty.call(o, p);
 
     if (hasProp(body, "candidate_code")) updateData.candidate_code = body.candidate_code;
-    if (hasProp(body, "candidate_name")) updateData.candidate_name = body.candidate_name.trim();
-    if (hasProp(body, "candidate_email")) updateData.candidate_email = body.candidate_email;
+    if (hasProp(body, "candidate_name")) updateData.candidate_name = body.candidate_name ? body.candidate_name.trim() : null;
+    if (hasProp(body, "candidate_email")) updateData.candidate_email = body.candidate_email ? body.candidate_email.trim() : body.candidate_email;
     if (hasProp(body, "candidate_phone")) updateData.candidate_phone = body.candidate_phone;
     if (hasProp(body, "agency")) updateData.agency = body.agency;
     if (hasProp(body, "offer_date")) updateData.offer_date = body.offer_date;

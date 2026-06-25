@@ -24,7 +24,7 @@ describe("Candidate update service", () => {
   it("should successfully update candidate fields and relations", async () => {
     // 1. Seed candidate
     const initialCand = await client.query(
-      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, 'jane@example.com', $2) RETURNING candidate_id`,
       ["Jane Doe", "Applied"]
     );
     const candidateId = initialCand.rows[0].candidate_id;
@@ -132,7 +132,7 @@ describe("Candidate update service", () => {
   it("should successfully update candidate fields to null", async () => {
     // 1. Seed candidate with initial values
     const initialCand = await client.query(
-      `INSERT INTO candidate (candidate_name, status, onboard_date) VALUES ($1, $2, $3) RETURNING candidate_id`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status, onboard_date) VALUES ($1, 'jane2@example.com', $2, $3) RETURNING candidate_id`,
       ["Jane Doe", "Applied", new Date()]
     );
     const candidateId = initialCand.rows[0].candidate_id;
@@ -153,7 +153,7 @@ describe("Candidate update service", () => {
     const adminId = userRes.rows[0].user_id;
 
     const initialCand = await client.query(
-      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING candidate_id`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, 'jane3@example.com', $2) RETURNING candidate_id`,
       ["Jane Doe", "Applied"]
     );
     const candidateId = initialCand.rows[0].candidate_id;

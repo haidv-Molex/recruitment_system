@@ -154,6 +154,7 @@ describe("CandidateController API", () => {
     const mockCandidate = {
       candidate_id: 1,
       candidate_name: "John Doe",
+      candidate_email: "john@example.com",
       candidate_phone: "+084.123.412",
       status: "Applied",
       create_at: new Date(),
@@ -168,6 +169,7 @@ describe("CandidateController API", () => {
       .withHeaders("Authorization", `Bearer ${token}`)
       .withMultiPartFormData({
         candidate_name: "John Doe",
+        candidate_email: "john@example.com",
         candidate_phone: "+084.123.412",
         status: "Applied"
       })
@@ -185,6 +187,7 @@ describe("CandidateController API", () => {
       .withHeaders("Authorization", `Bearer ${token}`)
       .withMultiPartFormData({
         candidate_name: "John Doe",
+        candidate_email: "john@example.com",
         status: "Applied",
         onboard_date: "026-06-10"
       })
@@ -404,6 +407,7 @@ describe("CandidateController API", () => {
       .withHeaders("Authorization", `Bearer ${token}`)
       .withMultiPartFormData({
         candidate_name: "John Doe",
+        candidate_email: "john@example.com",
         status: "Applied",
         candidate_name_invalid: "Tran Minh Khoa Updated"
       })
@@ -472,10 +476,7 @@ describe("CandidateController API", () => {
     ]);
   });
 
-  it("POST /candidate/batch - should allow blank email", async () => {
-    const mockResult = { success: true, importedCount: 1, errors: [] };
-    batchImportStub.resolves(mockResult);
-
+  it("POST /candidate/batch - should reject blank email", async () => {
     const token = generateTestToken(1, "Test User");
 
     await pactum.spec()
@@ -490,13 +491,34 @@ describe("CandidateController API", () => {
           }
         ]
       })
+      .expectStatus(400);
+  });
+
+  it("POST /candidate/batch - should allow blank name", async () => {
+    const mockResult = { success: true, importedCount: 1, errors: [] };
+    batchImportStub.resolves(mockResult);
+
+    const token = generateTestToken(1, "Test User");
+
+    await pactum.spec()
+      .post("/candidate/batch")
+      .withHeaders("Authorization", `Bearer ${token}`)
+      .withJson({
+        candidates: [
+          {
+            candidate_name: "",
+            status: "CV Sent",
+            candidate_email: "test@example.com",
+          }
+        ]
+      })
       .expectStatus(200);
 
     expectLocal(batchImportStub.calledOnce).to.be.true;
     expectLocal(batchImportStub.firstCall.args[0][0]).to.include({
-      candidate_name: "No Email Candidate",
+      candidate_name: "",
       status: "CV Sent",
-      candidate_email: null,
+      candidate_email: "test@example.com",
     });
   });
 

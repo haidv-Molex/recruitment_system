@@ -24,8 +24,8 @@ describe("deleteCandidate service", () => {
 
   async function seedCandidate(name: string): Promise<number> {
     const res = await client.query<{ candidate_id: number }>(
-      `INSERT INTO candidate (candidate_name, status) VALUES ($1, 'Applied') RETURNING candidate_id`,
-      [name]
+      `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, $2, 'Applied') RETURNING candidate_id`,
+      [name, `${name}@example.com`]
     );
     return res.rows[0].candidate_id;
   }

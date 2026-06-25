@@ -31,7 +31,7 @@ describe("Candidate populate service", () => {
 
     // 2. Seed a candidate with that platform_id
     const candidateRes = await client.query(
-      `INSERT INTO candidate (candidate_name, status, platform_id) VALUES ($1, $2, $3) RETURNING *`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status, platform_id) VALUES ($1, 'john.doe@example.com', $2, $3) RETURNING *`,
       ["John Doe", "Applied", platformId]
     );
     const candidateRow = candidateRes.rows[0];
@@ -51,7 +51,7 @@ describe("Candidate populate service", () => {
 
   it("should return null platform if platform_id is null", async () => {
     const candidateRes = await client.query(
-      `INSERT INTO candidate (candidate_name, status, platform_id) VALUES ($1, $2, NULL) RETURNING *`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status, platform_id) VALUES ($1, 'john.null@example.com', $2, NULL) RETURNING *`,
       ["John Doe Null Platform", "Applied"]
     );
     const candidateRow = candidateRes.rows[0];
@@ -72,7 +72,7 @@ describe("Candidate populate service", () => {
 
     // 2. Seed a candidate with that targeted_company id
     const candidateRes = await client.query(
-      `INSERT INTO candidate (candidate_name, status, targeted_company) VALUES ($1, $2, $3) RETURNING *`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status, targeted_company) VALUES ($1, 'cand.company@example.com', $2, $3) RETURNING *`,
       ["Candidate Company", "Applied", companyId]
     );
     const candidateRow = candidateRes.rows[0];
@@ -98,7 +98,7 @@ describe("Candidate populate service", () => {
 
     // 2. Seed a candidate
     const candidateRes = await client.query(
-      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING *`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, 'cand.level@example.com', $2) RETURNING *`,
       ["Candidate Level Pop", "Applied"]
     );
     const candidateRow = candidateRes.rows[0];
@@ -122,7 +122,7 @@ describe("Candidate populate service", () => {
   it("should successfully populate candidate notes in chronological order", async () => {
     // 1. Seed candidate
     const candidateRes = await client.query(
-      `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2) RETURNING *`,
+      `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, 'cand.notes@example.com', $2) RETURNING *`,
       ["Candidate Notes Pop", "Applied"]
     );
     const candidateRow = candidateRes.rows[0];

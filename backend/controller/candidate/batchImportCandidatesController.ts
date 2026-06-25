@@ -9,16 +9,15 @@ import passport from "@middlewares/passport";
 const batchImportCandidatesController = express.Router();
 
 const candidateItemSchema = Joi.object({
-  candidate_name: Joi.string().min(1).max(255).required().messages({
-    "any.required": "Tên ứng viên là bắt buộc",
-    "string.empty": "Tên ứng viên không được để trống",
-  }),
+  candidate_name: Joi.string().max(255).allow("", null).optional(),
   status: Joi.string().min(1).max(100).required().messages({
     "any.required": "Trạng thái ứng viên là bắt buộc",
     "string.empty": "Trạng thái ứng viên không được để trống",
   }),
   candidate_code: Joi.string().max(255).allow("", null).optional(),
-  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).default(null).optional().messages({
+  candidate_email: Joi.string().email().max(255).required().messages({
+    "any.required": "Email ứng viên là bắt buộc",
+    "string.empty": "Email ứng viên không được để trống",
     "string.email": "Email ứng viên không đúng định dạng chuẩn name@example.com",
     "string.max": "Email không được vượt quá 255 ký tự",
   }),

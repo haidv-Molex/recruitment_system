@@ -7,8 +7,8 @@ import { insertLinkRows } from "@utilities/db/linking";
 
 export interface CreateCandidateInput {
   candidate_code?: string | null;
-  candidate_name: string;
-  candidate_email?: string | null;
+  candidate_name?: string | null;
+  candidate_email: string;
   candidate_phone?: string | null;
   agency?: string | null;
   offer_date?: string | Date | null;
@@ -72,8 +72,8 @@ export async function create(
 
     const values = [
       data.candidate_code || null,
-      data.candidate_name,
-      data.candidate_email || null,
+      data.candidate_name || null,
+      data.candidate_email,
       data.candidate_phone || null,
       data.agency || null,
       data.offer_date || null,

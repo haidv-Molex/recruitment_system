@@ -2,16 +2,16 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const emailFormatMessage = 'Định dạng email chuẩn: name@example.com, ví dụ nguyen.van.a@gmail.com; không chứa khoảng trắng và phải có @ cùng tên miền.';
 
 export interface CandidateImportError {
-  candidate_name: string;
+  candidate_name: string | null;
   message: string;
   rowIndex: number;
 }
 
 export interface CandidateBatchImportPayload {
-  candidate_name: string;
+  candidate_name: string | null;
   status: string;
   candidate_code: string | null;
-  candidate_email: string | null;
+  candidate_email: string;
   candidate_phone: string | null;
   agency: string | null;
   offer_date: string | null;
@@ -74,13 +74,20 @@ function formatApiDate(value: unknown): string | null {
   return date.toISOString().slice(0, 10);
 }
 
-function normalizeEmail(value: unknown, candidateName: string, rowIndex: number): {
+function normalizeEmail(value: unknown, candidateName: string | null, rowIndex: number): {
   email: string | null;
   error: CandidateImportError | null;
 } {
   const email = toStringValue(value);
   if (!email) {
-    return { email: null, error: null };
+    return {
+      email: null,
+      error: {
+        candidate_name: candidateName,
+        message: `Email là bắt buộc nhưng bị thiếu ở dòng ${rowIndex + 1}.`,
+        rowIndex,
+      },
+    };
   }
 
   if (!emailRegex.test(email)) {
@@ -111,9 +118,9 @@ export function mapParsedCandidateToBatchPayload(
   candidate: any,
   rowIndex = 0
 ): { payload: CandidateBatchImportPayload | null; error: CandidateImportError | null } {
-  const candidateName = toStringValue(candidate.candidate_name) || `Row ${rowIndex + 1}`;
+  const candidateName = toNullableString(candidate.candidate_name) || `Dòng ${rowIndex + 1}`;
   const { email, error } = normalizeEmail(candidate.candidate_email, candidateName, rowIndex);
-  if (error) {
+  if (error || !email) {
     return { payload: null, error };
   }
 
@@ -123,7 +130,7 @@ export function mapParsedCandidateToBatchPayload(
 
   return {
     payload: {
-      candidate_name: toStringValue(candidate.candidate_name),
+      candidate_name: toNullableString(candidate.candidate_name),
       status: toStringValue(candidate.status),
       candidate_code: toNullableString(candidate.employee_code),
       candidate_email: email,
@@ -181,7 +188,7 @@ export function mapParsedCandidateToExtendedFormPayload(
   return {
     payload: {
       candidateCode: payload.candidate_code || '',
-      candidateName: payload.candidate_name,
+      candidateName: payload.candidate_name || '',
       candidateEmail: payload.candidate_email || '',
       candidatePhone: payload.candidate_phone || '',
       agency: payload.agency || '',

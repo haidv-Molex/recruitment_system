@@ -96,11 +96,11 @@ describe("Candidate getAll service", () => {
 
     // 2. Seed candidates
     await client.query(
-      `INSERT INTO candidate (candidate_name, candidate_phone, status, platform_id) VALUES ($1, $2, $3, $4)`,
+      `INSERT INTO candidate (candidate_name, candidate_email, candidate_phone, status, platform_id) VALUES ($1, 'y1@example.com', $2, $3, $4)`,
       ["UniqueNameY1", "8888888888", "OFFERED", platformId]
     );
     await client.query(
-      `INSERT INTO candidate (candidate_name, candidate_phone, status, platform_id) VALUES ($1, $2, $3, $4)`,
+      `INSERT INTO candidate (candidate_name, candidate_email, candidate_phone, status, platform_id) VALUES ($1, 'y2@example.com', $2, $3, $4)`,
       ["UniqueNameY2", "7777777777", "OFFERED", platformId]
     );
 
@@ -132,11 +132,11 @@ describe("Candidate getAll service", () => {
     const date3 = new Date("2026-06-20T00:00:00.000Z");
 
     await client.query(
-      `INSERT INTO candidate (candidate_name, offer_date, onboard_date, current_salary, expected_salary, status, platform_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO candidate (candidate_name, candidate_email, offer_date, onboard_date, current_salary, expected_salary, status, platform_id) VALUES ($1, 'z1@example.com', $2, $3, $4, $5, $6, $7)`,
       ["CandidateZ1", date1, date2, "1000 USD", "1500 USD", "OFFERED", platformId]
     );
     await client.query(
-      `INSERT INTO candidate (candidate_name, offer_date, onboard_date, current_salary, expected_salary, status, platform_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO candidate (candidate_name, candidate_email, offer_date, onboard_date, current_salary, expected_salary, status, platform_id) VALUES ($1, 'z2@example.com', $2, $3, $4, $5, $6, $7)`,
       ["CandidateZ2", date2, date3, "2000 USD", "2500 USD", "OFFERED", platformId]
     );
 
@@ -168,9 +168,10 @@ describe("Candidate getAll service", () => {
 
   it("should paginate matching candidates", async () => {
     for (let i = 1; i <= 3; i++) {
+      const candidateName = `CandidateGetAll_Page_${i}`;
       await client.query(
-        `INSERT INTO candidate (candidate_name, status) VALUES ($1, $2)`,
-        [`CandidateGetAll_Page_${i}`, "Searching"]
+        `INSERT INTO candidate (candidate_name, candidate_email, status) VALUES ($1, $2, $3)`,
+        [candidateName, `${candidateName}@example.com`, "Searching"]
       );
     }
 

@@ -43,13 +43,14 @@ const bodySchema = Joi.object({
   candidate_code: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.max": "Mã ứng viên không được vượt quá 255 ký tự"
   }),
-  candidate_name: Joi.string().max(255).required().messages({
-    "any.required": "Tên ứng viên là bắt buộc",
+  candidate_name: Joi.string().max(255).empty(["", "null"]).allow(null).default(null).messages({
     "string.base": "Tên ứng viên phải là chuỗi",
-    "string.empty": "Tên ứng viên là bắt buộc",
     "string.max": "Tên ứng viên không được vượt quá 255 ký tự"
   }),
-  candidate_email: Joi.string().email().max(255).empty(["", "null"]).allow(null).default(null).messages({
+  candidate_email: Joi.string().email().max(255).required().messages({
+    "any.required": "Email ứng viên là bắt buộc",
+    "string.base": "Email ứng viên phải là chuỗi",
+    "string.empty": "Email ứng viên là bắt buộc",
     "string.email": "Email không hợp lệ",
     "string.max": "Email không được vượt quá 255 ký tự"
   }),
@@ -115,8 +116,8 @@ createCandidateController.post("",
   async (req, res) => {
     const candidateData = {
       candidate_code: req.body.candidate_code,
-      candidate_name: req.body.candidate_name.trim(),
-      candidate_email: req.body.candidate_email,
+      candidate_name: req.body.candidate_name ? req.body.candidate_name.trim() : null,
+      candidate_email: req.body.candidate_email.trim(),
       candidate_phone: req.body.candidate_phone,
       agency: req.body.agency,
       offer_date: req.body.offer_date,

@@ -185,11 +185,11 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
     e.preventDefault();
     setError('');
 
-    if (!formData.candidateName.trim()) {
-      setError('Candidate Name is required.');
+    if (!formData.candidateEmail.trim()) {
+      setError('Email is required.');
       return;
     }
-    if (formData.candidateEmail && !emailRegex.test(formData.candidateEmail)) {
+    if (!emailRegex.test(formData.candidateEmail)) {
       setError('Email format is invalid.');
       return;
     }
@@ -304,7 +304,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Required & Key Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <InputField
-              label="Candidate Name *"
+              label="Candidate Name (optional)"
               name="candidateName"
               value={formData.candidateName}
               onChange={handleChange}
@@ -366,7 +366,7 @@ export default function CandidateForm({ candidate, onSubmit, onClose, saving }: 
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contact Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField
-              label="Email"
+              label="Email *"
               type="email"
               name="candidateEmail"
               value={formData.candidateEmail}

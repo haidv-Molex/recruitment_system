@@ -23,7 +23,7 @@ function createUserPlaceholder(name: string): userOutputModel {
 
 export interface ParsedCandidateRow {
   // Raw scalar fields
-  candidate_name: string;
+  candidate_name: string | null;
   candidate_email: string | null;
   candidate_phone: string | null;
   agency: string | null;
@@ -72,7 +72,7 @@ export default async function parseCandidateSheet(
   const result: ParsedCandidateRow[] = [];
 
   for (const row of rows) {
-    const candidate_name = getRowString(row, "Name", { defaultValue: "" });
+    const candidate_name = getRowString(row, "Name");
     const candidate_email = getRowString(row, "Email");
     const candidate_phone = getRowString(row, "Phone number");
     const agency = getRowString(row, "Headhunt Agency");

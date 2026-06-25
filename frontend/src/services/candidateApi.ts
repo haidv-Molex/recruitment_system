@@ -6,11 +6,11 @@ export async function createCandidateApi(formData: any): Promise<candidateModel>
   const fd = new FormData();
 
   // Required fields
-  fd.append('candidate_name', formData.candidateName);
+  fd.append('candidate_email', formData.candidateEmail);
   fd.append('candidate_code', formData.candidateCode);
 
   // Optional text fields
-  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
+  if (formData.candidateName) fd.append('candidate_name', formData.candidateName);
   if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
   if (formData.agency) fd.append('agency', formData.agency);
   if (formData.offerDate) fd.append('offer_date', formData.offerDate);
@@ -139,11 +139,11 @@ export async function createCandidateExtendedApi(formData: any): Promise<candida
   const fd = new FormData();
 
   // Required fields
-  fd.append('candidate_name', formData.candidateName);
+  fd.append('candidate_email', formData.candidateEmail);
   fd.append('candidate_code', formData.candidateCode);
 
   // Optional text fields
-  if (formData.candidateEmail) fd.append('candidate_email', formData.candidateEmail);
+  if (formData.candidateName) fd.append('candidate_name', formData.candidateName);
   if (formData.candidatePhone) fd.append('candidate_phone', formData.candidatePhone);
   if (formData.agency) fd.append('agency', formData.agency);
   if (formData.offerDate) fd.append('offer_date', formData.offerDate);
@@ -185,8 +185,8 @@ export async function updateCandidateApi(id: number, formData: any): Promise<can
   };
 
   // Text fields
-  fd.append('candidate_name', formData.candidateName);
   fd.append('candidate_code', formData.candidateCode);
+  appendIfPresent('candidate_name', 'candidateName');
   appendIfPresent('candidate_email', 'candidateEmail');
   appendIfPresent('candidate_phone', 'candidatePhone');
   appendIfPresent('agency', 'agency');

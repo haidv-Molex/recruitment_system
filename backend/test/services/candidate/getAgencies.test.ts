@@ -39,8 +39,8 @@ describe("getAgencies", () => {
   it("should include extra agency values from DB that are not in defaults", async () => {
     // Insert candidate với agency ngoài HeadhuntAgency type
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, agency) VALUES ($1, $2, $3)`,
-      ["Test Candidate", "Searching", "SomeNewAgency"]
+      `INSERT INTO candidate (candidate_name, candidate_email, status, agency) VALUES ($1, $2, $3, $4)`,
+      ["Test Candidate", "test1@example.com", "Searching", "SomeNewAgency"]
     );
 
     const result = await getAgencies(client);
@@ -51,8 +51,8 @@ describe("getAgencies", () => {
   it("should not have duplicate values", async () => {
     // Insert agency trùng với default
     await client.query(
-      `INSERT INTO candidate (candidate_name, status, agency) VALUES ($1, $2, $3)`,
-      ["Test Candidate 2", "Searching", "Navigos"]
+      `INSERT INTO candidate (candidate_name, candidate_email, status, agency) VALUES ($1, $2, $3, $4)`,
+      ["Test Candidate 2", "test2@example.com", "Searching", "Navigos"]
     );
 
     const result = await getAgencies(client);

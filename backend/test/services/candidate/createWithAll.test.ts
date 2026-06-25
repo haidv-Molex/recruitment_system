@@ -25,7 +25,7 @@ describe("candidate/createWithAll service", () => {
 
   it("should create candidate with only required fields", async () => {
     const result = await createWithAll(
-      { candidate_name: "Nguyễn Văn A", status: "CV Sent" },
+      { candidate_name: "Nguyễn Văn A", candidate_email: "a@example.com", status: "CV Sent" },
       client
     );
 
@@ -45,6 +45,7 @@ describe("candidate/createWithAll service", () => {
     const result = await createWithAll(
       {
         candidate_name: "Lê Văn C",
+        candidate_email: "c@example.com",
         status: "Hold",
         platform_name: "TestPlatformXYZ",
       },
@@ -62,6 +63,7 @@ describe("candidate/createWithAll service", () => {
     const result = await createWithAll(
       {
         candidate_name: "Phạm Thị D",
+        candidate_email: "d@example.com",
         status: "Withdraw",
         targeted_company_name: "Foxconn Auto",
       },
@@ -79,6 +81,7 @@ describe("candidate/createWithAll service", () => {
     const result = await createWithAll(
       {
         candidate_name: "Hoàng Văn E",
+        candidate_email: "e@example.com",
         status: "CV Fail",
         reference_name: "Bảo Giới Thiệu",
       },
@@ -98,6 +101,7 @@ describe("candidate/createWithAll service", () => {
     const result = await createWithAll(
       {
         candidate_name: "Nguyễn Thị G",
+        candidate_email: "g@example.com",
         status: "Onboarded",
         platform_name: "Platform Auto",
         targeted_company_name: "Company Auto",
@@ -122,7 +126,7 @@ describe("candidate/createWithAll service", () => {
 
   it("should leave FK fields null when neither ID nor _name is provided", async () => {
     const result = await createWithAll(
-      { candidate_name: "Lý Thị H", status: "CV Sent" },
+      { candidate_name: "Lý Thị H", candidate_email: "h@example.com", status: "CV Sent" },
       client
     );
 
@@ -145,6 +149,7 @@ describe("candidate/createWithAll service", () => {
     const result = await createWithAll(
       {
         candidate_name: "Nguyễn Văn Level",
+        candidate_email: "level@example.com",
         status: "CV Sent",
         candidate_levels: [seededLevelId],
         candidate_levels_name: ["Fresher", "Middle"], // Middle exists, Fresher is new
@@ -167,6 +172,7 @@ describe("candidate/createWithAll service", () => {
     const result = await createWithAll(
       {
         candidate_name: "Nguyễn Văn Job",
+        candidate_email: "job1@example.com",
         status: "CV Sent",
         job_code: "JOB-NEW-999",
         project: "Auto Job Project Name",
@@ -183,6 +189,7 @@ describe("candidate/createWithAll service", () => {
     const result2 = await createWithAll(
       {
         candidate_name: "Lê Thị Job",
+        candidate_email: "job2@example.com",
         status: "CV Sent",
         job_code: "JOB-NEW-999",
         project: "Different Project Name But Same Code",
@@ -193,5 +200,17 @@ describe("candidate/createWithAll service", () => {
     expect(result2.job).to.not.be.null;
     expect(result2.job.job_id).to.equal(result.job.job_id);
     expect(result2.job.job_code).to.equal("JOB-NEW-999");
+  });
+
+  it("should create candidate with null candidate_name", async () => {
+    const result = await createWithAll(
+      { candidate_email: "nullname.all@example.com", status: "CV Sent", candidate_name: null },
+      client
+    );
+
+    expect(result).to.have.property("candidate_id").that.is.a("number");
+    expect(result.candidate_name).to.be.null;
+    expect(result.candidate_email).to.equal("nullname.all@example.com");
+    expect(result.status).to.equal("CV Sent");
   });
 });

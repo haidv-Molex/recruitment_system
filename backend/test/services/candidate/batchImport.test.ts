@@ -32,6 +32,7 @@ describe("Candidate batchImport service", () => {
     const importItems = [
       {
         candidate_name: "Candidate Test Import A",
+        candidate_email: "test.import.a@example.com",
         status: "Applied",
         platform_name: "LinkedIn", // will be created
         targeted_company_name: "Molex", // will be created
@@ -39,6 +40,7 @@ describe("Candidate batchImport service", () => {
       },
       {
         candidate_name: "Candidate Test Import B",
+        candidate_email: "test.import.b@example.com",
         status: "Interviewing",
         platform_name: "linkedin", // should resolve to existing LinkedIn
         targeted_company_name: "molex", // should resolve to existing Molex
@@ -89,10 +91,12 @@ describe("Candidate batchImport service", () => {
     const importItems = [
       {
         candidate_name: "Candidate Test Import Ok",
+        candidate_email: "test.ok@example.com",
         status: "Applied",
       },
       {
-        candidate_name: null as any, // Will fail database NOT NULL validation
+        candidate_name: "Failing Candidate",
+        candidate_email: null as any, // Will fail database NOT NULL validation
         status: "Applied",
       }
     ];
@@ -102,7 +106,7 @@ describe("Candidate batchImport service", () => {
     expect(result.success).to.be.false;
     expect(result.importedCount).to.equal(1);
     expect(result.errors).to.have.lengthOf(1);
-    expect(result.errors[0].candidate_name).to.equal("Unknown Candidate");
+    expect(result.errors[0].candidate_name).to.equal("Failing Candidate");
 
     // Verify only the successful candidate is inserted
     const candidatesRes = await client.query(
@@ -116,12 +120,14 @@ describe("Candidate batchImport service", () => {
     const importItems = [
       {
         candidate_name: "Candidate Job Create A",
+        candidate_email: "job.create.a@example.com",
         status: "Applied",
         job_code: "BATCH-JOB-999",
         project: "Batch Job Project Name",
       },
       {
         candidate_name: "Candidate Job Create B",
+        candidate_email: "job.create.b@example.com",
         status: "Interviewing",
         job_code: "BATCH-JOB-999",
         project: "Another Project Name But Same Code", // should reuse
@@ -197,7 +203,7 @@ describe("Candidate batchImport service", () => {
     ]);
   });
 
-  it("should store blank candidate_email as null", async () => {
+  it("should fail to import candidate with blank candidate_email", async () => {
     const importItems = [
       {
         candidate_name: "Candidate Blank Email",
@@ -208,22 +214,17 @@ describe("Candidate batchImport service", () => {
 
     const result = await batchImport(importItems, client);
 
-    expect(result.success).to.be.true;
-    expect(result.importedCount).to.equal(1);
-    expect(result.errors).to.have.lengthOf(0);
-
-    const candidateRes = await client.query(
-      `SELECT candidate_email FROM candidate WHERE candidate_name = $1`,
-      ["Candidate Blank Email"]
-    );
-    expect(candidateRes.rows).to.have.lengthOf(1);
-    expect(candidateRes.rows[0].candidate_email).to.be.null;
+    expect(result.success).to.be.false;
+    expect(result.importedCount).to.equal(0);
+    expect(result.errors).to.have.lengthOf(1);
+    expect(result.errors[0].candidate_name).to.equal("Candidate Blank Email");
   });
 
   it("should auto-generate candidate_code in V00001 format when candidate_code is not provided", async () => {
     const importItems = [
       {
         candidate_name: "Candidate Without Code",
+        candidate_email: "no.code@example.com",
         status: "CV Sent",
       }
     ];
